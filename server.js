@@ -1,3 +1,6 @@
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const multer = require('multer');
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -8,6 +11,25 @@ const { v4: uuidv4 } = require('uuid');
 const WebSocket = require('ws');
 const http = require('http');
 require('dotenv').config();
+// R2 Storage client
+const s3 = new S3Client({
+  region: 'auto',
+  endpoint: process.env.R2_ENDPOINT,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY,
+    secretAccessKey: process.env.R2_SECRET_KEY,
+  },
+});
+
+// Multer — geçici bellek
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    allowed.includes(file.mimetype) ? cb(null, true) : cb(new Error('Sadece JPG, PNG, WebP'));
+  }
+});
 
 const app = express();
 const server = http.createServer(app);
@@ -517,7 +539,46 @@ app.get('/api/subscription', authMiddleware, async (req, res) => {
 // ═══════════════════════════════
 // SUNUCUYU BAŞLAT
 // ═══════════════════════════════
+// ═══════════════════════════════
+// FOTOĞRAF YÜKLEME
+// ═══════════════════════════════
 
+app.post('/api/upload/product-image', authMiddleware, upload.single('image'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Dosya seçilmedi' });
+  try {
+    const ext = req.file.mimetype === 'image/png' ? 'png' : req.file.mimetype === 'image/webp' ? 'webp' : 'jpg';
+    const fileName = `restaurants/${req.user.restaurantId}/products/${Date.now()}.${ext}`;
+    await s3.send(new PutObjectCommand({
+      Bucket: process.env.R2_BUCKET,
+      Key: fileName,
+      Body: req.file.buffer,
+      ContentType: req.file.mimetype,
+    }));
+    const imageUrl = `${process.env.R2_PUBLIC_URL}/${fileName}`;
+    res.json({ imageUrl });
+  } catch (err) {
+    res.status(500).json({ error: 'Yükleme hatası: ' + err.message });
+  }
+});
+
+app.post('/api/upload/logo', authMiddleware, upload.single('image'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Dosya seçilmedi' });
+  try {
+    const ext = req.file.mimetype === 'image/png' ? 'png' : 'jpg';
+    const fileName = `restaurants/${req.user.restaurantId}/logo.${ext}`;
+    await s3.send(new PutObjectCommand({
+      Bucket: process.env.R2_BUCKET,
+      Key: fileName,
+      Body: req.file.buffer,
+      ContentType: req.file.mimetype,
+    }));
+    const logoUrl = `${process.env.R2_PUBLIC_URL}/${fileName}`;
+    await pool.query('UPDATE restaurants SET logo_url=$1 WHERE id=$2', [logoUrl, req.user.restaurantId]);
+    res.json({ logoUrl });
+  } catch (err) {
+    res.status(500).json({ error: 'Yükleme hatası: ' + err.message });
+  }
+});
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, async () => {
   console.log(`🚀 QRMenu API çalışıyor: port ${PORT}`);
