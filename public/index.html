@@ -13,10 +13,7 @@ button{cursor:pointer;font-family:var(--sans)}
 input,textarea,select{font-family:var(--sans)}
 .view{display:none;min-height:100vh}
 .view.active{display:flex}
-
-/* AUTH */
-#auth-view{align-items:center;justify-content:center;flex-direction:column;
-background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(232,197,71,.1),transparent 60%),var(--bg)}
+#auth-view{align-items:center;justify-content:center;flex-direction:column;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(232,197,71,.1),transparent 60%),var(--bg)}
 .auth-logo{font-family:var(--serif);font-size:2rem;margin-bottom:40px;display:flex;align-items:center;gap:10px}
 .auth-logo span{color:var(--accent)}
 .auth-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:36px;width:380px}
@@ -30,8 +27,6 @@ background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(232,197,71,.1),transpa
 .btn-primary{width:100%;background:var(--accent);border:none;border-radius:var(--r);color:#0d0d0f;font-weight:700;font-size:14px;padding:13px;transition:all .15s}
 .btn-primary:hover{filter:brightness(1.1)}
 .auth-error{background:rgba(232,71,71,.1);border:1px solid rgba(232,71,71,.3);color:var(--red);border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:16px;display:none}
-
-/* APP SHELL */
 #app-view{flex-direction:row}
 .sidebar{width:220px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100}
 .sidebar-logo{padding:22px 18px;font-family:var(--serif);font-size:1.2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
@@ -53,11 +48,8 @@ background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(232,197,71,.1),transpa
 .btn-sm:hover{background:var(--bg2)}
 .btn-accent{background:var(--accent);border-color:var(--accent);color:#0d0d0f;font-weight:700}
 .btn-accent:hover{filter:brightness(1.1)}
-.btn-danger{background:rgba(232,71,71,.1);border-color:rgba(232,71,71,.3);color:var(--red)}
 .page{padding:24px;display:none}
 .page.active{display:block}
-
-/* CARDS & STATS */
 .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
 .stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:18px;position:relative;overflow:hidden}
 .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--c,var(--accent))}
@@ -66,15 +58,14 @@ background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(232,197,71,.1),transpa
 .panel{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px}
 .panel-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .panel-title{font-size:13px;font-weight:600}
-
-/* MENU EDITOR */
 .editor-grid{display:grid;grid-template-columns:260px 1fr;gap:16px}
 .cat-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:all .15s;margin-bottom:4px;border:1px solid transparent}
 .cat-item:hover{background:var(--bg3)}
 .cat-item.active{background:rgba(232,197,71,.08);border-color:rgba(232,197,71,.2);color:var(--accent)}
 .product-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:10px;display:flex;gap:12px;align-items:start}
 .product-card.hidden{opacity:.4}
-.prod-emoji{width:60px;height:60px;border-radius:8px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+.prod-thumb{width:60px;height:60px;border-radius:8px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;overflow:hidden}
+.prod-thumb img{width:100%;height:100%;object-fit:cover;border-radius:8px}
 .prod-name{font-size:14px;font-weight:600;margin-bottom:3px}
 .prod-desc{font-size:12px;color:var(--text2);margin-bottom:6px;line-height:1.4}
 .prod-price{font-size:14px;color:var(--accent);font-weight:600;font-family:monospace}
@@ -84,11 +75,9 @@ background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(232,197,71,.1),transpa
 .toggle-pill{display:inline-flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;transition:all .2s}
 .toggle-pill.on{background:rgba(71,201,126,.1);border-color:rgba(71,201,126,.3);color:var(--green)}
 .toggle-pill.off{color:var(--text3)}
-
-/* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
 .modal-overlay.open{display:flex}
-.modal{background:var(--bg2);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:28px;width:460px;max-width:94vw;max-height:90vh;overflow-y:auto}
+.modal{background:var(--bg2);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:28px;width:480px;max-width:94vw;max-height:90vh;overflow-y:auto}
 .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
 .modal-title{font-size:16px;font-weight:600}
 .modal-close{background:none;border:none;color:var(--text3);font-size:22px;line-height:1;cursor:pointer}
@@ -96,17 +85,17 @@ background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(232,197,71,.1),transpa
 .modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;padding-top:18px;border-top:1px solid var(--border)}
 select.form-input{cursor:pointer}
 textarea.form-input{resize:vertical;min-height:80px}
-
-/* FEEDBACK */
+.img-upload-area{border:2px dashed rgba(255,255,255,.1);border-radius:var(--r);padding:16px;margin-top:8px}
+.img-upload-row{display:flex;align-items:center;gap:12px}
+.img-preview-box{width:72px;height:72px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;overflow:hidden;border:1px solid var(--border)}
+.img-preview-box img{width:100%;height:100%;object-fit:cover;border-radius:7px}
+.img-upload-info{flex:1}
+.img-upload-info p{font-size:12px;color:var(--text3);margin-top:4px}
 .feedback-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;display:flex;gap:12px;margin-bottom:10px}
 .fb-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
 .stars{color:var(--accent);font-size:12px}
-
-/* NOTIFICATIONS */
-.notif-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;display:flex;align-items:center;gap:14px;margin-bottom:10px;transition:all .3s}
+.notif-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;display:flex;align-items:center;gap:14px;margin-bottom:10px}
 .notif-card.new{border-color:rgba(232,197,71,.3);background:rgba(232,197,71,.04)}
-
-/* PLANS */
 .plans-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .plan-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px;position:relative}
 .plan-card.featured{border-color:rgba(232,197,71,.4);background:rgba(232,197,71,.03)}
@@ -117,19 +106,13 @@ textarea.form-input{resize:vertical;min-height:80px}
 .feat-ok{color:var(--green)}
 .plan-btn{width:100%;background:var(--bg3);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;transition:all .2s}
 .plan-card.featured .plan-btn{background:var(--accent);border-color:var(--accent);color:#0d0d0f}
-
-/* DESIGN */
 .design-grid{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start}
 .preview-box{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;position:sticky;top:70px}
 .preview-bar{padding:10px 14px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:6px}
 .pdot{width:8px;height:8px;border-radius:50%;background:var(--border)}
 .preview-content{height:480px;overflow-y:auto;background:#fff}
-
-/* QR */
 .qr-center{max-width:360px;margin:0 auto;text-align:center}
 .qr-box{width:200px;height:200px;background:#fff;border-radius:12px;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;padding:10px}
-
-/* TOAST */
 .toast-wrap{position:fixed;bottom:20px;right:20px;z-index:500;display:flex;flex-direction:column;gap:8px}
 .toast{background:var(--bg2);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px 18px;font-size:13px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.4);animation:toastIn .3s ease}
 @keyframes toastIn{from{transform:translateX(16px);opacity:0}to{transform:translateX(0);opacity:1}}
@@ -137,36 +120,24 @@ textarea.form-input{resize:vertical;min-height:80px}
 .t-success .toast-dot{background:var(--green)}
 .t-error .toast-dot{background:var(--red)}
 .t-info .toast-dot{background:var(--blue)}
-
-/* EMPTY STATE */
 .empty{padding:48px;text-align:center;color:var(--text3)}
 .empty-icon{font-size:40px;margin-bottom:12px}
-
-/* CHART */
-.bars{display:flex;align-items:end;gap:6px;height:100px}
-.bar{flex:1;background:rgba(232,197,71,.15);border-radius:4px 4px 0 0;border:1px solid rgba(232,197,71,.2);transition:height .5s;cursor:pointer}
-.bar:hover{background:rgba(232,197,71,.3)}
-.bar-labels{display:flex;gap:6px;margin-top:6px}
-.bar-label{flex:1;font-size:10px;color:var(--text3);text-align:center;font-family:monospace}
-
-/* CUSTOMER MENU */
 #menu-view{flex-direction:column;background:#fff}
 .menu-topbar{background:#111;padding:8px 16px;display:flex;align-items:center;justify-content:space-between}
 .menu-back{background:rgba(255,255,255,.1);border:none;color:#aaa;font-size:12px;padding:5px 12px;border-radius:6px;cursor:pointer}
 .menu-public{flex:1;max-width:500px;margin:0 auto;width:100%;min-height:100vh;background:#fff;box-shadow:0 0 40px rgba(0,0,0,.08)}
-.m-hero{padding:28px 20px 20px;text-align:center;background:linear-gradient(180deg,var(--hero-color,#fdf6e3) 0%,#fff 100%)}
+.m-hero{padding:28px 20px 20px;text-align:center}
 .m-rest-name{font-family:var(--serif);font-size:1.7rem;color:#111;margin-bottom:5px}
 .m-tag{font-size:12px;color:#999;margin-bottom:14px}
 .m-pills{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
 .m-pill{display:flex;align-items:center;gap:5px;font-size:12px;background:rgba(0,0,0,.05);border-radius:20px;padding:5px 12px;color:#555;cursor:pointer;border:none;font-family:var(--sans)}
-.m-pill:hover{background:rgba(0,0,0,.08)}
 .sticky-nav{position:sticky;top:0;background:#fff;border-bottom:1px solid #f0f0f0;display:flex;overflow-x:auto;z-index:10;scrollbar-width:none}
 .sticky-nav::-webkit-scrollbar{display:none}
 .snav-item{padding:12px 16px;font-size:13px;font-weight:500;color:#999;white-space:nowrap;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
 .snav-item.active{color:var(--menu-accent,#c0a020);border-color:var(--menu-accent,#c0a020)}
 .m-section{padding:18px 16px}
 .m-section-title{font-size:1.2rem;color:#111;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #f5f5f5;font-family:var(--serif)}
-.m-product{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid #fafafa;cursor:pointer}
+.m-product{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid #fafafa}
 .m-product:last-child{border-bottom:none}
 .m-prod-img{width:76px;height:76px;border-radius:10px;background:#f5f5f5;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:30px;overflow:hidden}
 .m-prod-img img{width:100%;height:100%;object-fit:cover;border-radius:10px}
@@ -175,36 +146,30 @@ textarea.form-input{resize:vertical;min-height:80px}
 .m-prod-price{font-size:15px;font-weight:700;color:var(--menu-accent,#c0a020)}
 .m-footer{padding:24px 20px;border-top:1px solid #f0f0f0;text-align:center;background:#fafafa}
 .waiter-btn{background:var(--menu-accent,#c0a020);color:#fff;border:none;border-radius:12px;padding:13px 28px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;margin:0 auto 16px;cursor:pointer;transition:all .15s;font-family:var(--sans)}
-.waiter-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
 .wifi-card{background:#fff;border:1px solid #eee;border-radius:12px;padding:14px;display:inline-flex;gap:12px;align-items:center;text-align:left;margin-bottom:14px}
 .wifi-name{font-size:12px;font-weight:600;color:#111;margin-bottom:2px}
 .wifi-pass{font-family:monospace;font-size:12px;color:#888}
 .social-row{display:flex;justify-content:center;gap:10px;margin-bottom:16px}
-.social-btn{width:40px;height:40px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:18px;text-decoration:none;border:none;cursor:pointer;transition:background .15s}
-.social-btn:hover{background:#eee}
+.social-btn{width:40px;height:40px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:18px;border:none;cursor:pointer}
 .camp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:none;align-items:center;justify-content:center}
 .camp-overlay.open{display:flex}
-.camp-box{background:#fff;border-radius:16px;overflow:hidden;width:300px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:popIn .4s cubic-bezier(.34,1.56,.64,1)}
+.camp-box{background:#fff;border-radius:16px;overflow:hidden;width:300px;text-align:center;animation:popIn .4s cubic-bezier(.34,1.56,.64,1)}
 @keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
 .camp-img{height:140px;display:flex;align-items:center;justify-content:center;font-size:60px;background:linear-gradient(135deg,#fde68a,#f59e0b)}
 .camp-body{padding:18px}
 .camp-title{font-size:17px;font-weight:700;color:#111;margin-bottom:6px;font-family:var(--serif)}
 .camp-sub{font-size:12px;color:#666;margin-bottom:14px}
 .camp-close-btn{width:100%;background:#111;color:#fff;border:none;padding:11px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans)}
-
-/* FB MODAL (customer) */
 .fb-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:none;align-items:flex-end;justify-content:center}
 .fb-modal.open{display:flex}
 .fb-inner{background:#fff;border-radius:16px 16px 0 0;padding:24px;width:100%;max-width:500px;animation:slideUp .3s ease}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .fb-title{font-size:16px;font-weight:700;color:#111;margin-bottom:16px;font-family:var(--serif)}
 .fb-input{width:100%;border:1px solid #e5e5e5;border-radius:10px;padding:12px;font-size:14px;font-family:var(--sans);resize:none;outline:none;min-height:100px}
-.fb-input:focus{border-color:#c0a020}
 .fb-types{display:flex;gap:8px;margin-bottom:14px}
-.fb-type-btn{flex:1;padding:8px;border:1px solid #e5e5e5;border-radius:8px;background:#fff;font-size:12px;cursor:pointer;transition:all .2s;font-family:var(--sans)}
+.fb-type-btn{flex:1;padding:8px;border:1px solid #e5e5e5;border-radius:8px;background:#fff;font-size:12px;cursor:pointer;font-family:var(--sans)}
 .fb-type-btn.selected{border-color:#c0a020;background:#fef9e7;color:#8a6d00;font-weight:600}
 .fb-submit{width:100%;background:#111;color:#fff;border:none;padding:13px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;margin-top:12px;font-family:var(--sans)}
-.rating-row{display:flex;gap:6px;margin-bottom:14px}
 .star-btn{background:none;border:none;font-size:24px;cursor:pointer;opacity:.4;transition:all .15s}
 .star-btn.active{opacity:1}
 </style>
@@ -241,7 +206,7 @@ textarea.form-input{resize:vertical;min-height:80px}
     <nav class="sidebar-nav">
       <div class="nav-section">DASHBOARD</div>
       <div class="nav-item active" onclick="goPage('home',this)">🏠 Genel Bakış</div>
-      <div class="nav-item" onclick="goPage('notifications',this)" id="nav-notif">🔔 Garson Çağrıları <span class="nav-badge" id="notif-badge">0</span></div>
+      <div class="nav-item" onclick="goPage('notifications',this)">🔔 Garson Çağrıları <span class="nav-badge" id="notif-badge">0</span></div>
       <div class="nav-section">MENÜ</div>
       <div class="nav-item" onclick="goPage('editor',this)">📋 Menü Editörü</div>
       <div class="nav-item" onclick="goPage('design',this)">🎨 Tasarım</div>
@@ -255,10 +220,9 @@ textarea.form-input{resize:vertical;min-height:80px}
       <div class="nav-item" onclick="doLogout()" style="color:var(--red);margin-top:8px">🚪 Çıkış Yap</div>
     </nav>
     <div class="sidebar-footer">
-      <div class="plan-box"><div class="plan-name">✦ TRIAL</div><div class="plan-meta" id="plan-meta">14 gün kaldı</div></div>
+      <div class="plan-box"><div class="plan-name">✦ TRIAL</div><div class="plan-meta">14 gün kaldı</div></div>
     </div>
   </aside>
-
   <main class="main">
     <div class="topbar">
       <span class="topbar-title" id="topbar-title">Genel Bakış</span>
@@ -274,7 +238,7 @@ textarea.form-input{resize:vertical;min-height:80px}
         <div class="stat-card" style="--c:var(--accent)"><div class="stat-val" id="stat-products">0</div><div class="stat-label">Toplam Ürün</div></div>
         <div class="stat-card" style="--c:var(--green)"><div class="stat-val" id="stat-cats">0</div><div class="stat-label">Kategori</div></div>
         <div class="stat-card" style="--c:var(--blue)"><div class="stat-val" id="stat-feedback">0</div><div class="stat-label">Geri Bildirim</div></div>
-        <div class="stat-card" style="--c:var(--red)"><div class="stat-val" id="stat-calls">0</div><div class="stat-label">Garson Çağrısı</div></div>
+        <div class="stat-card" style="--c:var(--red)"><div class="stat-val" id="stat-calls">0</div><div class="stat-label">Bekleyen Çağrı</div></div>
       </div>
       <div class="panel">
         <div class="panel-head"><span class="panel-title">Menü Linkiniz</span></div>
@@ -328,6 +292,16 @@ textarea.form-input{resize:vertical;min-height:80px}
                   <option value="Georgia">Georgia — Geleneksel</option>
                 </select>
               </div>
+              <div><div class="form-label" style="margin-bottom:8px">LOGO</div>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div id="logo-preview" style="width:60px;height:60px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;border:1px solid var(--border)">🏪</div>
+                  <div>
+                    <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="uploadLogo(this)">
+                    <button class="btn-sm" onclick="document.getElementById('logo-file').click()" type="button">📁 Logo Yükle</button>
+                    <p style="font-size:11px;color:var(--text3);margin-top:4px">PNG veya JPG, maks 2MB</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <div class="panel" style="margin-bottom:14px">
@@ -344,7 +318,7 @@ textarea.form-input{resize:vertical;min-height:80px}
               <div><div class="form-label" style="margin-bottom:6px">FACEBOOK</div><input class="form-input" id="d-fb" placeholder="sayfanizin-adi"></div>
             </div>
           </div>
-          <button class="btn-primary" onclick="saveDesign()">Kaydet</button>
+          <button class="btn-primary" onclick="saveDesign()">Değişiklikleri Kaydet</button>
         </div>
         <div class="preview-box">
           <div class="preview-bar"><div class="pdot"></div><div class="pdot"></div><div class="pdot"></div> Canlı Önizleme</div>
@@ -409,7 +383,7 @@ textarea.form-input{resize:vertical;min-height:80px}
   </main>
 </div>
 
-<!-- CUSTOMER MENU VIEW -->
+<!-- CUSTOMER MENU -->
 <div id="menu-view" class="view" style="flex-direction:column">
   <div class="menu-topbar">
     <span style="font-size:11px;color:#666;font-family:monospace" id="menu-topbar-url"></span>
@@ -439,38 +413,57 @@ textarea.form-input{resize:vertical;min-height:80px}
       <button class="fb-type-btn" onclick="selectFBType('complaint',this)">⚠️ Şikayet</button>
       <button class="fb-type-btn" onclick="selectFBType('suggestion',this)">💡 Öneri</button>
     </div>
-    <div style="display:flex;gap:4px;margin-bottom:12px" class="rating-row" id="star-row"></div>
+    <div style="display:flex;gap:4px;margin-bottom:12px" id="star-row"></div>
     <textarea class="fb-input" id="fb-msg" placeholder="Deneyiminizi paylaşın..."></textarea>
     <button class="fb-submit" onclick="submitFeedback()">Gönder</button>
     <button onclick="document.getElementById('fb-modal').classList.remove('open')" style="width:100%;background:none;border:none;color:#888;font-size:13px;padding:10px;cursor:pointer;font-family:var(--sans)">Vazgeç</button>
   </div>
 </div>
 
-<!-- MODALS -->
+<!-- PRODUCT MODAL -->
 <div class="modal-overlay" id="prod-modal">
   <div class="modal">
-    <div class="modal-head"><span class="modal-title" id="prod-modal-title">Ürün Ekle</span><button class="modal-close" onclick="closeModal('prod-modal')">✕</button></div>
+    <div class="modal-head">
+      <span class="modal-title" id="prod-modal-title">Ürün Ekle</span>
+      <button class="modal-close" onclick="closeModal('prod-modal')">✕</button>
+    </div>
     <input type="hidden" id="prod-edit-id">
-    <div class="form-group"><label class="form-label">KATEGORİ</label><select class="form-input" id="prod-cat-select"></select></div>
-    <div class="form-group"><label class="form-label">ÜRÜN ADI</label><input class="form-input" id="prod-name" placeholder="örn. Mercimek Çorbası"></div>
-    <div class="form-group"><label class="form-label">AÇIKLAMA</label><textarea class="form-input" id="prod-desc" placeholder="Kısa açıklama..."></textarea></div>
+    <div class="form-group">
+      <label class="form-label">KATEGORİ</label>
+      <select class="form-input" id="prod-cat-select"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ÜRÜN ADI</label>
+      <input class="form-input" id="prod-name" placeholder="örn. Mercimek Çorbası">
+    </div>
+    <div class="form-group">
+      <label class="form-label">AÇIKLAMA</label>
+      <textarea class="form-input" id="prod-desc" placeholder="Kısa açıklama..."></textarea>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="form-group"><label class="form-label">FİYAT (₺)</label><input class="form-input" id="prod-price" type="number" min="0" step="0.01" placeholder="0.00"></div>
-      maxlength="4"></div>
+      <div class="form-group">
+        <label class="form-label">FİYAT (₺)</label>
+        <input class="form-input" id="prod-price" type="number" min="0" step="0.01" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">EMOJİ</label>
+        <input class="form-input" id="prod-emoji" placeholder="🍽️" maxlength="4">
+      </div>
+    </div>
     <div class="form-group">
       <label class="form-label">FOTOĞRAF (opsiyonel)</label>
-      <div id="img-preview" style="width:80px;height:80px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:8px;overflow:hidden">📷</div>
-      <input type="file" id="prod-image" accept="image/*" style="display:none" onchange="previewImage(this)">
-      <button class="btn-sm" onclick="document.getElementById('prod-image').click()" type="button">📁 Fotoğraf Seç</button>
-      <span id="img-status" style="font-size:11px;color:var(--text3);margin-left:8px"></span>
+      <div class="img-upload-area">
+        <div class="img-upload-row">
+          <div class="img-preview-box" id="img-preview">📷</div>
+          <div class="img-upload-info">
+            <input type="file" id="prod-image" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="previewImage(this)">
+            <button class="btn-sm" onclick="document.getElementById('prod-image').click()" type="button">📁 Fotoğraf Seç</button>
+            <p>JPG, PNG veya WebP — maks 5MB</p>
+            <span id="img-status" style="font-size:11px;color:var(--green)"></span>
+          </div>
+        </div>
+      </div>
     </div>
-    </div><div class="form-group">
-  <label class="form-label">FOTOĞRAF (opsiyonel)</label>
-  <div id="img-preview" style="width:80px;height:80px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:8px;overflow:hidden">📷</div>
-  <input type="file" id="prod-image" accept="image/*" style="display:none" onchange="previewImage(this)">
-  <button class="btn-sm" onclick="document.getElementById('prod-image').click()" type="button">📁 Fotoğraf Seç</button>
-  <span id="img-status" style="font-size:11px;color:var(--text3);margin-left:8px"></span>
-</div>
     <div class="modal-footer">
       <button class="btn-sm" onclick="closeModal('prod-modal')">İptal</button>
       <button class="btn-sm btn-accent" onclick="saveProduct()">Kaydet</button>
@@ -478,6 +471,7 @@ textarea.form-input{resize:vertical;min-height:80px}
   </div>
 </div>
 
+<!-- CATEGORY MODAL -->
 <div class="modal-overlay" id="cat-modal">
   <div class="modal" style="width:340px">
     <div class="modal-head"><span class="modal-title">Kategori Ekle</span><button class="modal-close" onclick="closeModal('cat-modal')">✕</button></div>
@@ -489,13 +483,12 @@ textarea.form-input{resize:vertical;min-height:80px}
   </div>
 </div>
 
+<!-- BULK MODAL -->
 <div class="modal-overlay" id="bulk-modal">
   <div class="modal" style="width:360px">
     <div class="modal-head"><span class="modal-title">Toplu Fiyat Güncelle</span><button class="modal-close" onclick="closeModal('bulk-modal')">✕</button></div>
     <div class="form-group"><label class="form-label">KATEGORİ</label>
-      <select class="form-input" id="bulk-cat-select">
-        <option value="">Tüm kategoriler</option>
-      </select>
+      <select class="form-input" id="bulk-cat-select"><option value="">Tüm kategoriler</option></select>
     </div>
     <div class="form-group"><label class="form-label">ORAN — <span id="bulk-pct-lbl">+10%</span></label>
       <input type="range" min="-50" max="100" value="10" id="bulk-pct" oninput="document.getElementById('bulk-pct-lbl').textContent=(this.value>0?'+':'')+this.value+'%'">
@@ -507,6 +500,7 @@ textarea.form-input{resize:vertical;min-height:80px}
   </div>
 </div>
 
+<!-- CAMPAIGN MODAL -->
 <div class="modal-overlay" id="camp-modal">
   <div class="modal" style="width:380px">
     <div class="modal-head"><span class="modal-title">Kampanya Ekle</span><button class="modal-close" onclick="closeModal('camp-modal')">✕</button></div>
@@ -523,7 +517,6 @@ textarea.form-input{resize:vertical;min-height:80px}
 <div class="toast-wrap" id="toast-wrap"></div>
 
 <script>
-// ── CONFIG ──────────────────────────────────────────
 const API = window.location.origin + '/api';
 let TOKEN = localStorage.getItem('qrmenu_token');
 let RESTAURANT = JSON.parse(localStorage.getItem('qrmenu_rest') || 'null');
@@ -532,7 +525,6 @@ let activeCatId = null, fbFilter = 'all', fbType = 'praise', fbRating = 5;
 let editingProductId = null;
 let ws = null;
 
-// ── API HELPERS ──────────────────────────────────────
 async function api(method, path, body) {
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
   if (TOKEN) opts.headers['Authorization'] = 'Bearer ' + TOKEN;
@@ -543,7 +535,6 @@ async function api(method, path, body) {
   return data;
 }
 
-// ── AUTH ────────────────────────────────────────────
 function authTab(t) {
   document.querySelectorAll('.auth-tab').forEach(e => e.classList.remove('active'));
   event.currentTarget.classList.add('active');
@@ -594,7 +585,6 @@ function doLogout() {
   document.getElementById('auth-view').classList.add('active');
 }
 
-// ── INIT ────────────────────────────────────────────
 async function loadApp() {
   document.getElementById('auth-view').classList.remove('active');
   document.getElementById('app-view').classList.add('active');
@@ -603,8 +593,7 @@ async function loadApp() {
     RESTAURANT = await api('GET', '/restaurant/me');
     localStorage.setItem('qrmenu_rest', JSON.stringify(RESTAURANT));
   } catch {}
-  const slug = RESTAURANT?.slug || '';
-  const menuUrl = `${window.location.origin}/menu/${slug}`;
+  const menuUrl = `${window.location.origin}/menu/${RESTAURANT?.slug || ''}`;
   document.getElementById('menu-link').textContent = menuUrl;
   document.getElementById('qr-url').textContent = menuUrl;
   document.getElementById('menu-topbar-url').textContent = menuUrl;
@@ -616,7 +605,6 @@ async function loadApp() {
   connectWS();
 }
 
-// ── WEBSOCKET ────────────────────────────────────────
 function connectWS() {
   if (!RESTAURANT) return;
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -625,21 +613,16 @@ function connectWS() {
     const msg = JSON.parse(e.data);
     if (msg.type === 'waiter_call') {
       calls.unshift(msg.data);
-      updateNotifBadge();
-      updateStats();
-      renderCalls();
-      renderHomeCalls();
+      updateNotifBadge(); updateStats(); renderCalls(); renderHomeCalls();
       toast(`🔔 ${msg.data.table_no} — Garson çağrısı!`, 'info');
     }
   };
   ws.onclose = () => setTimeout(connectWS, 3000);
 }
 
-// ── DATA LOADERS ─────────────────────────────────────
 async function loadCategories() {
   try { categories = await api('GET', '/categories'); } catch { categories = []; }
-  renderCatList();
-  populateCatSelects();
+  renderCatList(); populateCatSelects();
 }
 
 async function loadProducts() {
@@ -669,7 +652,6 @@ function updateStats() {
   document.getElementById('stat-calls').textContent = calls.filter(c => c.status === 'pending').length;
 }
 
-// ── NAV ──────────────────────────────────────────────
 function goPage(id, el) {
   document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
   if (el) el.classList.add('active');
@@ -681,7 +663,6 @@ function goPage(id, el) {
   if (id === 'design') loadDesignFields();
 }
 
-// ── CATEGORIES ───────────────────────────────────────
 function renderCatList() {
   const el = document.getElementById('cat-list');
   if (!categories.length) { el.innerHTML = '<div class="empty" style="padding:20px"><div class="empty-icon">📂</div>Henüz kategori yok</div>'; return; }
@@ -698,8 +679,7 @@ function renderCatList() {
 function selectCat(id, name) {
   activeCatId = id;
   document.getElementById('active-cat-name').textContent = name;
-  renderCatList();
-  renderProductList();
+  renderCatList(); renderProductList();
 }
 
 async function saveCategory() {
@@ -710,9 +690,7 @@ async function saveCategory() {
     categories.push(cat);
     closeModal('cat-modal');
     document.getElementById('cat-name').value = '';
-    renderCatList();
-    populateCatSelects();
-    updateStats();
+    renderCatList(); populateCatSelects(); updateStats();
     toast(`"${name}" eklendi`, 'success');
   } catch (e) { toast(e.message, 'error'); }
 }
@@ -723,18 +701,14 @@ async function deleteCat(id) {
     await api('DELETE', '/categories/' + id);
     categories = categories.filter(c => c.id !== id);
     products = products.filter(p => p.category_id !== id);
-    if (activeCatId === id) activeCatId = null;
-    renderCatList();
-    renderProductList();
-    populateCatSelects();
-    updateStats();
+    if (activeCatId === id) { activeCatId = null; document.getElementById('active-cat-name').textContent = 'Ürünler'; }
+    renderCatList(); renderProductList(); populateCatSelects(); updateStats();
     toast('Kategori silindi', 'info');
   } catch (e) { toast(e.message, 'error'); }
 }
 
 function populateCatSelects() {
-  const selects = ['prod-cat-select', 'bulk-cat-select'];
-  selects.forEach(id => {
+  ['prod-cat-select', 'bulk-cat-select'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     const extra = id === 'bulk-cat-select' ? '<option value="">Tüm kategoriler</option>' : '';
@@ -742,7 +716,6 @@ function populateCatSelects() {
   });
 }
 
-// ── PRODUCTS ─────────────────────────────────────────
 function renderProductList() {
   const el = document.getElementById('prod-list');
   const count = document.getElementById('prod-count');
@@ -752,14 +725,14 @@ function renderProductList() {
   if (!prods.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📦</div>Bu kategoride ürün yok<br><br><button class="btn-sm btn-accent" onclick="openModal(\'prod-modal\')">+ İlk Ürünü Ekle</button></div>'; return; }
   el.innerHTML = prods.map(p => `
     <div class="product-card ${!p.is_visible ? 'hidden' : ''}">
-      <div class="prod-emoji">${p.emoji || '🍽️'}</div>
+      <div class="prod-thumb">${p.image_url ? `<img src="${p.image_url}" alt="${p.name}">` : (p.emoji || '🍽️')}</div>
       <div style="flex:1">
         <div class="prod-name">${p.name}</div>
         <div class="prod-desc">${p.description || ''}</div>
         <div style="display:flex;align-items:center;gap:10px">
           <span class="prod-price">₺${parseFloat(p.price).toFixed(2)}</span>
           <div class="toggle-pill ${p.is_visible ? 'on' : 'off'}" onclick="toggleProduct('${p.id}')">
-            <span>${p.is_visible ? '👁 Aktif' : '🚫 Gizli'}</span>
+            ${p.is_visible ? '👁 Aktif' : '🚫 Gizli'}
           </div>
         </div>
       </div>
@@ -767,14 +740,35 @@ function renderProductList() {
         <button class="icon-btn" onclick="editProduct('${p.id}')">✏️</button>
         <button class="icon-btn" onclick="deleteProduct('${p.id}')" style="color:var(--red)">🗑</button>
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) {
   document.getElementById(id).classList.remove('open');
-  if (id === 'prod-modal') { editingProductId = null; document.getElementById('prod-modal-title').textContent = 'Ürün Ekle'; }
+  if (id === 'prod-modal') {
+    editingProductId = null;
+    document.getElementById('prod-modal-title').textContent = 'Ürün Ekle';
+    document.getElementById('prod-name').value = '';
+    document.getElementById('prod-desc').value = '';
+    document.getElementById('prod-price').value = '';
+    document.getElementById('prod-emoji').value = '';
+    document.getElementById('prod-image').value = '';
+    document.getElementById('img-preview').innerHTML = '📷';
+    document.getElementById('img-status').textContent = '';
+  }
+}
+
+function previewImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById('img-preview');
+    preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:7px">`;
+  };
+  reader.readAsDataURL(file);
+  document.getElementById('img-status').textContent = file.name;
 }
 
 function editProduct(id) {
@@ -787,6 +781,10 @@ function editProduct(id) {
   document.getElementById('prod-desc').value = p.description || '';
   document.getElementById('prod-price').value = p.price;
   document.getElementById('prod-emoji').value = p.emoji || '';
+  if (p.image_url) {
+    document.getElementById('img-preview').innerHTML = `<img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover;border-radius:7px">`;
+    document.getElementById('img-status').textContent = 'Mevcut fotoğraf';
+  }
   openModal('prod-modal');
 }
 
@@ -797,15 +795,11 @@ async function saveProduct() {
   const emoji = document.getElementById('prod-emoji').value.trim() || '🍽️';
   const category_id = document.getElementById('prod-cat-select').value;
   const imageFile = document.getElementById('prod-image').files[0];
-
   if (!name) return toast('Ürün adı zorunlu', 'error');
   if (!category_id) return toast('Kategori seçin', 'error');
-
   let image_url = null;
-
-  // Fotoğraf varsa önce yükle
   if (imageFile) {
-    document.getElementById('img-status').textContent = 'Yükleniyor...';
+    document.getElementById('img-status').textContent = '⏳ Yükleniyor...';
     try {
       const formData = new FormData();
       formData.append('image', imageFile);
@@ -819,14 +813,10 @@ async function saveProduct() {
         image_url = uploadData.imageUrl;
         document.getElementById('img-status').textContent = '✅ Yüklendi';
       }
-    } catch {
-      toast('Fotoğraf yüklenemedi', 'error');
-    }
+    } catch { toast('Fotoğraf yüklenemedi', 'error'); }
   }
-
   const body = { category_id, name, description, price, emoji };
   if (image_url) body.image_url = image_url;
-
   try {
     let prod;
     if (editingProductId) {
@@ -840,16 +830,7 @@ async function saveProduct() {
       toast(`"${prod.name}" eklendi ✅`, 'success');
     }
     closeModal('prod-modal');
-    document.getElementById('prod-name').value = '';
-    document.getElementById('prod-desc').value = '';
-    document.getElementById('prod-price').value = '';
-    document.getElementById('prod-emoji').value = '';
-    document.getElementById('prod-image').value = '';
-    document.getElementById('img-preview').innerHTML = '📷';
-    document.getElementById('img-status').textContent = '';
-    renderProductList();
-    updateStats();
-    updatePreview();
+    renderProductList(); updateStats(); updatePreview();
   } catch (e) { toast(e.message, 'error'); }
 }
 
@@ -869,16 +850,12 @@ async function deleteProduct(id) {
   try {
     await api('DELETE', '/products/' + id);
     products = products.filter(x => x.id !== id);
-    renderProductList();
-    updateStats();
+    renderProductList(); updateStats();
     toast('Ürün silindi', 'info');
   } catch (e) { toast(e.message, 'error'); }
 }
 
-function openBulkModal() {
-  populateCatSelects();
-  openModal('bulk-modal');
-}
+function openBulkModal() { populateCatSelects(); openModal('bulk-modal'); }
 
 async function applyBulkPrice() {
   const category_id = document.getElementById('bulk-cat-select').value;
@@ -891,11 +868,10 @@ async function applyBulkPrice() {
   } catch (e) { toast(e.message, 'error'); }
 }
 
-// ── FEEDBACK ─────────────────────────────────────────
 function renderFeedback() {
   const el = document.getElementById('feedback-list');
-  const icons = { praise: '👍', complaint: '⚠️', suggestion: '💡' };
-  const colors = { praise: 'rgba(71,201,126,.1)', complaint: 'rgba(232,71,71,.1)', suggestion: 'rgba(71,153,232,.1)' };
+  const icons = { praise:'👍', complaint:'⚠️', suggestion:'💡' };
+  const colors = { praise:'rgba(71,201,126,.1)', complaint:'rgba(232,71,71,.1)', suggestion:'rgba(71,153,232,.1)' };
   const filtered = fbFilter === 'all' ? feedbacks : feedbacks.filter(f => f.type === fbFilter);
   if (!filtered.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📭</div>Geri bildirim yok</div>'; return; }
   el.innerHTML = filtered.map(f => `
@@ -904,7 +880,7 @@ function renderFeedback() {
       <div style="flex:1">
         <div style="font-size:13px;line-height:1.5;margin-bottom:5px">${f.message}</div>
         <div style="display:flex;gap:10px;align-items:center">
-          <span class="stars">${'★'.repeat(f.rating)}${'☆'.repeat(5 - f.rating)}</span>
+          <span class="stars">${'★'.repeat(f.rating)}${'☆'.repeat(5-f.rating)}</span>
           <span style="font-size:11px;color:var(--text3)">${new Date(f.created_at).toLocaleDateString('tr-TR')}</span>
         </div>
       </div>
@@ -913,12 +889,11 @@ function renderFeedback() {
 
 function filterFB(type, btn) {
   fbFilter = type;
-  document.querySelectorAll('#fb-filters .btn-sm').forEach(b => { b.classList.remove('btn-accent'); });
+  document.querySelectorAll('#fb-filters .btn-sm').forEach(b => b.classList.remove('btn-accent'));
   btn.classList.add('btn-accent');
   renderFeedback();
 }
 
-// ── CALLS ────────────────────────────────────────────
 function renderCalls() {
   const el = document.getElementById('notif-list');
   if (!calls.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">🔕</div>Garson çağrısı yok</div>'; return; }
@@ -929,14 +904,14 @@ function renderCalls() {
         <div style="font-size:13px;font-weight:600">${c.table_no} — Garson Çağrısı</div>
         <div style="font-size:11px;color:var(--text3)">${new Date(c.called_at).toLocaleString('tr-TR')}</div>
       </div>
-      ${c.status === 'pending' ? `<button class="btn-sm" onclick="ackCall('${c.id}')">Kabul Et</button>` : '<span style="color:var(--green);font-size:13px">✅ Kabul edildi</span>'}
+      ${c.status === 'pending' ? `<button class="btn-sm" onclick="ackCall('${c.id}')">Kabul Et</button>` : '<span style="color:var(--green)">✅ Kabul edildi</span>'}
     </div>`).join('');
 }
 
 function renderHomeCalls() {
   const el = document.getElementById('home-calls');
   const pending = calls.filter(c => c.status === 'pending').slice(0, 5);
-  if (!pending.length) { el.innerHTML = '<div class="empty" style="padding:20px"><div>✅ Bekleyen çağrı yok</div></div>'; return; }
+  if (!pending.length) { el.innerHTML = '<div class="empty" style="padding:20px">✅ Bekleyen çağrı yok</div>'; return; }
   el.innerHTML = pending.map(c => `
     <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border)">
       <span>🔔</span>
@@ -965,7 +940,6 @@ function updateNotifBadge() {
   badge.style.display = count ? 'inline' : 'none';
 }
 
-// ── CAMPAIGNS ────────────────────────────────────────
 function renderCampaigns() {
   const el = document.getElementById('camp-list');
   if (!campaigns.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📢</div>Kampanya yok</div>'; return; }
@@ -1018,7 +992,6 @@ async function deleteCampaign(id) {
   } catch (e) { toast(e.message, 'error'); }
 }
 
-// ── DESIGN ───────────────────────────────────────────
 function loadDesignFields() {
   if (!RESTAURANT) return;
   document.getElementById('d-color').value = RESTAURANT.brand_color || '#e8c547';
@@ -1028,12 +1001,41 @@ function loadDesignFields() {
   document.getElementById('d-wpass').value = RESTAURANT.wifi_password || '';
   document.getElementById('d-ig').value = RESTAURANT.instagram_url || '';
   document.getElementById('d-fb').value = RESTAURANT.facebook_url || '';
+  if (RESTAURANT.logo_url) {
+    document.getElementById('logo-preview').innerHTML = `<img src="${RESTAURANT.logo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:9px">`;
+  }
   updatePreview();
 }
 
 function syncColor() {
   const hex = document.getElementById('d-color-hex').value;
   if (/^#[0-9a-f]{6}$/i.test(hex)) { document.getElementById('d-color').value = hex; updatePreview(); }
+}
+
+async function uploadLogo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('logo-preview').innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:9px">`;
+  };
+  reader.readAsDataURL(file);
+  try {
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await fetch(API + '/upload/logo', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + TOKEN },
+      body: formData
+    });
+    const data = await res.json();
+    if (data.logoUrl) {
+      RESTAURANT.logo_url = data.logoUrl;
+      localStorage.setItem('qrmenu_rest', JSON.stringify(RESTAURANT));
+      toast('Logo yüklendi ✅', 'success');
+      updatePreview();
+    }
+  } catch { toast('Logo yüklenemedi', 'error'); }
 }
 
 async function saveDesign() {
@@ -1061,41 +1063,45 @@ function updatePreview() {
   const el = document.getElementById('preview-content');
   if (!el) return;
   const prods = products.filter(p => p.is_visible).slice(0, 4);
+  const logoHtml = RESTAURANT?.logo_url
+    ? `<img src="${RESTAURANT.logo_url}" style="width:50px;height:50px;border-radius:12px;object-fit:cover;margin:0 auto 10px;display:block">`
+    : `<div style="width:50px;height:50px;border-radius:12px;background:${color};margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:22px">🏪</div>`;
   el.innerHTML = `
     <div style="text-align:center;padding:20px 16px 14px;background:linear-gradient(180deg,${color}22 0%,#fff 60%)">
-      <div style="width:50px;height:50px;border-radius:12px;background:${color};margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:22px">🏪</div>
+      ${logoHtml}
       <div style="font-size:1.2rem;color:#111;margin-bottom:3px;font-family:'DM Serif Display',serif">${RESTAURANT?.name || 'Restoranınız'}</div>
-      <div style="font-size:11px;color:#999">qrmenu.io/${RESTAURANT?.slug || 'slug'}</div>
+      <div style="font-size:11px;color:#999">${window.location.origin}/menu/${RESTAURANT?.slug || ''}</div>
     </div>
     <div style="display:flex;overflow-x:auto;border-bottom:1px solid #f0f0f0;padding:0 10px">
       ${categories.slice(0,4).map((c,i)=>`<div style="padding:8px 12px;font-size:12px;font-weight:500;white-space:nowrap;border-bottom:2px solid ${i===0?color:'transparent'};color:${i===0?color:'#888'}">${c.name}</div>`).join('')}
     </div>
     <div style="padding:10px 12px">
       ${prods.map(p=>`<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #fafafa">
-        <div style="width:50px;height:50px;background:#f5f5f5;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${p.emoji||'🍽️'}</div>
-        <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#111">${p.name}</div>
-        <div style="font-size:11px;color:#888;margin:2px 0 4px">${(p.description||'').slice(0,40)}</div>
-        <div style="font-size:13px;font-weight:700;color:${color}">₺${parseFloat(p.price).toFixed(2)}</div></div>
+        <div style="width:50px;height:50px;background:#f5f5f5;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;overflow:hidden">
+          ${p.image_url ? `<img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">` : (p.emoji||'🍽️')}
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:#111">${p.name}</div>
+          <div style="font-size:11px;color:#888;margin:2px 0 4px">${(p.description||'').slice(0,40)}</div>
+          <div style="font-size:13px;font-weight:700;color:${color}">₺${parseFloat(p.price).toFixed(2)}</div>
+        </div>
       </div>`).join('')}
     </div>
-    ${wifi ? `<div style="margin:10px 12px;padding:10px;background:#f9f9f9;border-radius:8px;display:flex;gap:8px;align-items:center"><span style="font-size:18px">📡</span><div><div style="font-size:11px;font-weight:600;color:#111">${wifi}</div><div style="font-size:11px;color:#888;font-family:monospace">${wpass}</div></div></div>` : ''}
+    ${wifi?`<div style="margin:10px 12px;padding:10px;background:#f9f9f9;border-radius:8px;display:flex;gap:8px;align-items:center"><span style="font-size:18px">📡</span><div><div style="font-size:11px;font-weight:600;color:#111">${wifi}</div><div style="font-size:11px;color:#888;font-family:monospace">${wpass}</div></div></div>`:''}
   `;
 }
 
-// ── QR ───────────────────────────────────────────────
 async function loadQR() {
   try {
     const data = await api('GET', '/restaurant/me/qr');
-    const el = document.getElementById('qr-img');
-    el.innerHTML = `<img src="${data.qr}" style="width:100%;height:100%;border-radius:8px">`;
+    document.getElementById('qr-img').innerHTML = `<img src="${data.qr}" style="width:100%;height:100%;border-radius:8px">`;
   } catch {}
 }
 
 function downloadQR() {
   const img = document.querySelector('#qr-img img');
   if (!img) return toast('QR yüklenemedi', 'error');
-  const a = document.createElement('a');
-  a.href = img.src; a.download = 'qrmenu-qr.png'; a.click();
+  const a = document.createElement('a'); a.href = img.src; a.download = 'qrmenu-qr.png'; a.click();
   toast('QR kod indirildi ✅', 'success');
 }
 
@@ -1104,7 +1110,6 @@ function copyMenuLink() {
   navigator.clipboard.writeText(link).then(() => toast('Link kopyalandı 📋', 'success'));
 }
 
-// ── CUSTOMER MENU ────────────────────────────────────
 async function openMenu() {
   document.getElementById('app-view').classList.remove('active');
   document.getElementById('menu-view').style.display = 'flex';
@@ -1128,9 +1133,11 @@ function renderPublicMenu(data) {
   const color = restaurant.brand_color || '#e8c547';
   const el = document.getElementById('menu-public');
   el.style.setProperty('--menu-accent', color);
-
+  const logoHtml = restaurant.logo_url
+    ? `<img src="${restaurant.logo_url}" style="width:64px;height:64px;border-radius:14px;object-fit:cover;margin:0 auto 12px;display:block;border:3px solid rgba(0,0,0,.08)">`
+    : `<div style="width:64px;height:64px;border-radius:14px;background:${color};margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:28px">🏪</div>`;
   const hero = `<div class="m-hero" style="background:linear-gradient(180deg,${color}18 0%,#fff 80%)">
-    <div style="width:64px;height:64px;border-radius:14px;background:${color};margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:28px">🏪</div>
+    ${logoHtml}
     <div class="m-rest-name">${restaurant.name}</div>
     <div class="m-tag">Dijital Menü</div>
     <div class="m-pills">
@@ -1138,54 +1145,45 @@ function renderPublicMenu(data) {
       <button class="m-pill" onclick="callWaiter('${restaurant.id}')">🔔 Garson Çağır</button>
     </div>
   </div>`;
-
-  const nav = `<div class="sticky-nav">${cats.map((c,i) => `<div class="snav-item ${i===0?'active':''}" onclick="scrollToSec('${c.id}',this)">${c.name}</div>`).join('')}</div>`;
-
+  const nav = `<div class="sticky-nav">${cats.map((c,i)=>`<div class="snav-item ${i===0?'active':''}" onclick="scrollToSec('${c.id}',this)">${c.name}</div>`).join('')}</div>`;
   const sections = cats.map(cat => {
     if (!cat.products.length) return '';
     return `<div class="m-section" id="sec-${cat.id}">
       <div class="m-section-title">${cat.name}</div>
-      ${cat.products.map(p => `<div class="m-product">
-        <div class="m-prod-img">${p.emoji || '🍽️'}</div>
-        <div class="m-prod-body">
+      ${cat.products.map(p=>`<div class="m-product">
+        <div class="m-prod-img">${p.image_url?`<img src="${p.image_url}" alt="${p.name}">`:(p.emoji||'🍽️')}</div>
+        <div style="flex:1">
           <div class="m-prod-name">${p.name}</div>
-          <div class="m-prod-desc">${p.description || ''}</div>
+          <div class="m-prod-desc">${p.description||''}</div>
           <div class="m-prod-price">₺${parseFloat(p.price).toFixed(2)}</div>
         </div>
       </div>`).join('')}
     </div>`;
   }).join('');
-
   const footer = `<div class="m-footer">
     <button class="waiter-btn" onclick="callWaiter('${restaurant.id}')">🔔 Garson Çağır</button>
-    ${restaurant.wifi_name ? `<div class="wifi-card"><span style="font-size:22px">📡</span><div><div class="wifi-name">${restaurant.wifi_name}</div><div class="wifi-pass">${restaurant.wifi_password || ''}</div></div></div>` : ''}
+    ${restaurant.wifi_name?`<div class="wifi-card"><span style="font-size:22px">📡</span><div><div class="wifi-name">${restaurant.wifi_name}</div><div class="wifi-pass">${restaurant.wifi_password||''}</div></div></div>`:''}
     <div class="social-row">
-      ${restaurant.instagram_url ? `<button class="social-btn" onclick="window.open('https://instagram.com/${restaurant.instagram_url.replace('@','')}','_blank')">📸</button>` : ''}
-      ${restaurant.facebook_url ? `<button class="social-btn" onclick="window.open('https://facebook.com/${restaurant.facebook_url}','_blank')">👍</button>` : ''}
+      ${restaurant.instagram_url?`<button class="social-btn" onclick="window.open('https://instagram.com/${restaurant.instagram_url.replace('@','')}','_blank')">📸</button>`:''}
+      ${restaurant.facebook_url?`<button class="social-btn" onclick="window.open('https://facebook.com/${restaurant.facebook_url}','_blank')">👍</button>`:''}
     </div>
-    <div style="font-size:11px;color:#ccc">Powered by QRMenu — app.ucgun.com.tr</div>
+    <div style="font-size:11px;color:#ccc;margin-top:8px">Powered by QRMenu — app.ucgun.com.tr</div>
   </div>`;
-
   el.innerHTML = hero + nav + sections + footer;
-
-  // Stars for feedback
   renderStars();
-
-  // Campaign popup
+  window._currentRestaurantId = restaurant.id;
   if (campaign) {
     document.getElementById('camp-popup-title').textContent = campaign.title;
     document.getElementById('camp-popup-desc').textContent = campaign.description || '';
     document.getElementById('camp-emoji-display').textContent = campaign.emoji || '🎉';
     setTimeout(() => document.getElementById('camp-popup').classList.add('open'), 1200);
   }
-
-  window._currentRestaurantId = restaurant.id;
 }
 
 function scrollToSec(id, el) {
   document.querySelectorAll('.snav-item').forEach(e => e.classList.remove('active'));
   el.classList.add('active');
-  document.getElementById('sec-' + id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('sec-' + id)?.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
 async function callWaiter(restaurantId) {
@@ -1196,7 +1194,6 @@ async function callWaiter(restaurantId) {
   } catch { toast('Çağrı gönderilemedi', 'error'); }
 }
 
-// ── FEEDBACK (customer) ───────────────────────────────
 function selectFBType(type, btn) {
   fbType = type;
   document.querySelectorAll('.fb-type-btn').forEach(b => b.classList.remove('selected'));
@@ -1206,7 +1203,7 @@ function selectFBType(type, btn) {
 function renderStars() {
   const row = document.getElementById('star-row');
   if (!row) return;
-  row.innerHTML = [1,2,3,4,5].map(i => `<button class="star-btn ${i<=fbRating?'active':''}" onclick="setRating(${i})">${i<=fbRating?'★':'☆'}</button>`).join('');
+  row.innerHTML = [1,2,3,4,5].map(i=>`<button class="star-btn ${i<=fbRating?'active':''}" onclick="setRating(${i})">${i<=fbRating?'★':'☆'}</button>`).join('');
 }
 
 function setRating(n) { fbRating = n; renderStars(); }
@@ -1214,41 +1211,28 @@ function setRating(n) { fbRating = n; renderStars(); }
 async function submitFeedback() {
   const message = document.getElementById('fb-msg').value.trim();
   if (!message) return toast('Mesaj yazınız', 'error');
-  const restaurantId = window._currentRestaurantId;
   try {
-    await fetch(API + '/feedback', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ restaurant_id: restaurantId, type: fbType, message, rating: fbRating }) });
+    await fetch(API + '/feedback', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ restaurant_id: window._currentRestaurantId, type: fbType, message, rating: fbRating }) });
     document.getElementById('fb-modal').classList.remove('open');
     document.getElementById('fb-msg').value = '';
     toast('Geri bildiriminiz alındı, teşekkürler! 🙏', 'success');
   } catch { toast('Gönderilemedi', 'error'); }
 }
-function previewImage(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const preview = document.getElementById('img-preview');
-    preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`;
-  };
-  reader.readAsDataURL(file);
-}
-// ── TOAST ────────────────────────────────────────────
+
 function toast(msg, type = 'info') {
   const wrap = document.getElementById('toast-wrap');
   const el = document.createElement('div');
   el.className = `toast t-${type}`;
   el.innerHTML = `<div class="toast-dot"></div>${msg}`;
   wrap.appendChild(el);
-  setTimeout(() => { el.style.opacity = '0'; el.style.transition = '.3s'; setTimeout(() => el.remove(), 300); }, 3500);
+  setTimeout(() => { el.style.opacity='0'; el.style.transition='.3s'; setTimeout(()=>el.remove(),300); }, 3500);
 }
 
-// ── MODAL CLOSE ON OVERLAY ───────────────────────────
 document.addEventListener('click', e => {
   if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('open');
   if (e.target.id === 'camp-popup') e.target.classList.remove('open');
 });
 
-// ── AUTO LOGIN ───────────────────────────────────────
 if (TOKEN) loadApp();
 </script>
 </body>
