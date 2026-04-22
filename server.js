@@ -547,6 +547,12 @@ app.post('/api/upload/product-image', authMiddleware, upload.single('image'), as
   if (!req.file) return res.status(400).json({ error: 'Dosya seçilmedi' });
   try {
     console.log('Upload başladı:', req.file?.originalname, process.env.R2_BUCKET, process.env.R2_ENDPOINT);
+    console.log('R2 Ayarları:', {
+      endpoint: process.env.R2_ENDPOINT,
+      bucket: process.env.R2_BUCKET,
+      accessKey: process.env.R2_ACCESS_KEY ? 'VAR' : 'YOK',
+      secretKey: process.env.R2_SECRET_KEY ? 'VAR' : 'YOK'
+    });
     const ext = req.file.mimetype === 'image/png' ? 'png' : req.file.mimetype === 'image/webp' ? 'webp' : 'jpg';
     const fileName = `restaurants/${req.user.restaurantId}/products/${Date.now()}.${ext}`;
     await s3.send(new PutObjectCommand({
@@ -558,6 +564,7 @@ app.post('/api/upload/product-image', authMiddleware, upload.single('image'), as
     const imageUrl = `${process.env.R2_PUBLIC_URL}/${fileName}`;
     res.json({ imageUrl });
   } catch (err) {
+    console.error('R2 Yükleme Hatası:', err);
     res.status(500).json({ error: 'Yükleme hatası: ' + err.message });
   }
 });
