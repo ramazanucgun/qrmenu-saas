@@ -815,7 +815,8 @@ async function saveProduct() {
       }
     } catch { toast('Fotoğraf yüklenemedi', 'error'); }
   }
-  const body = { category_id, name, description, price, emoji };
+  const existing = products.find(p => p.id === editingProductId);
+    const body = { category_id, name, description, price, emoji, is_visible: existing ? existing.is_visible : true };
   if (image_url) body.image_url = image_url;
   try {
     let prod;

@@ -355,11 +355,38 @@ app.post('/api/products', authMiddleware, async (req, res) => {
 });
 
 app.put('/api/products/:id', authMiddleware, async (req, res) => {
-  const { name, description, price, emoji, is_visible, category_id } = req.body;
+  const { name, description, price, emoji, is_visible, category_id, image_url } = req.body;
+  
+  // Mevcut ürünü al
+  const existing = await pool.query(
+    'SELECT * FROM products WHERE id=$1 AND restaurant_id=$2',
+    [req.params.id, req.user.restaurantId]
+  );
+  if (!existing.rows[0]) return res.status(404).json({ error: 'Ürün bulunamadı' });
+  
+  const current = existing.rows[0];
+  
   const result = await pool.query(
-    `UPDATE products SET name=$1, description=$2, price=$3, emoji=$4,
-     is_visible=$5, category_id=$6 WHERE id=$7 AND restaurant_id=$8 RETURNING *`,
-    [name, description, price, emoji, is_visible, category_id, req.params.id, req.user.restaurantId]
+    `UPDATE products SET 
+      name=$1, 
+      description=$2, 
+      price=$3, 
+      emoji=$4,
+      is_visible=$5, 
+      category_id=$6,
+      image_url=$7
+     WHERE id=$8 AND restaurant_id=$9 RETURNING *`,
+    [
+      name || current.name,
+      description !== undefined ? description : current.description,
+      price || current.price,
+      emoji || current.emoji,
+      is_visible !== undefined ? is_visible : current.is_visible,
+      category_id || current.category_id,
+      image_url !== undefined ? image_url : current.image_url,
+      req.params.id,
+      req.user.restaurantId
+    ]
   );
   res.json(result.rows[0]);
 });
