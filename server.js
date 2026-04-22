@@ -546,6 +546,7 @@ app.get('/api/subscription', authMiddleware, async (req, res) => {
 app.post('/api/upload/product-image', authMiddleware, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Dosya seçilmedi' });
   try {
+    console.log('Upload başladı:', req.file?.originalname, process.env.R2_BUCKET, process.env.R2_ENDPOINT);
     const ext = req.file.mimetype === 'image/png' ? 'png' : req.file.mimetype === 'image/webp' ? 'webp' : 'jpg';
     const fileName = `restaurants/${req.user.restaurantId}/products/${Date.now()}.${ext}`;
     await s3.send(new PutObjectCommand({
