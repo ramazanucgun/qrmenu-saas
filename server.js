@@ -214,7 +214,7 @@ app.post('/api/auth/register', async (req, res) => {
     res.json({ token, restaurant: restResult.rows[0] });
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ error: 'Bu email zaten kayıtlı' });
-    res.status(500).json({ error: 'Sunucu hatası' });
+    res.status(500).json({ error: 'Sunucu hatası: ' + err.message });
   }
 });
 
@@ -241,7 +241,7 @@ app.post('/api/auth/login', async (req, res) => {
     );
     res.json({ token, restaurantId: user.restaurant_id });
   } catch {
-    res.status(500).json({ error: 'Sunucu hatası' });
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -429,7 +429,7 @@ app.get('/api/menu/:slug', async (req, res) => {
       campaign: campResult.rows[0] || null
     });
   } catch (err) {
-    res.status(500).json({ error: 'Sunucu hatası' });
+    res.status(500).json({ error: err.message });
   }
 });
 
