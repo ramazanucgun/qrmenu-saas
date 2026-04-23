@@ -181,8 +181,9 @@ textarea.form-input{resize:vertical;min-height:80px}
 /* KART STİLİ 1: Liste */
 .style-list .m-product{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid;cursor:pointer;align-items:center}
 .style-list .m-product:last-child{border-bottom:none}
-.style-list .m-prod-img{width:76px;height:76px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:30px;overflow:hidden}
-.style-list .m-prod-img img{width:100%;height:100%;object-fit:cover;border-radius:10px}
+.style-list .m-prod-img{width:76px;height:76px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:30px;overflow:hidden;min-width:76px}
+.style-list .m-prod-img img{width:76px;height:76px;object-fit:cover;border-radius:10px;display:block;flex-shrink:0}
+.style-list .m-prod-img img{width:100%;height:100%;object-fit:cover;border-radius:10px;display:block}
 .style-list .m-prod-name{font-size:14px;font-weight:600;margin-bottom:3px}
 .style-list .m-prod-desc{font-size:12px;line-height:1.4;margin-bottom:6px;opacity:.7}
 .style-list .m-prod-price{font-size:15px;font-weight:700}
@@ -191,7 +192,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 .style-card .m-products-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .style-card .m-product{border-radius:12px;overflow:hidden;border:1px solid;cursor:pointer;transition:transform .15s}
 .style-card .m-product:hover{transform:translateY(-2px)}
-.style-card .m-prod-img{width:100%;height:140px;display:flex;align-items:center;justify-content:center;font-size:48px;overflow:hidden}
+.style-card .m-prod-img{width:100%;height:140px;display:flex;align-items:center;justify-content:center;font-size:48px;overflow:hidden}.style-card .m-prod-img img{width:100%;height:140px;object-fit:cover;display:block}.style-card .m-prod-img img{width:100%;height:140px;object-fit:cover;display:block}.style-card .m-prod-img img{width:100%;height:140px;object-fit:cover;display:block}.style-card .m-prod-img img{width:100%;height:140px;object-fit:cover;display:block}.style-card .m-prod-img img{width:100%;height:140px;object-fit:cover;display:block}.style-card .m-prod-img img{width:100%;height:140px;object-fit:cover;display:block}.style-card .m-prod-img img{width:100%;height:140px;object-fit:cover;display:block}.style-card .m-prod-img img{width:100%;height:140px;object-fit:cover;display:block}
 .style-card .m-prod-img img{width:100%;height:100%;object-fit:cover}
 .style-card .m-prod-body{padding:12px}
 .style-card .m-prod-name{font-size:13px;font-weight:600;margin-bottom:3px}
