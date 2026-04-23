@@ -1287,7 +1287,7 @@ document.addEventListener('click',e=>{
   if(e.target.id==='prod-detail-overlay') e.target.classList.remove('open');
 });
 // /menu/:slug adresinde müşteri menüsünü direkt aç
-const path = window.location.pathname;
+const currentPath=window.location.pathname;if(currentPath.startsWith('/menu/')){const slug=currentPath.replace('/menu/','').split('/')[0];document.getElementById('auth-view').style.display='none';document.getElementById('app-view').style.display='none';document.getElementById('menu-view').style.display='flex';document.getElementById('menu-view').style.flexDirection='column';const adminBar=document.querySelector('.menu-topbar-admin');if(adminBar)adminBar.style.display='none';fetch(API+'/menu/'+slug).then(r=>r.json()).then(data=>{if(data.error){document.getElementById('menu-public').innerHTML='<div style="padding:60px;text-align:center">Menu bulunamadi</div>';}else{renderPublicMenu(data);}}).catch(()=>{document.getElementById('menu-public').innerHTML='<div style="padding:60px;text-align:center">Baglanti hatasi</div>';});}else if(TOKEN){loadApp();}
 
 </script>
 </body>
