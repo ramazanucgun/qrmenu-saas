@@ -507,7 +507,14 @@ textarea.form-input{resize:vertical;min-height:80px}
               <div><div class="form-label" style="margin-bottom:6px">FACEBOOK</div><input class="form-input" id="d-fb" placeholder="sayfanizin-adi"></div>
             </div>
           </div>
-
+<!-- ÇALIŞMA SAATLERİ -->
+<div class="panel" style="margin-bottom:14px">
+  <div class="panel-head"><span class="panel-title">🕐 Çalışma Saatleri</span></div>
+  <div style="padding:16px" id="working-hours-form">
+    <div id="hours-list"></div>
+    <button class="btn-sm btn-accent" style="width:100%;margin-top:12px" onclick="saveWorkingHours()">Saatleri Kaydet</button>
+  </div>
+</div>
           <button class="btn-primary" onclick="saveDesign()">💾 Değişiklikleri Kaydet</button>
         </div>
 
@@ -701,7 +708,54 @@ textarea.form-input{resize:vertical;min-height:80px}
 </div>
 
 <div class="toast-wrap" id="toast-wrap"></div>
+// ÇALIŞMA SAATLERİ
+const DAY_NAMES = ['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
+let workingHours = [];
 
+async function loadWorkingHours() {
+  try {
+    workingHours = await api('GET', '/working-hours');
+    renderWorkingHours();
+  } catch(e) { console.log('Çalışma saatleri yüklenemedi:', e); }
+}
+
+function renderWorkingHours() {
+  const el = document.getElementById('hours-list');
+  if(!el) return;
+  el.innerHTML = workingHours.map((h, i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:12px;font-weight:600;min-width:80px;color:var(--text2)">${DAY_NAMES[h.day_of_week]}</span>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">
+        <input type="checkbox" ${h.is_closed?'':'checked'} onchange="toggleDay(${i},this.checked)" style="cursor:pointer">
+        <span>Açık</span>
+      </label>
+      <div id="hours-inputs-${i}" style="display:flex;align-items:center;gap:6px;${h.is_closed?'opacity:.3;pointer-events:none':''}">
+        <input type="time" value="${h.opens_at||'09:00'}" id="opens-${i}" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text);font-size:12px;outline:none">
+        <span style="color:var(--text3)">—</span>
+        <input type="time" value="${h.closes_at||'22:00'}" id="closes-${i}" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text);font-size:12px;outline:none">
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleDay(index, isOpen) {
+  workingHours[index].is_closed = !isOpen;
+  const inputs = document.getElementById('hours-inputs-'+index);
+  if(inputs) { inputs.style.opacity = isOpen ? '1' : '.3'; inputs.style.pointerEvents = isOpen ? 'auto' : 'none'; }
+}
+
+async function saveWorkingHours() {
+  const hours = workingHours.map((h, i) => ({
+    day_of_week: h.day_of_week,
+    opens_at: document.getElementById('opens-'+i)?.value || h.opens_at,
+    closes_at: document.getElementById('closes-'+i)?.value || h.closes_at,
+    is_closed: h.is_closed
+  }));
+  try {
+    await api('PUT', '/working-hours', { hours });
+    toast('Çalışma saatleri kaydedildi ✅', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
 <script>
 const API = window.location.origin + '/api';
 let TOKEN = localStorage.getItem('qrmenu_token');
@@ -1110,7 +1164,7 @@ function loadDesignFields(){
   document.getElementById('d-tagline').value=RESTAURANT.tagline||'';
   if(RESTAURANT.logo_url){document.getElementById('logo-preview').innerHTML=`<img src="${RESTAURANT.logo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:11px">`;}
   document.getElementById('preview-theme-label').textContent=THEMES[currentTheme]?.name||'Klasik Açık';
-  updatePreview();
+  updatePreview();loadWorkingHours();
 }
 
 function syncColor(){const hex=document.getElementById('d-color-hex').value;if(/^#[0-9a-f]{6}$/i.test(hex)){document.getElementById('d-color').value=hex;updatePreview();}}
@@ -1216,6 +1270,10 @@ function renderPublicMenu(data){
     ${logoHtml}
     <div class="m-rest-name" style="color:${t.text};font-family:'${font}',serif">${restaurant.name}</div>
     <div class="m-tag" style="color:${t.text2}">Dijital Menü</div>
+    ${today_hours && !today_hours.is_closed ? `
+    <div style="display:inline-flex;align-items:center;gap:6px;background:${is_open?'rgba(71,201,126,.1)':'rgba(232,71,71,.1)'};border:1px solid ${is_open?'rgba(71,201,126,.3)':'rgba(232,71,71,.3)'};border-radius:20px;padding:5px 12px;font-size:12px;color:${is_open?'#47c97e':'#e84747'};margin-bottom:10px">
+      ${is_open?'🟢 Şu an açık':'🔴 Şu an kapalı'} — ${today_hours.opens_at} - ${today_hours.closes_at}
+    </div>` : ''}
     <div class="m-pills">
       <button class="m-pill" style="background:${t.pillBg};color:${t.pillColor};border-color:${t.pillBorder}" onclick="document.getElementById('fb-modal').classList.add('open')">💬 Geri Bildirim</button>
       <button class="m-pill" style="background:${t.pillBg};color:${t.pillColor};border-color:${t.pillBorder}" onclick="callWaiter('${restaurant.id}')">🔔 Garson Çağır</button>
