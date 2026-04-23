@@ -859,7 +859,7 @@ function renderProductList(){
   if(!prods.length){el.innerHTML='<div class="empty"><div class="empty-icon">📦</div>Bu kategoride ürün yok<br><br><button class="btn-sm btn-accent" onclick="openModal(\'prod-modal\')">+ İlk Ürünü Ekle</button></div>';return;}
   el.innerHTML=prods.map(p=>`
     <div class="product-card ${!p.is_visible?'hidden':''}">
-      <div class="prod-thumb">${p.image_url?`<img src="${p.image_url}" alt="${p.name}">`:(p.emoji||'🍽️')}</div>
+      <div class="prod-thumb">${p.image_url?`<img src="${p.image_url}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;display:block">`:(p.emoji||'🍽️')}</div>
       <div style="flex:1">
         <div class="prod-name">${p.name}</div>
         <div class="prod-desc">${p.description||''}</div>
@@ -1174,7 +1174,7 @@ function renderPublicMenu(data){
     if(currentCardStyle==='card'){
       prodsHtml=`<div class="m-products-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         ${cat.products.map(p=>`<div class="m-product" style="background:${t.bg2};border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
-          <div class="m-prod-img" style="background:${t.bg2}">${p.image_url?`<img src="${p.image_url}" alt="${p.name}">`:(p.emoji||'🍽️')}</div>
+          <div class="m-prod-img" style="background:${t.bg2}">${p.image_url?`<img src="${p.image_url}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;display:block">`:(p.emoji||'🍽️')}</div>
           <div class="m-prod-body">
             <div class="m-prod-name" style="color:${t.text}">${p.name}</div>
             <div class="m-prod-desc" style="color:${t.text2}">${p.description||''}</div>
@@ -1192,7 +1192,7 @@ function renderPublicMenu(data){
       </div>`).join('');
     }else{
       prodsHtml=cat.products.map(p=>`<div class="m-product style-list" style="border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
-        <div class="m-prod-img" style="background:${t.bg2};border-radius:10px">${p.image_url?`<img src="${p.image_url}" alt="${p.name}">`:(p.emoji||'🍽️')}</div>
+        <div class="m-prod-img" style="background:${t.bg2};border-radius:10px">${p.image_url?`<img src="${p.image_url}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;display:block">`:(p.emoji||'🍽️')}</div>
         <div style="flex:1">
           <div class="m-prod-name" style="color:${t.text}">${p.name}</div>
           <div class="m-prod-desc" style="color:${t.text2}">${p.description||''}</div>
