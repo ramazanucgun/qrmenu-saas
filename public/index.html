@@ -1227,7 +1227,7 @@ function renderPublicMenu(data){
     document.getElementById('camp-popup-title').textContent=campaign.title;
     document.getElementById('camp-popup-desc').textContent=campaign.description||'';
     document.getElementById('camp-emoji-display').textContent=campaign.emoji||'🎉';
-    if(!window.location.pathname.startsWith('/menu/')) setTimeout(()=>document.getElementById('camp-popup').classList.add('open'),1200);
+    if(!window.location.pathname.startsWith('/menu/')) if(!window.location.pathname.startsWith('/menu/')) setTimeout(()=>document.getElementById('camp-popup').classList.add('open'),1200);
   }
 }
 
