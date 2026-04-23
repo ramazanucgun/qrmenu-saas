@@ -615,6 +615,15 @@ app.post('/api/upload/logo', authMiddleware, upload.single('image'), async (req,
   }
 });
 const PORT = process.env.PORT || 3000;
+// Müşteri menüsü sayfası — /menu/:slug
+app.get('/menu/:slug', (req, res) => {
+  res.sendFile('index.html', { root: 'public' });
+});
+
+// Tüm diğer rotalar — index.html'e yönlendir
+app.get('*', (req, res) => {
+  res.sendFile('index.html', { root: 'public' });
+});
 server.listen(PORT, async () => {
   console.log(`🚀 QRMenu API çalışıyor: port ${PORT}`);
   await initDB();
