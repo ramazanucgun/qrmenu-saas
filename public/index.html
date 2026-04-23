@@ -810,26 +810,15 @@ async function doResetPassword() {
   const password2 = document.getElementById('reset-pass2').value;
   if(password.length < 8) return showAuthError('Şifre en az 8 karakter olmalı');
   if(password !== password2) return showAuthError('Şifreler eşleşmiyor');
-  const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get('token');
-  if(!token) return showAuthError('Geçersiz link — token bulunamadı');
+  const token = new URLSearchParams(window.location.search).get('token');
+  if(!token) return showAuthError('Geçersiz link');
   try {
-    const res = await fetch(API + '/auth/reset-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, password })
-    });
-    const data = await res.json();
-    if(!res.ok) return showAuthError(data.error || 'Hata oluştu');
-    const errEl = document.getElementById('auth-error');
-    errEl.textContent = '✅ Şifreniz güncellendi — giriş yapabilirsiniz';
-    errEl.style.display = 'block';
-    errEl.style.background = 'rgba(71,201,126,.1)';
-    errEl.style.borderColor = 'rgba(71,201,126,.3)';
-    errEl.style.color = 'var(--green)';
-    setTimeout(() => {
-      window.location.href = '/';
-    }, 2000);
+    await api('POST', '/auth/reset-password', { token, password });
+    showAuthError('✅ Şifreniz güncellendi — giriş yapabilirsiniz');
+    document.getElementById('auth-error').style.background = 'rgba(71,201,126,.1)';
+    document.getElementById('auth-error').style.borderColor = 'rgba(71,201,126,.3)';
+    document.getElementById('auth-error').style.color = 'var(--green)';
+    setTimeout(() => authTab('login'), 2000);
   } catch(e) { showAuthError(e.message); }
 }
 
