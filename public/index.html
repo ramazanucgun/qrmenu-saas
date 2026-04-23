@@ -263,10 +263,30 @@ textarea.form-input{resize:vertical;min-height:80px}
       <button class="auth-tab" onclick="authTab('register')">Kayıt Ol</button>
     </div>
     <div id="auth-error" class="auth-error"></div>
+    <!-- ŞİFRE SIFIRLAMA SAYFASI -->
+<div id="forgot-form" style="display:none">
+  <p style="font-size:13px;color:var(--text2);margin-bottom:20px">Email adresinizi girin — şifre sıfırlama linki göndereceğiz.</p>
+  <div class="form-group"><label class="form-label">E-POSTA</label><input class="form-input" id="forgot-email" type="email" placeholder="email@ornek.com"></div>
+  <button class="btn-primary" onclick="doForgotPassword()">Sıfırlama Linki Gönder</button>
+  <div style="text-align:center;margin-top:16px">
+    <button onclick="authTab('login')" style="background:none;border:none;color:var(--text2);font-size:13px;cursor:pointer">← Giriş sayfasına dön</button>
+  </div>
+</div>
+
+<!-- ŞİFRE SIFIRLAMA FORMU -->
+<div id="reset-form" style="display:none">
+  <p style="font-size:13px;color:var(--text2);margin-bottom:20px">Yeni şifrenizi girin.</p>
+  <div class="form-group"><label class="form-label">YENİ ŞİFRE</label><input class="form-input" id="reset-pass" type="password" placeholder="En az 8 karakter"></div>
+  <div class="form-group"><label class="form-label">ŞİFRE TEKRAR</label><input class="form-input" id="reset-pass2" type="password" placeholder="Şifreyi tekrar girin"></div>
+  <button class="btn-primary" onclick="doResetPassword()">Şifremi Güncelle</button>
+</div>
     <div id="login-form">
       <div class="form-group"><label class="form-label">E-POSTA</label><input class="form-input" id="l-email" type="email" placeholder="email@ornek.com"></div>
       <div class="form-group"><label class="form-label">ŞİFRE</label><input class="form-input" id="l-pass" type="password" placeholder="••••••••"></div>
       <button class="btn-primary" onclick="doLogin()">Giriş Yap</button>
+      <div style="text-align:center;margin-top:12px">
+  <button onclick="authTab('forgot')" style="background:none;border:none;color:var(--text2);font-size:13px;cursor:pointer">Şifremi unuttum</button>
+</div>
     </div>
     <div id="register-form" style="display:none">
       <div class="form-group"><label class="form-label">RESTORAN ADI</label><input class="form-input" id="r-name" placeholder="Cafe Riviera"></div>
@@ -711,10 +731,41 @@ async function api(method, path, body) {
 
 function authTab(t) {
   document.querySelectorAll('.auth-tab').forEach(e => e.classList.remove('active'));
-  event.currentTarget.classList.add('active');
-  document.getElementById('login-form').style.display = t==='login'?'block':'none';
-  document.getElementById('register-form').style.display = t==='register'?'block':'none';
+  if(t === 'login' || t === 'register') event?.currentTarget?.classList.add('active');
+  document.getElementById('login-form').style.display = t==='login' ? 'block' : 'none';
+  document.getElementById('register-form').style.display = t==='register' ? 'block' : 'none';
+  document.getElementById('forgot-form').style.display = t==='forgot' ? 'block' : 'none';
+  document.getElementById('reset-form').style.display = t==='reset' ? 'block' : 'none';
   document.getElementById('auth-error').style.display = 'none';
+}
+
+async function doForgotPassword() {
+  const email = document.getElementById('forgot-email').value;
+  if(!email) return showAuthError('Email zorunlu');
+  try {
+    await api('POST', '/auth/forgot-password', { email });
+    showAuthError('✅ Sıfırlama linki gönderildi — emailinizi kontrol edin');
+    document.getElementById('auth-error').style.background = 'rgba(71,201,126,.1)';
+    document.getElementById('auth-error').style.borderColor = 'rgba(71,201,126,.3)';
+    document.getElementById('auth-error').style.color = 'var(--green)';
+  } catch(e) { showAuthError(e.message); }
+}
+
+async function doResetPassword() {
+  const password = document.getElementById('reset-pass').value;
+  const password2 = document.getElementById('reset-pass2').value;
+  if(password.length < 8) return showAuthError('Şifre en az 8 karakter olmalı');
+  if(password !== password2) return showAuthError('Şifreler eşleşmiyor');
+  const token = new URLSearchParams(window.location.search).get('token');
+  if(!token) return showAuthError('Geçersiz link');
+  try {
+    await api('POST', '/auth/reset-password', { token, password });
+    showAuthError('✅ Şifreniz güncellendi — giriş yapabilirsiniz');
+    document.getElementById('auth-error').style.background = 'rgba(71,201,126,.1)';
+    document.getElementById('auth-error').style.borderColor = 'rgba(71,201,126,.3)';
+    document.getElementById('auth-error').style.color = 'var(--green)';
+    setTimeout(() => authTab('login'), 2000);
+  } catch(e) { showAuthError(e.message); }
 }
 
 function showAuthError(msg) { const el=document.getElementById('auth-error'); el.textContent=msg; el.style.display='block'; }
@@ -1288,6 +1339,11 @@ document.addEventListener('click',e=>{
   if(e.target.id==='prod-detail-overlay') e.target.classList.remove('open');
 });
 // /menu/:slug adresinde müşteri menüsünü direkt aç
+if(window.location.pathname === '/reset-password') {
+  document.getElementById('auth-view').style.display = 'flex';
+  document.getElementById('app-view').style.display = 'none';
+  authTab('reset');
+} else
 const currentPath=window.location.pathname;if(currentPath.startsWith('/menu/')){const slug=currentPath.replace('/menu/','').split('/')[0];document.getElementById('auth-view').style.display='none';document.getElementById('app-view').style.display='none';document.getElementById('menu-view').style.display='flex';document.getElementById('menu-view').style.flexDirection='column';const adminBar=document.querySelector('.menu-topbar-admin');if(adminBar)adminBar.style.display='none';fetch(API+'/menu/'+slug).then(r=>r.json()).then(data=>{if(data.error){document.getElementById('menu-public').innerHTML='<div style="padding:60px;text-align:center">Menu bulunamadi</div>';}else{renderPublicMenu(data);}}).catch(()=>{document.getElementById('menu-public').innerHTML='<div style="padding:60px;text-align:center">Baglanti hatasi</div>';});}else if(TOKEN){loadApp();}
 
 </script>

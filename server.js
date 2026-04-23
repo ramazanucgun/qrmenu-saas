@@ -562,7 +562,61 @@ app.get('/api/subscription', authMiddleware, async (req, res) => {
   );
   res.json(result.rows[0]);
 });
+// ═══════════════════════════════
+// ŞİFRE SIFIRLAMA
+// ═══════════════════════════════
+const { Resend } = require('resend');
+const resend = new Resend(process.env.RESEND_API_KEY);
+const resetTokens = {}; // Geçici token store
 
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE email=$1', [email]);
+    if (!result.rows[0]) return res.json({ success: true }); // Güvenlik için her zaman success dön
+
+    const token = uuidv4();
+    const expires = Date.now() + 3600000; // 1 saat
+    resetTokens[token] = { email, expires };
+
+    const resetUrl = `${process.env.APP_URL}/reset-password?token=${token}`;
+
+    await resend.emails.send({
+      from: 'QRMenu <noreply@ucgun.com.tr>',
+      to: email,
+      subject: 'Şifre Sıfırlama — QRMenu',
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
+          <h2 style="color:#111;margin-bottom:8px">Şifrenizi sıfırlayın</h2>
+          <p style="color:#666;margin-bottom:24px">Aşağıdaki butona tıklayarak şifrenizi sıfırlayabilirsiniz. Bu link 1 saat geçerlidir.</p>
+          <a href="${resetUrl}" style="background:#e8c547;color:#111;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block">Şifremi Sıfırla</a>
+          <p style="color:#999;font-size:12px;margin-top:24px">Bu emaili siz talep etmediyseniz görmezden gelebilirsiniz.</p>
+        </div>
+      `
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Email hatası:', err);
+    res.status(500).json({ error: 'Email gönderilemedi: ' + err.message });
+  }
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+  const { token, password } = req.body;
+  const record = resetTokens[token];
+  if (!record || record.expires < Date.now()) {
+    return res.status(400).json({ error: 'Link geçersiz veya süresi dolmuş' });
+  }
+  try {
+    const hash = await bcrypt.hash(password, 10);
+    await pool.query('UPDATE users SET password_hash=$1 WHERE email=$2', [hash, record.email]);
+    delete resetTokens[token];
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 // ═══════════════════════════════
 // SUNUCUYU BAŞLAT
 // ═══════════════════════════════
@@ -616,6 +670,9 @@ app.post('/api/upload/logo', authMiddleware, upload.single('image'), async (req,
 });
 const PORT = process.env.PORT || 3000;
 // Müşteri menüsü sayfası — /menu/:slug
+app.get('/reset-password', (req, res) => {
+  res.sendFile('index.html', { root: 'public' });
+});
 app.get('/menu/:slug', (req, res) => {
   res.sendFile('index.html', { root: 'public' });
 });
