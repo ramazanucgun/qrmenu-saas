@@ -863,6 +863,9 @@ app.post('/api/upload/logo', authMiddleware, upload.single('image'), async (req,
 });
 const PORT = process.env.PORT || 3000;
 // Müşteri menüsü sayfası — /menu/:slug
+app.get('/admin', (req, res) => {
+  res.sendFile('admin.html', { root: 'public' });
+});
 app.get('/reset-password', (req, res) => {
   res.sendFile('index.html', { root: 'public' });
 });
