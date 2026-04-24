@@ -160,6 +160,17 @@ CREATE TABLE IF NOT EXISTS working_hours (
   closes_at VARCHAR(5),
   is_closed BOOLEAN DEFAULT false
 );
+
+CREATE TABLE IF NOT EXISTS working_hours (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  restaurant_id UUID REFERENCES restaurants(id) ON DELETE CASCADE,
+  day_of_week INTEGER NOT NULL,
+  opens_at VARCHAR(5) DEFAULT '09:00',
+  closes_at VARCHAR(5) DEFAULT '22:00',
+  is_closed BOOLEAN DEFAULT false,
+  UNIQUE(restaurant_id, day_of_week)
+);
+
     CREATE TABLE IF NOT EXISTS campaigns (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       restaurant_id UUID REFERENCES restaurants(id) ON DELETE CASCADE,
@@ -460,11 +471,21 @@ const hoursResult = await pool.query(
       products: prodResult.rows.filter(p => p.category_id === cat.id)
     }));
 
-    res.json({
-      restaurant: { ...restaurant, password_hash: undefined },
-      categories,
-      campaign: campResult.rows[0] || null
-    });
+    // Bugün açık mı hesapla
+const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+const todayHours = hoursResult.rows.find(h => h.day_of_week === todayIndex);
+const now = new Date();
+const currentTime = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+const isOpen = todayHours && !todayHours.is_closed && currentTime >= todayHours.opens_at && currentTime <= todayHours.closes_at;
+
+res.json({
+  restaurant: { ...restaurant, password_hash: undefined },
+  categories,
+  campaign: campResult.rows[0] || null,
+  working_hours: hoursResult.rows,
+  today_hours: todayHours || null,
+  is_open: isOpen
+});
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -600,6 +621,47 @@ app.put('/api/working-hours', authMiddleware, async (req, res) => {
   }
   res.json({ success: true });
 });
+
+// ═══════════════════════════════
+// ÇALIŞMA SAATLERİ
+// ═══════════════════════════════
+
+app.get('/api/working-hours', authMiddleware, async (req, res) => {
+  try {
+    let result = await pool.query(
+      'SELECT * FROM working_hours WHERE restaurant_id=$1 ORDER BY day_of_week',
+      [req.user.restaurantId]
+    );
+    if (!result.rows.length) {
+      for (let i = 0; i < 7; i++) {
+        await pool.query(
+          'INSERT INTO working_hours (restaurant_id, day_of_week, opens_at, closes_at, is_closed) VALUES ($1,$2,$3,$4,$5)',
+          [req.user.restaurantId, i, '09:00', '22:00', false]
+        );
+      }
+      result = await pool.query(
+        'SELECT * FROM working_hours WHERE restaurant_id=$1 ORDER BY day_of_week',
+        [req.user.restaurantId]
+      );
+    }
+    res.json(result.rows);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.put('/api/working-hours', authMiddleware, async (req, res) => {
+  try {
+    const { hours } = req.body;
+    for (const h of hours) {
+      await pool.query(
+        `UPDATE working_hours SET opens_at=$1, closes_at=$2, is_closed=$3
+         WHERE restaurant_id=$4 AND day_of_week=$5`,
+        [h.opens_at, h.closes_at, h.is_closed, req.user.restaurantId, h.day_of_week]
+      );
+    }
+    res.json({ success: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 // ═══════════════════════════════
 // ABONELIK
 // ═══════════════════════════════
