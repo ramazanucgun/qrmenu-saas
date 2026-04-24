@@ -460,11 +460,7 @@ const hoursResult = await pool.query(
   'SELECT * FROM working_hours WHERE restaurant_id=$1 ORDER BY day_of_week',
   [restaurant.id]
 );
-const todayIndex = new Date().getDay()===0 ? 6 : new Date().getDay()-1;
-const todayHours = hoursResult.rows.find(h=>h.day_of_week===todayIndex) || null;
-const now = new Date();
-const currentTime = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-const isOpen = todayHours && !todayHours.is_closed && currentTime>=todayHours.opens_at && currentTime<=todayHours.closes_at;
+
 
     const campResult = await pool.query(
       `SELECT * FROM campaigns WHERE restaurant_id=$1 AND is_active=true
