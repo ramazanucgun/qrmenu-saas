@@ -1257,7 +1257,7 @@ async function openMenu(){
 function closeMenu(){document.getElementById('menu-view').style.display='none';document.getElementById('app-view').classList.add('active');document.getElementById('camp-popup').classList.remove('open');document.getElementById('fb-modal').classList.remove('open');}
 
 function renderPublicMenu(data){
-  const{restaurant,categories:cats,campaign}=data;
+  const{restaurant,categories:cats,campaign,today_hours,is_open}=data;
   const t=THEMES[currentTheme]||THEMES.classic;
   const color=restaurant.brand_color||t.accent;
   const font=restaurant.font_family||'DM Serif Display';
@@ -1273,6 +1273,7 @@ function renderPublicMenu(data){
     ${logoHtml}
     <div class="m-rest-name" style="color:${t.text};font-family:'${font}',serif">${restaurant.name}</div>
     <div class="m-tag" style="color:${t.text2}">Dijital Menü</div>
+    ${today_hours&&!today_hours.is_closed?`<div style="display:inline-flex;align-items:center;gap:6px;background:${is_open?'rgba(71,201,126,.1)':'rgba(232,71,71,.1)'};border:1px solid ${is_open?'rgba(71,201,126,.3)':'rgba(232,71,71,.3)'};border-radius:20px;padding:5px 14px;font-size:12px;font-weight:500;color:${is_open?'#47c97e':'#e84747'};margin-bottom:10px">${is_open?'🟢 Şu an açık':'🔴 Şu an kapalı'} · ${today_hours.opens_at} - ${today_hours.closes_at}</div>`:''}
     <div class="m-pills">
       <button class="m-pill" style="background:${t.pillBg};color:${t.pillColor};border-color:${t.pillBorder}" onclick="document.getElementById('fb-modal').classList.add('open')">💬 Geri Bildirim</button>
       <button class="m-pill" style="background:${t.pillBg};color:${t.pillColor};border-color:${t.pillBorder}" onclick="callWaiter('${restaurant.id}')">🔔 Garson Çağır</button>
