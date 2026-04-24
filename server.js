@@ -619,19 +619,7 @@ app.get('/api/working-hours', authMiddleware, async (req, res) => {
   res.json(result.rows);
 });
 
-app.put('/api/working-hours', authMiddleware, async (req, res) => {
-  const { hours } = req.body;
-  for (const h of hours) {
-    await pool.query(
-      `INSERT INTO working_hours (restaurant_id, day_of_week, opens_at, closes_at, is_closed)
-       VALUES ($1,$2,$3,$4,$5)
-       ON CONFLICT (restaurant_id, day_of_week) 
-       DO UPDATE SET opens_at=$3, closes_at=$4, is_closed=$5`,
-      [req.user.restaurantId, h.day_of_week, h.opens_at, h.closes_at, h.is_closed]
-    );
-  }
-  res.json({ success: true });
-});
+
 
 // ═══════════════════════════════
 // ÇALIŞMA SAATLERİ
