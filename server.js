@@ -861,6 +861,46 @@ app.post('/api/upload/logo', authMiddleware, upload.single('image'), async (req,
     res.status(500).json({ error: 'Yükleme hatası: ' + err.message });
   }
 });
+// ═══════════════════════════════
+// OTOMATİK YEDEKLEME — Her gün saat 03:00'da
+// ═══════════════════════════════
+function scheduleBackup() {
+  const now = new Date();
+  const next = new Date();
+  next.setHours(3, 0, 0, 0);
+  if (next <= now) next.setDate(next.getDate() + 1);
+  const msUntilNext = next - now;
+  setTimeout(async () => {
+    await runBackup();
+    setInterval(runBackup, 24 * 60 * 60 * 1000);
+  }, msUntilNext);
+  console.log(`📅 Sonraki yedek: ${next.toLocaleString('tr-TR')}`);
+}
+
+async function runBackup() {
+  console.log('🔄 Otomatik yedekleme başlıyor...');
+  try {
+    const tables = ['users','restaurants','subscriptions','categories','products','feedbacks','waiter_calls','campaigns','working_hours'];
+    const backupData = {};
+    for (const table of tables) {
+      try {
+        const result = await pool.query(`SELECT * FROM ${table}`);
+        backupData[table] = result.rows;
+      } catch(e) { backupData[table] = []; }
+    }
+    const now = new Date();
+    const fileName = `backups/${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}.json`;
+    await s3.send(new PutObjectCommand({
+      Bucket: process.env.R2_BUCKET,
+      Key: fileName,
+      Body: JSON.stringify(backupData, null, 2),
+      ContentType: 'application/json',
+    }));
+    console.log(`✅ Yedek kaydedildi: ${fileName}`);
+  } catch(err) {
+    console.error('❌ Yedekleme hatası:', err.message);
+  }
+}
 const PORT = process.env.PORT || 3000;
 // Müşteri menüsü sayfası — /menu/:slug
 app.get('/admin', (req, res) => {
@@ -880,4 +920,5 @@ app.get('*', (req, res) => {
 server.listen(PORT, async () => {
   console.log(`🚀 QRMenu API çalışıyor: port ${PORT}`);
   await initDB();
+  scheduleBackup();
 });
