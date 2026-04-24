@@ -719,6 +719,98 @@ app.post('/api/auth/reset-password', async (req, res) => {
   }
 });
 // ═══════════════════════════════
+// ADMİN PANEL
+// ═══════════════════════════════
+
+function adminMiddleware(req, res, next) {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Token gerekli' });
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.role !== 'admin') return res.status(403).json({ error: 'Admin yetkisi gerekli' });
+    req.user = decoded;
+    next();
+  } catch {
+    res.status(401).json({ error: 'Geçersiz token' });
+  }
+}
+
+// Admin girişi
+app.post('/api/admin/login', async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE email=$1 AND role=$2', [email, 'admin']);
+    const user = result.rows[0];
+    if (!user) return res.status(400).json({ error: 'Admin bulunamadı' });
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) return res.status(400).json({ error: 'Şifre hatalı' });
+    const token = jwt.sign({ userId: user.id, role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    res.json({ token });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// Tüm kullanıcılar
+app.get('/api/admin/users', adminMiddleware, async (req, res) => {
+  const result = await pool.query(`
+    SELECT u.id, u.email, u.role, u.created_at,
+           r.name as restaurant_name, r.slug,
+           s.plan, s.status, s.trial_ends_at, s.current_period_end
+    FROM users u
+    LEFT JOIN restaurants r ON r.user_id = u.id
+    LEFT JOIN subscriptions s ON s.user_id = u.id
+    ORDER BY u.created_at DESC
+  `);
+  res.json(result.rows);
+});
+
+// Kullanıcı sil
+app.delete('/api/admin/users/:id', adminMiddleware, async (req, res) => {
+  await pool.query('DELETE FROM users WHERE id=$1', [req.params.id]);
+  res.json({ success: true });
+});
+
+// Abonelik güncelle
+app.put('/api/admin/subscription/:userId', adminMiddleware, async (req, res) => {
+  const { plan, status } = req.body;
+  await pool.query(
+    'UPDATE subscriptions SET plan=$1, status=$2 WHERE user_id=$3',
+    [plan, status, req.params.userId]
+  );
+  res.json({ success: true });
+});
+
+// Platform istatistikleri
+app.get('/api/admin/stats', adminMiddleware, async (req, res) => {
+  const [users, restaurants, products, feedbacks, subs] = await Promise.all([
+    pool.query('SELECT COUNT(*) FROM users WHERE role=$1', ['owner']),
+    pool.query('SELECT COUNT(*) FROM restaurants'),
+    pool.query('SELECT COUNT(*) FROM products'),
+    pool.query('SELECT COUNT(*) FROM feedbacks'),
+    pool.query('SELECT plan, COUNT(*) FROM subscriptions GROUP BY plan'),
+  ]);
+  res.json({
+    totalUsers: parseInt(users.rows[0].count),
+    totalRestaurants: parseInt(restaurants.rows[0].count),
+    totalProducts: parseInt(products.rows[0].count),
+    totalFeedbacks: parseInt(feedbacks.rows[0].count),
+    planDistribution: subs.rows,
+  });
+});
+
+// Admin oluştur (sadece bir kez çalıştırılır)
+app.post('/api/admin/create', async (req, res) => {
+  const { email, password, secret } = req.body;
+  if (secret !== process.env.ADMIN_SECRET) return res.status(403).json({ error: 'Yetkisiz' });
+  try {
+    const hash = await bcrypt.hash(password, 10);
+    const result = await pool.query(
+      'INSERT INTO users (email, password_hash, role) VALUES ($1,$2,$3) RETURNING id, email',
+      [email, hash, 'admin']
+    );
+    res.json({ success: true, user: result.rows[0] });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+// ═══════════════════════════════
 // SUNUCUYU BAŞLAT
 // ═══════════════════════════════
 // ═══════════════════════════════
