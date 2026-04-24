@@ -508,6 +508,14 @@ textarea.form-input{resize:vertical;min-height:80px}
             </div>
           </div>
 
+<div class="panel" style="margin-bottom:14px">
+  <div class="panel-head"><span class="panel-title">🕐 Çalışma Saatleri</span></div>
+  <div style="padding:16px">
+    <div id="hours-list" style="display:flex;flex-direction:column;gap:8px"></div>
+    <button class="btn-sm btn-accent" style="width:100%;margin-top:12px" onclick="saveWorkingHours()">💾 Saatleri Kaydet</button>
+  </div>
+</div>
+
           <button class="btn-primary" onclick="saveDesign()">💾 Değişiklikleri Kaydet</button>
         </div>
 
@@ -1110,7 +1118,7 @@ function loadDesignFields(){
   document.getElementById('d-tagline').value=RESTAURANT.tagline||'';
   if(RESTAURANT.logo_url){document.getElementById('logo-preview').innerHTML=`<img src="${RESTAURANT.logo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:11px">`;}
   document.getElementById('preview-theme-label').textContent=THEMES[currentTheme]?.name||'Klasik Açık';
-  updatePreview();
+  updatePreview();loadWorkingHours();
 }
 
 function syncColor(){const hex=document.getElementById('d-color-hex').value;if(/^#[0-9a-f]{6}$/i.test(hex)){document.getElementById('d-color').value=hex;updatePreview();}}
@@ -1126,6 +1134,55 @@ async function uploadLogo(input){
     const data=await res.json();
     if(data.logoUrl){RESTAURANT.logo_url=data.logoUrl;localStorage.setItem('qrmenu_rest',JSON.stringify(RESTAURANT));toast('Logo yüklendi ✅','success');updatePreview();}
   }catch{toast('Logo yüklenemedi','error');}
+}
+
+const DAY_NAMES=['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
+let workingHours=[];
+
+async function loadWorkingHours(){
+  try{
+    workingHours=await api('GET','/working-hours');
+    renderWorkingHours();
+  }catch(e){console.log('Saat yüklenemedi:',e);}
+}
+
+function renderWorkingHours(){
+  const el=document.getElementById('hours-list');
+  if(!el||!workingHours.length) return;
+  el.innerHTML=workingHours.map((h,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:12px;font-weight:600;min-width:90px;color:var(--text2)">${DAY_NAMES[h.day_of_week]}</span>
+      <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;min-width:60px">
+        <input type="checkbox" id="open-${i}" ${h.is_closed?'':'checked'} onchange="toggleDay(${i})">
+        <span>Açık</span>
+      </label>
+      <div id="time-${i}" style="${h.is_closed?'opacity:.3;pointer-events:none':''}display:flex;align-items:center;gap:5px">
+        <input type="time" id="opens-${i}" value="${h.opens_at||'09:00'}" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--text);font-size:12px;outline:none">
+        <span style="color:var(--text3)">—</span>
+        <input type="time" id="closes-${i}" value="${h.closes_at||'22:00'}" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 6px;color:var(--text);font-size:12px;outline:none">
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleDay(i){
+  const isOpen=document.getElementById('open-'+i).checked;
+  workingHours[i].is_closed=!isOpen;
+  const timeDiv=document.getElementById('time-'+i);
+  if(timeDiv){timeDiv.style.opacity=isOpen?'1':'.3';timeDiv.style.pointerEvents=isOpen?'auto':'none';}
+}
+
+async function saveWorkingHours(){
+  const hours=workingHours.map((h,i)=>({
+    day_of_week:h.day_of_week,
+    opens_at:document.getElementById('opens-'+i)?.value||h.opens_at,
+    closes_at:document.getElementById('closes-'+i)?.value||h.closes_at,
+    is_closed:h.is_closed
+  }));
+  try{
+    await api('PUT','/working-hours',{hours});
+    toast('Çalışma saatleri kaydedildi ✅','success');
+  }catch(e){toast(e.message,'error');}
 }
 
 async function saveDesign(){
