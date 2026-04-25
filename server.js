@@ -791,8 +791,6 @@ app.get('/api/auth/verify-email', async (req, res) => {
 });
   
 
-
-
 app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body;
   try {
