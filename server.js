@@ -21,13 +21,32 @@ const s3 = new S3Client({
   },
 });
 
-// Multer — geçici bellek
+// Multer — resim yükleme
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = ['image/jpeg', 'image/png', 'image/webp'];
     allowed.includes(file.mimetype) ? cb(null, true) : cb(new Error('Sadece JPG, PNG, WebP'));
+  }
+});
+
+// Multer — Excel yükleme
+const uploadExcel = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'application/octet-stream'
+    ];
+    const ext = file.originalname.split('.').pop().toLowerCase();
+    if (allowed.includes(file.mimetype) || ext === 'xlsx' || ext === 'xls') {
+      cb(null, true);
+    } else {
+      cb(new Error('Sadece Excel dosyası (.xlsx, .xls)'));
+    }
   }
 });
 
@@ -946,7 +965,7 @@ app.get('/api/restaurant/me/pdf', authMiddleware, async (req, res) => {
 // ═══════════════════════════════
 const XLSX = require('xlsx');
 
-app.post('/api/products/import', authMiddleware, upload.single('file'), async (req, res) => {
+app.post('/api/products/import', authMiddleware, uploadExcel.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Dosya seçilmedi' });
   try {
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
