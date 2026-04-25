@@ -893,14 +893,52 @@ function setColor(hex) {
 function renderCatList(){
   const el=document.getElementById('cat-list');
   if(!categories.length){el.innerHTML='<div class="empty" style="padding:20px"><div class="empty-icon">📂</div>Henüz kategori yok</div>';return;}
-  el.innerHTML=categories.map(c=>{
+  el.innerHTML=categories.map((c,i)=>{
     const count=products.filter(p=>p.category_id===c.id).length;
-    return `<div class="cat-item ${c.id===activeCatId?'active':''}" onclick="selectCat('${c.id}','${c.name}')">
+    return `<div class="cat-item ${c.id===activeCatId?'active':''}" 
+      draggable="true"
+      ondragstart="dragStartCat(event,${i})"
+      ondragover="dragOverCat(event)"
+      ondrop="dropCat(event,${i})"
+      ondragend="dragEndCat(event)"
+      onclick="selectCat('${c.id}','${c.name}')">
+      <span style="cursor:grab;color:var(--text3);margin-right:4px;font-size:16px">⠿</span>
       <span style="flex:1;font-size:13px">${c.name}</span>
       <span style="font-size:11px;color:var(--text3);font-family:monospace">${count}</span>
       <button class="icon-btn" onclick="event.stopPropagation();deleteCat('${c.id}')" style="padding:3px 7px;font-size:11px">🗑</button>
     </div>`;
   }).join('');
+}
+
+let dragCatIndex = null;
+
+function dragStartCat(e, i) {
+  dragCatIndex = i;
+  e.currentTarget.style.opacity = '0.5';
+}
+
+function dragOverCat(e) {
+  e.preventDefault();
+  e.currentTarget.style.background = 'rgba(232,197,71,.15)';
+}
+
+function dragEndCat(e) {
+  e.currentTarget.style.opacity = '1';
+  e.currentTarget.style.background = '';
+}
+
+async function dropCat(e, targetIndex) {
+  e.preventDefault();
+  e.currentTarget.style.background = '';
+  if (dragCatIndex === null || dragCatIndex === targetIndex) return;
+  const moved = categories.splice(dragCatIndex, 1)[0];
+  categories.splice(targetIndex, 0, moved);
+  dragCatIndex = null;
+  renderCatList();
+  try {
+    await api('PATCH', '/categories/reorder', { ids: categories.map(c => c.id) });
+    toast('Kategori sırası güncellendi ✅', 'success');
+  } catch(e) { toast(e.message, 'error'); }
 }
 
 function selectCat(id,name){ activeCatId=id; document.getElementById('active-cat-name').textContent=name; renderCatList(); renderProductList(); }
@@ -931,9 +969,15 @@ function renderProductList(){
   count.textContent=`${prods.length} ürün`;
   if(!activeCatId){el.innerHTML='<div class="empty"><div class="empty-icon">👈</div>Sol taraftan kategori seçin</div>';return;}
   if(!prods.length){el.innerHTML='<div class="empty"><div class="empty-icon">📦</div>Bu kategoride ürün yok<br><br><button class="btn-sm btn-accent" onclick="openModal(\'prod-modal\')">+ İlk Ürünü Ekle</button></div>';return;}
-  el.innerHTML=prods.map(p=>`
-    <div class="product-card ${!p.is_visible?'hidden':''}">
-      <div class="prod-thumb">${p.image_url?`<img src="${p.image_url}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;display:block">`:(p.emoji||'🍽️')}</div>
+  el.innerHTML=prods.map((p,i)=>`
+    <div class="product-card ${!p.is_visible?'hidden':''}"
+      draggable="true"
+      ondragstart="dragStartProd(event,${i})"
+      ondragover="dragOverProd(event)"
+      ondrop="dropProd(event,${i})"
+      ondragend="dragEndProd(event)">
+      <span style="cursor:grab;color:var(--text3);font-size:18px;align-self:center;margin-right:4px">⠿</span>
+      <div class="prod-thumb">${p.image_url?`<img src="${p.image_url}" alt="${p.name}">`:(p.emoji||'🍽️')}</div>
       <div style="flex:1">
         <div class="prod-name">${p.name}</div>
         <div class="prod-desc">${p.description||''}</div>
@@ -1044,6 +1088,40 @@ async function importExcel(input){
     }
   } catch(e){ toast(e.message,'error'); }
   input.value='';
+}
+
+let dragProdIndex = null;
+
+function dragStartProd(e, i) {
+  dragProdIndex = i;
+  e.currentTarget.style.opacity = '0.5';
+}
+
+function dragOverProd(e) {
+  e.preventDefault();
+  e.currentTarget.style.borderColor = 'rgba(232,197,71,.5)';
+}
+
+function dragEndProd(e) {
+  e.currentTarget.style.opacity = '1';
+  e.currentTarget.style.borderColor = '';
+}
+
+async function dropProd(e, targetIndex) {
+  e.preventDefault();
+  e.currentTarget.style.borderColor = '';
+  if (dragProdIndex === null || dragProdIndex === targetIndex) return;
+  const catProds = products.filter(p => p.category_id === activeCatId);
+  const otherProds = products.filter(p => p.category_id !== activeCatId);
+  const moved = catProds.splice(dragProdIndex, 1)[0];
+  catProds.splice(targetIndex, 0, moved);
+  products = [...otherProds, ...catProds];
+  dragProdIndex = null;
+  renderProductList();
+  try {
+    await api('PATCH', '/products/reorder', { ids: catProds.map(p => p.id) });
+    toast('Ürün sırası güncellendi ✅', 'success');
+  } catch(e) { toast(e.message, 'error'); }
 }
 
 function openBulkModal(){populateCatSelects();openModal('bulk-modal');}
