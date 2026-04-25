@@ -854,6 +854,17 @@ app.post('/api/admin/create', async (req, res) => {
 // PDF MENÜ
 // ═══════════════════════════════
 const PDFDocument = require('pdfkit');
+const path = require('path');
+function turkishToAscii(str) {
+  if (!str) return '';
+  return str
+    .replace(/ğ/g, 'g').replace(/Ğ/g, 'G')
+    .replace(/ü/g, 'u').replace(/Ü/g, 'U')
+    .replace(/ş/g, 's').replace(/Ş/g, 'S')
+    .replace(/ı/g, 'i').replace(/İ/g, 'I')
+    .replace(/ö/g, 'o').replace(/Ö/g, 'O')
+    .replace(/ç/g, 'c').replace(/Ç/g, 'C');
+}
 
 app.get('/api/restaurant/me/pdf', authMiddleware, async (req, res) => {
   try {
@@ -874,14 +885,14 @@ app.get('/api/restaurant/me/pdf', authMiddleware, async (req, res) => {
     doc.pipe(res);
 
     // Başlık
-    doc.fontSize(28).font('Helvetica-Bold').text(restaurant.name, { align: 'center' });
-    doc.fontSize(12).font('Helvetica').fillColor('#888').text('Dijital Menü', { align: 'center' });
+    doc.fontSize(28).font('Helvetica-Bold').text(turkishToAscii(restaurant.name), { align: 'center' });
+    doc.fontSize(12).font('Helvetica').fillColor('#888').text('Dijital Menu', { align: 'center' });
     doc.moveDown(1);
 
     // WiFi bilgisi
     if (restaurant.wifi_name) {
       doc.fontSize(10).fillColor('#555')
-        .text(`WiFi: ${restaurant.wifi_name}  |  Şifre: ${restaurant.wifi_password || ''}`, { align: 'center' });
+        .text(`WiFi: ${turkishToAscii(restaurant.wifi_name)}  |  Sifre: ${turkishToAscii(restaurant.wifi_password || '')}`, { align: 'center' });
       doc.moveDown(0.5);
     }
 
@@ -895,7 +906,7 @@ app.get('/api/restaurant/me/pdf', authMiddleware, async (req, res) => {
       if (!products.length) continue;
 
       // Kategori başlığı
-      doc.fontSize(16).font('Helvetica-Bold').fillColor('#111').text(cat.name);
+      doc.fontSize(16).font('Helvetica-Bold').fillColor('#111').text(turkishToAscii(cat.name));
       doc.moveTo(50, doc.y + 2).lineTo(545, doc.y + 2).stroke('#e8c547');
       doc.moveDown(0.8);
 
@@ -904,12 +915,12 @@ app.get('/api/restaurant/me/pdf', authMiddleware, async (req, res) => {
         const yStart = doc.y;
 
         // Ürün adı ve fiyat
-        doc.fontSize(13).font('Helvetica-Bold').fillColor('#111').text(prod.name, 50, yStart, { continued: true, width: 380 });
+        doc.fontSize(13).font('Helvetica-Bold').fillColor('#111').text(turkishToAscii(prod.name), 50, yStart, { continued: true, width: 380 });
         doc.fontSize(13).font('Helvetica-Bold').fillColor('#c0a020').text(`${parseFloat(prod.price).toFixed(2)} TL`, { align: 'right' });
 
         // Açıklama
         if (prod.description) {
-          doc.fontSize(10).font('Helvetica').fillColor('#666').text(prod.description, 50, doc.y, { width: 450 });
+          doc.fontSize(10).font('Helvetica').fillColor('#666').text(turkishToAscii(prod.description), 50, doc.y, { width: 450 });
         }
 
         doc.moveDown(0.6);
