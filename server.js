@@ -230,15 +230,6 @@ app.post('/api/auth/register', async (req, res) => {
   if (password.length < 8) {
     return res.status(400).json({ error: 'Şifre en az 8 karakter olmalı' });
   }
-  // Email format kontrolü
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({ error: 'Geçerli bir email adresi girin' });
-  }
-  // Şifre uzunluğu kontrolü
-  if (password.length < 8) {
-    return res.status(400).json({ error: 'Şifre en az 8 karakter olmalı' });
-  }
   try {
     const hash = await bcrypt.hash(password, 10);
     const userResult = await pool.query(
