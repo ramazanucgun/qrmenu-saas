@@ -789,20 +789,7 @@ app.get('/api/auth/verify-email', async (req, res) => {
     res.redirect(`${process.env.APP_URL}/?error=server_error`);
   }
 });
-  const { token } = req.query;
-  try {
-    const result = await pool.query(
-      'SELECT * FROM email_verifications WHERE token=$1 AND expires_at > NOW()',
-      [token]
-    );
-    if (!result.rows[0]) return res.status(400).json({ error: 'Link geçersiz veya süresi dolmuş' });
-    await pool.query('UPDATE users SET is_verified=true WHERE id=$1', [result.rows[0].user_id]);
-    await pool.query('DELETE FROM email_verifications WHERE token=$1', [token]);
-    res.redirect(`${process.env.APP_URL}/?verified=1`);
-  } catch(err) {
-    res.status(500).json({ error: err.message });
-  }
-;
+  
 
 
 
