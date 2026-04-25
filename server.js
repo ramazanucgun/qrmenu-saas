@@ -849,6 +849,88 @@ app.post('/api/admin/create', async (req, res) => {
     res.json({ success: true, user: result.rows[0] });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
+
+// ═══════════════════════════════
+// PDF MENÜ
+// ═══════════════════════════════
+const PDFDocument = require('pdfkit');
+
+app.get('/api/restaurant/me/pdf', authMiddleware, async (req, res) => {
+  try {
+    const restResult = await pool.query('SELECT * FROM restaurants WHERE id=$1', [req.user.restaurantId]);
+    const restaurant = restResult.rows[0];
+    const catResult = await pool.query(
+      'SELECT * FROM categories WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order',
+      [req.user.restaurantId]
+    );
+    const prodResult = await pool.query(
+      'SELECT * FROM products WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order',
+      [req.user.restaurantId]
+    );
+
+    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${restaurant.slug}-menu.pdf"`);
+    doc.pipe(res);
+
+    // Başlık
+    doc.fontSize(28).font('Helvetica-Bold').text(restaurant.name, { align: 'center' });
+    doc.fontSize(12).font('Helvetica').fillColor('#888').text('Dijital Menü', { align: 'center' });
+    doc.moveDown(1);
+
+    // WiFi bilgisi
+    if (restaurant.wifi_name) {
+      doc.fontSize(10).fillColor('#555')
+        .text(`WiFi: ${restaurant.wifi_name}  |  Şifre: ${restaurant.wifi_password || ''}`, { align: 'center' });
+      doc.moveDown(0.5);
+    }
+
+    // Çizgi
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke('#e0e0e0');
+    doc.moveDown(1);
+
+    // Kategoriler ve ürünler
+    for (const cat of catResult.rows) {
+      const products = prodResult.rows.filter(p => p.category_id === cat.id);
+      if (!products.length) continue;
+
+      // Kategori başlığı
+      doc.fontSize(16).font('Helvetica-Bold').fillColor('#111').text(cat.name);
+      doc.moveTo(50, doc.y + 2).lineTo(545, doc.y + 2).stroke('#e8c547');
+      doc.moveDown(0.8);
+
+      // Ürünler
+      for (const prod of products) {
+        const yStart = doc.y;
+
+        // Ürün adı ve fiyat
+        doc.fontSize(13).font('Helvetica-Bold').fillColor('#111').text(prod.name, 50, yStart, { continued: true, width: 380 });
+        doc.fontSize(13).font('Helvetica-Bold').fillColor('#c0a020').text(`${parseFloat(prod.price).toFixed(2)} TL`, { align: 'right' });
+
+        // Açıklama
+        if (prod.description) {
+          doc.fontSize(10).font('Helvetica').fillColor('#666').text(prod.description, 50, doc.y, { width: 450 });
+        }
+
+        doc.moveDown(0.6);
+
+        // Sayfa kontrolü
+        if (doc.y > 750) {
+          doc.addPage();
+        }
+      }
+      doc.moveDown(0.5);
+    }
+
+    // Footer
+    doc.fontSize(9).fillColor('#aaa').text(`CafeMenu · cafemenu.com.tr · ${new Date().toLocaleDateString('tr-TR')}`, { align: 'center' });
+
+    doc.end();
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ═══════════════════════════════
 // SUNUCUYU BAŞLAT
 // ═══════════════════════════════

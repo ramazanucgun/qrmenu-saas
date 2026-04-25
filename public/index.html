@@ -549,6 +549,7 @@ textarea.form-input{resize:vertical;min-height:80px}
           <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
             <button class="btn-sm" onclick="downloadQR()">⬇ PNG İndir</button>
             <button class="btn-sm" onclick="copyMenuLink()">📋 Linki Kopyala</button>
+            <button class="btn-sm" onclick="downloadPDF()">📄 PDF İndir</button>
           </div>
         </div>
       </div>
@@ -1242,6 +1243,23 @@ function updatePreview(){
 
 async function loadQR(){
   try{const data=await api('GET','/restaurant/me/qr');document.getElementById('qr-img').innerHTML=`<img src="${data.qr}" style="width:100%;height:100%;border-radius:8px">`;}catch{}
+}
+async function downloadPDF(){
+  toast('PDF hazırlanıyor...','info');
+  try {
+    const res = await fetch(API+'/restaurant/me/pdf', {
+      headers: { 'Authorization': 'Bearer ' + TOKEN }
+    });
+    if(!res.ok) throw new Error('PDF oluşturulamadı');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'menu.pdf';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('PDF indirildi ✅','success');
+  } catch(e) { toast(e.message,'error'); }
 }
 
 function downloadQR(){const img=document.querySelector('#qr-img img');if(!img) return toast('QR yüklenemedi','error');const a=document.createElement('a');a.href=img.src;a.download='qrmenu-qr.png';a.click();toast('QR kod indirildi ✅','success');}
