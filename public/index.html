@@ -356,6 +356,9 @@ textarea.form-input{resize:vertical;min-height:80px}
     <div class="page" id="page-editor">
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
         <button class="btn-sm" onclick="openBulkModal()">💰 Toplu Fiyat</button>
+        <button class="btn-sm" onclick="downloadTemplate()">📥 Şablon İndir</button>
+<button class="btn-sm" onclick="document.getElementById('excel-file').click()">📤 Excel Yükle</button>
+<input type="file" id="excel-file" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)">
         <button class="btn-sm btn-accent" onclick="openModal('prod-modal')">+ Ürün Ekle</button>
       </div>
       <div class="editor-grid">
@@ -1011,6 +1014,36 @@ async function deleteProduct(id){
   const p=products.find(x=>x.id===id);
   if(!confirm(`"${p?.name}" silinsin mi?`)) return;
   try{await api('DELETE','/products/'+id);products=products.filter(x=>x.id!==id);renderProductList();updateStats();toast('Ürün silindi','info');}catch(e){toast(e.message,'error');}
+}
+
+function downloadTemplate(){
+  window.open(API+'/products/import/template?token='+TOKEN,'_blank');
+}
+
+async function importExcel(input){
+  const file = input.files[0];
+  if(!file) return;
+  toast('Excel yükleniyor...','info');
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(API+'/products/import', {
+      method:'POST',
+      headers:{'Authorization':'Bearer '+TOKEN},
+      body: formData
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error);
+    await loadCategories();
+    await loadProducts();
+    renderCatList();
+    updateStats();
+    toast(`✅ ${data.message}`, 'success');
+    if(data.errors?.length) {
+      data.errors.forEach(e => toast(e,'error'));
+    }
+  } catch(e){ toast(e.message,'error'); }
+  input.value='';
 }
 
 function openBulkModal(){populateCatSelects();openModal('bulk-modal');}

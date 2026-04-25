@@ -942,6 +942,93 @@ app.get('/api/restaurant/me/pdf', authMiddleware, async (req, res) => {
 });
 
 // ═══════════════════════════════
+// EXCEL IMPORT
+// ═══════════════════════════════
+const XLSX = require('xlsx');
+
+app.post('/api/products/import', authMiddleware, upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Dosya seçilmedi' });
+  try {
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet);
+
+    if (!rows.length) return res.status(400).json({ error: 'Excel dosyası boş' });
+
+    let imported = 0;
+    let errors = [];
+
+    for (const row of rows) {
+      try {
+        // Kolon adlarını esnek oku
+        const catName = row['Kategori'] || row['kategori'] || row['Category'] || 'Genel';
+        const name = row['Ürün Adı'] || row['urun_adi'] || row['Name'] || row['name'] || '';
+        const description = row['Açıklama'] || row['aciklama'] || row['Description'] || '';
+        const price = parseFloat(row['Fiyat'] || row['fiyat'] || row['Price'] || 0);
+        const emoji = row['Emoji'] || row['emoji'] || '🍽️';
+
+        if (!name) continue;
+
+        // Kategoriyi bul veya oluştur
+        let catResult = await pool.query(
+          'SELECT id FROM categories WHERE restaurant_id=$1 AND LOWER(name)=LOWER($2)',
+          [req.user.restaurantId, catName]
+        );
+
+        let categoryId;
+        if (catResult.rows.length) {
+          categoryId = catResult.rows[0].id;
+        } else {
+          const newCat = await pool.query(
+            'INSERT INTO categories (restaurant_id, name, sort_order) VALUES ($1,$2,(SELECT COUNT(*) FROM categories WHERE restaurant_id=$1)) RETURNING id',
+            [req.user.restaurantId, catName]
+          );
+          categoryId = newCat.rows[0].id;
+        }
+
+        // Ürünü ekle
+        await pool.query(
+          'INSERT INTO products (category_id, restaurant_id, name, description, price, emoji) VALUES ($1,$2,$3,$4,$5,$6)',
+          [categoryId, req.user.restaurantId, name, description, price, emoji]
+        );
+        imported++;
+      } catch(e) {
+        errors.push(`Satır hatası: ${e.message}`);
+      }
+    }
+
+    res.json({
+      success: true,
+      imported,
+      errors: errors.slice(0, 5),
+      message: `${imported} ürün başarıyla içe aktarıldı`
+    });
+  } catch(err) {
+    res.status(500).json({ error: 'Excel okuma hatası: ' + err.message });
+  }
+});
+
+// Excel şablon indir
+app.get('/api/products/import/template', authMiddleware, (req, res) => {
+  const wb = XLSX.utils.book_new();
+  const data = [
+    ['Kategori', 'Ürün Adı', 'Açıklama', 'Fiyat', 'Emoji'],
+    ['Kahvaltı', 'Serpme Kahvaltı', '2 kişilik zengin kahvaltı', 320, '🍳'],
+    ['Kahvaltı', 'Menemen', 'Domates ve biberli yumurta', 120, '🥚'],
+    ['İçecekler', 'Türk Kahvesi', 'Geleneksel Türk kahvesi', 45, '☕'],
+    ['İçecekler', 'Çay', 'Demlik çay', 20, '🍵'],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{ wch: 15 }, { wch: 25 }, { wch: 35 }, { wch: 10 }, { wch: 8 }];
+  XLSX.utils.book_append_sheet(wb, ws, 'Menü');
+  const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', 'attachment; filename="menu-sablonu.xlsx"');
+  res.send(buffer);
+});
+
+// ═══════════════════════════════
 // SUNUCUYU BAŞLAT
 // ═══════════════════════════════
 // ═══════════════════════════════
