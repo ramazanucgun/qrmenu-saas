@@ -317,7 +317,11 @@ await pool.query(
       console.log('Hoşgeldin emaili gönderilemedi:', emailErr.message);
     }
 
-    res.json({ token, restaurant: restResult.rows[0] });
+    res.json({ 
+  success: true, 
+  message: 'Kayıt başarılı! Email adresinizi doğrulayın.',
+  email: email
+});
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ error: 'Bu email zaten kayıtlı' });
     res.status(500).json({ error: 'Sunucu hatası: ' + err.message });
@@ -765,6 +769,27 @@ const resetTokens = {}; // Geçici token store
 // Email doğrulama
 app.get('/api/auth/verify-email', async (req, res) => {
   const { token } = req.query;
+  if (!token) return res.redirect(`${process.env.APP_URL}/?error=no_token`);
+  try {
+    const result = await pool.query(
+      'SELECT * FROM email_verifications WHERE token=$1',
+      [token]
+    );
+    if (!result.rows[0]) {
+      return res.redirect(`${process.env.APP_URL}/?error=invalid_token`);
+    }
+    if (new Date(result.rows[0].expires_at) < new Date()) {
+      return res.redirect(`${process.env.APP_URL}/?error=expired_token`);
+    }
+    await pool.query('UPDATE users SET is_verified=true WHERE id=$1', [result.rows[0].user_id]);
+    await pool.query('DELETE FROM email_verifications WHERE token=$1', [token]);
+    res.redirect(`${process.env.APP_URL}/?verified=1`);
+  } catch(err) {
+    console.error('Verify email error:', err.message);
+    res.redirect(`${process.env.APP_URL}/?error=server_error`);
+  }
+});
+  const { token } = req.query;
   try {
     const result = await pool.query(
       'SELECT * FROM email_verifications WHERE token=$1 AND expires_at > NOW()',
@@ -777,7 +802,7 @@ app.get('/api/auth/verify-email', async (req, res) => {
   } catch(err) {
     res.status(500).json({ error: err.message });
   }
-});
+;
 
 
 

@@ -833,10 +833,25 @@ async function doLogin() {
 }
 
 async function doRegister() {
-  const restaurantName=document.getElementById('r-name').value, email=document.getElementById('r-email').value, password=document.getElementById('r-pass').value;
-  if(!restaurantName||!email||!password) return showAuthError('Tüm alanlar zorunlu');
-  if(password.length<8) return showAuthError('Şifre en az 8 karakter olmalı');
-  try { const data=await api('POST','/auth/register',{email,password,restaurantName}); TOKEN=data.token; localStorage.setItem('qrmenu_token',TOKEN); RESTAURANT=data.restaurant; localStorage.setItem('qrmenu_rest',JSON.stringify(RESTAURANT)); await loadApp(); toast('Hoş geldiniz! 🎉','success'); } catch(e){ showAuthError(e.message); }
+  const restaurantName = document.getElementById('r-name').value.trim();
+  const email = document.getElementById('r-email').value.trim();
+  const password = document.getElementById('r-pass').value;
+  if (!restaurantName || !email || !password) return showAuthError('Tüm alanlar zorunlu');
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) return showAuthError('Geçerli bir email adresi girin');
+  if (password.length < 8) return showAuthError('Şifre en az 8 karakter olmalı');
+  try {
+    await api('POST', '/auth/register', { email, password, restaurantName });
+    const errEl = document.getElementById('auth-error');
+    errEl.textContent = '✅ Kayıt başarılı! Email adresinize doğrulama linki gönderdik.';
+    errEl.style.display = 'block';
+    errEl.style.background = 'rgba(71,201,126,.1)';
+    errEl.style.borderColor = 'rgba(71,201,126,.3)';
+    errEl.style.color = 'var(--green)';
+    document.getElementById('r-name').value = '';
+    document.getElementById('r-email').value = '';
+    document.getElementById('r-pass').value = '';
+  } catch(e) { showAuthError(e.message); }
 }
 
 function doLogout() { TOKEN=null; RESTAURANT=null; localStorage.removeItem('qrmenu_token'); localStorage.removeItem('qrmenu_rest'); document.getElementById('app-view').classList.remove('active'); document.getElementById('auth-view').classList.add('active'); }
@@ -1578,6 +1593,12 @@ if(window.location.pathname === '/reset-password') {
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('verified') === '1') {
   setTimeout(() => toast('✅ Email adresiniz doğrulandı! Giriş yapabilirsiniz.', 'success'), 500);
+}
+if (urlParams.get('error') === 'invalid_token') {
+  setTimeout(() => toast('❌ Doğrulama linki geçersiz. Tekrar gönderin.', 'error'), 500);
+}
+if (urlParams.get('error') === 'expired_token') {
+  setTimeout(() => toast('❌ Doğrulama linki süresi dolmuş. Tekrar gönderin.', 'error'), 500);
 }
 const currentPath = window.location.pathname;
 if (currentPath === '/verify-email') {
