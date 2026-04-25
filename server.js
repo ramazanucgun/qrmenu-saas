@@ -876,8 +876,28 @@ app.get('/api/admin/users', adminMiddleware, async (req, res) => {
 
 // Kullanıcı sil
 app.delete('/api/admin/users/:id', adminMiddleware, async (req, res) => {
-  await pool.query('DELETE FROM users WHERE id=$1', [req.params.id]);
-  res.json({ success: true });
+  try {
+    const userId = req.params.id;
+    // Önce ilişkili verileri sil
+    await pool.query('DELETE FROM email_verifications WHERE user_id=$1', [userId]);
+    await pool.query('DELETE FROM subscriptions WHERE user_id=$1', [userId]);
+    // Restoran ve bağlı verileri sil (CASCADE ile otomatik silinmeli ama garantiyelim)
+    const restResult = await pool.query('SELECT id FROM restaurants WHERE user_id=$1', [userId]);
+    if (restResult.rows[0]) {
+      const restId = restResult.rows[0].id;
+      await pool.query('DELETE FROM working_hours WHERE restaurant_id=$1', [restId]);
+      await pool.query('DELETE FROM campaigns WHERE restaurant_id=$1', [restId]);
+      await pool.query('DELETE FROM feedbacks WHERE restaurant_id=$1', [restId]);
+      await pool.query('DELETE FROM waiter_calls WHERE restaurant_id=$1', [restId]);
+      await pool.query('DELETE FROM products WHERE restaurant_id=$1', [restId]);
+      await pool.query('DELETE FROM categories WHERE restaurant_id=$1', [restId]);
+      await pool.query('DELETE FROM restaurants WHERE id=$1', [restId]);
+    }
+    await pool.query('DELETE FROM users WHERE id=$1', [userId]);
+    res.json({ success: true });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Abonelik güncelle
