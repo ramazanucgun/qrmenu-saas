@@ -229,6 +229,45 @@ app.post('/api/auth/register', async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    // Hoşgeldin emaili gönder
+    try {
+      await resend.emails.send({
+        from: 'CafeMenu <noreply@cafemenu.com.tr>',
+        to: email,
+        subject: 'CafeMenu\'ya Hoş Geldiniz! 🎉',
+        html: `
+          <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px;background:#fff">
+            <div style="text-align:center;margin-bottom:28px">
+              <div style="font-size:2rem;font-weight:700;color:#111">◈ CafeMenu</div>
+              <div style="font-size:13px;color:#888;margin-top:4px">Dijital Menü Platformu</div>
+            </div>
+            <h2 style="color:#111;margin-bottom:12px">Hoş Geldiniz! 👋</h2>
+            <p style="color:#444;line-height:1.6;margin-bottom:16px">
+              <strong>${restaurantName}</strong> için dijital menünüz oluşturuldu. 
+              14 günlük ücretsiz trial süreniz başladı.
+            </p>
+            <div style="background:#f9f9f9;border-radius:10px;padding:16px;margin-bottom:20px">
+              <div style="font-size:13px;color:#666;margin-bottom:6px">Menü linkiniz:</div>
+              <div style="font-family:monospace;font-size:14px;color:#e8a020;font-weight:600">
+                https://app.cafemenu.com.tr/menu/${restResult.rows[0].slug}
+              </div>
+            </div>
+            <p style="color:#444;line-height:1.6;margin-bottom:24px">
+              Hemen giriş yapıp menünüzü oluşturmaya başlayabilirsiniz.
+            </p>
+            <div style="text-align:center">
+              <a href="https://app.cafemenu.com.tr" style="background:#e8c547;color:#111;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block">Dashboard'a Git →</a>
+            </div>
+            <div style="border-top:1px solid #eee;margin-top:28px;padding-top:16px;text-align:center;font-size:12px;color:#aaa">
+              CafeMenu · cafemenu.com.tr
+            </div>
+          </div>
+        `
+      });
+    } catch(emailErr) {
+      console.log('Hoşgeldin emaili gönderilemedi:', emailErr.message);
+    }
+
     res.json({ token, restaurant: restResult.rows[0] });
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ error: 'Bu email zaten kayıtlı' });
