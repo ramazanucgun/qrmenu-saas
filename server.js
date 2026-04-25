@@ -1010,7 +1010,7 @@ app.post('/api/products/import', authMiddleware, upload.single('file'), async (r
 });
 
 // Excel şablon indir
-app.get('/api/products/import/template', authMiddleware, (req, res) => {
+app.get('/api/products/import/template', (req, res) => {
   const wb = XLSX.utils.book_new();
   const data = [
     ['Kategori', 'Ürün Adı', 'Açıklama', 'Fiyat', 'Emoji'],
