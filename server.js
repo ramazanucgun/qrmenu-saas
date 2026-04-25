@@ -221,6 +221,24 @@ app.post('/api/auth/register', async (req, res) => {
   if (!email || !password || !restaurantName) {
     return res.status(400).json({ error: 'Tüm alanlar zorunlu' });
   }
+  // Email format kontrolü
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Geçerli bir email adresi girin' });
+  }
+  // Şifre uzunluğu kontrolü
+  if (password.length < 8) {
+    return res.status(400).json({ error: 'Şifre en az 8 karakter olmalı' });
+  }
+  // Email format kontrolü
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Geçerli bir email adresi girin' });
+  }
+  // Şifre uzunluğu kontrolü
+  if (password.length < 8) {
+    return res.status(400).json({ error: 'Şifre en az 8 karakter olmalı' });
+  }
   try {
     const hash = await bcrypt.hash(password, 10);
     const userResult = await pool.query(
@@ -330,6 +348,10 @@ app.post('/api/auth/login', async (req, res) => {
 
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return res.status(400).json({ error: 'Email veya şifre hatalı' });
+
+    if (!user.is_verified) {
+      return res.status(400).json({ error: 'EMAIL_NOT_VERIFIED' });
+    }
 
     const token = jwt.sign(
       { userId: user.id, restaurantId: user.restaurant_id },
