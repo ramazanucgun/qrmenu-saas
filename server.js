@@ -754,7 +754,7 @@ app.get('/api/admin/users', adminMiddleware, async (req, res) => {
   const result = await pool.query(`
     SELECT u.id, u.email, u.role, u.created_at,
            r.name as restaurant_name, r.slug,
-           s.plan, s.status, s.trial_ends_at, s.current_period_end
+           s.plan, s.status, s.trial_ends_at
     FROM users u
     LEFT JOIN restaurants r ON r.user_id = u.id
     LEFT JOIN subscriptions s ON s.user_id = u.id

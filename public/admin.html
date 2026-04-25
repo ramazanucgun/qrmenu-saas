@@ -280,7 +280,7 @@ function renderSubs() {
       <td>${u.email}</td>
       <td><span class="badge ${planBadge[u.plan]||'b-yellow'}">${(u.plan||'trial').toUpperCase()}</span></td>
       <td><span class="badge ${statusBadge[u.status]||'b-yellow'}">${u.status==='active'?'Aktif':u.status==='cancelled'?'İptal':'Süresi Doldu'}</span></td>
-      <td style="font-size:12px;color:var(--text3)">${u.current_period_end ? new Date(u.current_period_end).toLocaleDateString('tr-TR') : u.trial_ends_at ? 'Trial: '+new Date(u.trial_ends_at).toLocaleDateString('tr-TR') : '—'}</td>
+      <td style="font-size:12px;color:var(--text3)">${u.trial_ends_at ? new Date(u.trial_ends_at).toLocaleDateString('tr-TR') : '—'}</td>
       <td><button class="btn-sm" onclick="editSub('${u.id}','${u.plan||'trial'}','${u.status||'active'}')">✏️ Düzenle</button></td>
     </tr>
   `).join('');
