@@ -1462,7 +1462,7 @@ function renderPublicMenu(data){
       ${restaurant.instagram_url?`<button class="social-btn" style="background:${t.socialBg};border-color:${t.socialBorder}" onclick="window.open('https://instagram.com/${restaurant.instagram_url.replace('@','')}','_blank')">📸</button>`:''}
       ${restaurant.facebook_url?`<button class="social-btn" style="background:${t.socialBg};border-color:${t.socialBorder}" onclick="window.open('https://facebook.com/${restaurant.facebook_url}','_blank')">👍</button>`:''}
     </div>
-    <div style="font-size:11px;color:${t.text2};margin-top:8px;opacity:.5">Powered by QRMenu</div>
+    <div style="font-size:11px;color:${t.text2};margin-top:8px;opacity:.5">Powered by Cafemenu.com.tr</div>
   </div>`;
 
   el.innerHTML=hero+search+nav+sections+footer;
@@ -1542,8 +1542,48 @@ if(window.location.pathname === '/reset-password') {
   document.getElementById('auth-view').style.display = 'flex';
   document.getElementById('app-view').style.display = 'none';
   authTab('reset');
-} else {
-const currentPath=window.location.pathname;if(currentPath.startsWith('/menu/')){const slug=currentPath.replace('/menu/','').split('/')[0];document.getElementById('auth-view').style.display='none';document.getElementById('app-view').style.display='none';document.getElementById('menu-view').style.display='flex';document.getElementById('menu-view').style.flexDirection='column';const adminBar=document.querySelector('.menu-topbar-admin');if(adminBar)adminBar.style.display='none';fetch(API+'/menu/'+slug).then(r=>r.json()).then(data=>{if(data.error){document.getElementById('menu-public').innerHTML='<div style="padding:60px;text-align:center">Menu bulunamadi</div>';}else{renderPublicMenu(data);}}).catch(()=>{document.getElementById('menu-public').innerHTML='<div style="padding:60px;text-align:center">Baglanti hatasi</div>';});}else if(TOKEN){loadApp();}}
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('verified') === '1') {
+  setTimeout(() => toast('✅ Email adresiniz doğrulandı! Giriş yapabilirsiniz.', 'success'), 500);
+}
+const currentPath = window.location.pathname;
+if (currentPath === '/verify-email') {
+  const vToken = urlParams.get('token');
+  if (vToken) {
+    fetch(API + '/auth/verify-email?token=' + vToken)
+      .then(r => { if (!r.ok) throw new Error(); })
+      .catch(() => toast('Doğrulama linki geçersiz', 'error'));
+  }
+}
+if (currentPath.startsWith('/menu/')) {
+  const slug = currentPath.replace('/menu/', '').split('/')[0];
+  document.getElementById('auth-view').style.display = 'none';
+  document.getElementById('app-view').style.display = 'none';
+  document.getElementById('menu-view').style.display = 'flex';
+  document.getElementById('menu-view').style.flexDirection = 'column';
+  const adminBar = document.querySelector('.menu-topbar-admin');
+  if (adminBar) adminBar.style.display = 'none';
+  fetch(API + '/menu/' + slug)
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) {
+        document.getElementById('menu-public').innerHTML = '<div style="padding:60px;text-align:center">Menu bulunamadi</div>';
+      } else {
+        renderPublicMenu(data);
+        if (data.campaign) {
+          document.getElementById('camp-popup-title').textContent = data.campaign.title;
+          document.getElementById('camp-popup-desc').textContent = data.campaign.description || '';
+          document.getElementById('camp-emoji-display').textContent = data.campaign.emoji || '🎉';
+          setTimeout(() => document.getElementById('camp-popup').classList.add('open'), 2000);
+        }
+      }
+    })
+    .catch(() => {
+      document.getElementById('menu-public').innerHTML = '<div style="padding:60px;text-align:center">Baglanti hatasi</div>';
+    });
+} else if (TOKEN) {
+  loadApp();
+}
 
 </script>
 </body>

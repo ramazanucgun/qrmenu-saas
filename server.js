@@ -171,7 +171,14 @@ async function initDB() {
       status VARCHAR(20) DEFAULT 'pending',
       called_at TIMESTAMP DEFAULT NOW()
     );
-CREATE TABLE IF NOT EXISTS working_hours (
+CREATE TABLE IF NOT EXISTS email_verifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  token VARCHAR(100) UNIQUE NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+    CREATE TABLE IF NOT EXISTS working_hours (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   restaurant_id UUID REFERENCES restaurants(id) ON DELETE CASCADE,
   day_of_week INTEGER NOT NULL,
@@ -247,7 +254,13 @@ app.post('/api/auth/register', async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
-
+// Email doğrulama tokeni oluştur
+const verifyToken = uuidv4();
+const verifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 saat
+await pool.query(
+  'INSERT INTO email_verifications (user_id, token, expires_at) VALUES ($1,$2,$3)',
+  [user.id, verifyToken, verifyExpires]
+);
     // Hoşgeldin emaili gönder
     try {
       await resend.emails.send({
@@ -275,7 +288,15 @@ app.post('/api/auth/register', async (req, res) => {
               Hemen giriş yapıp menünüzü oluşturmaya başlayabilirsiniz.
             </p>
             <div style="text-align:center">
-              <a href="https://app.cafemenu.com.tr" style="background:#e8c547;color:#111;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block">Dashboard'a Git →</a>
+            <div style="background:#fff8e1;border:1px solid #e8c547;border-radius:10px;padding:16px;margin-bottom:20px;text-align:center">
+              <div style="font-size:13px;color:#666;margin-bottom:10px">Email adresinizi doğrulamak için aşağıdaki butona tıklayın:</div>
+              <a href="${process.env.APP_URL}/verify-email?token=${verifyToken}" style="background:#e8c547;color:#111;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block">✅ Email Adresimi Doğrula</a>
+              <div style="font-size:11px;color:#aaa;margin-top:8px">Bu link 24 saat geçerlidir</div>
+            </div>
+            <div style="text-align:center">
+              <a href="https://app.cafemenu.com.tr" style="background:#f5f5f5;color:#111;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block">Dashboard'a Git →</a>
+            </div> 
+            <a href="https://app.cafemenu.com.tr" style="background:#e8c547;color:#111;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block">Dashboard'a Git →</a>
             </div>
             <div style="border-top:1px solid #eee;margin-top:28px;padding-top:16px;text-align:center;font-size:12px;color:#aaa">
               CafeMenu · cafemenu.com.tr
@@ -728,6 +749,23 @@ const { Resend } = require('resend');
 const resend = new Resend(process.env.RESEND_API_KEY);
 const resetTokens = {}; // Geçici token store
 
+// Email doğrulama
+app.get('/api/auth/verify-email', async (req, res) => {
+  const { token } = req.query;
+  try {
+    const result = await pool.query(
+      'SELECT * FROM email_verifications WHERE token=$1 AND expires_at > NOW()',
+      [token]
+    );
+    if (!result.rows[0]) return res.status(400).json({ error: 'Link geçersiz veya süresi dolmuş' });
+    await pool.query('UPDATE users SET is_verified=true WHERE id=$1', [result.rows[0].user_id]);
+    await pool.query('DELETE FROM email_verifications WHERE token=$1', [token]);
+    res.redirect(`${process.env.APP_URL}/?verified=1`);
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body;
   try {
@@ -1143,6 +1181,11 @@ const PORT = process.env.PORT || 3000;
 app.get('/admin', (req, res) => {
   res.sendFile('admin.html', { root: 'public' });
 });
+
+app.get('/verify-email', (req, res) => {
+  res.sendFile('index.html', { root: 'public' });
+});
+
 app.get('/reset-password', (req, res) => {
   res.sendFile('index.html', { root: 'public' });
 });
