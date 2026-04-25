@@ -232,7 +232,7 @@ app.post('/api/auth/register', async (req, res) => {
     // Hoşgeldin emaili gönder
     try {
       await resend.emails.send({
-        from: 'CafeMenu <noreply@cafemenu.com.tr>',
+        from: 'CafeMenu <noreply@ucgun.com.tr>',
         to: email,
         subject: 'CafeMenu\'ya Hoş Geldiniz! 🎉',
         html: `
