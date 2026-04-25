@@ -854,7 +854,6 @@ app.post('/api/admin/create', async (req, res) => {
 // PDF MENÜ
 // ═══════════════════════════════
 const PDFDocument = require('pdfkit');
-const path = require('path');
 function turkishToAscii(str) {
   if (!str) return '';
   return str
