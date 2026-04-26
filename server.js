@@ -105,6 +105,7 @@ async function initDB() {
       email VARCHAR(255) UNIQUE NOT NULL,
       password_hash VARCHAR(255) NOT NULL,
       role VARCHAR(20) DEFAULT 'owner',
+      is_verified BOOLEAN DEFAULT false,
       created_at TIMESTAMP DEFAULT NOW()
     );
 
@@ -208,6 +209,10 @@ CREATE TABLE IF NOT EXISTS working_hours (
       ends_at TIMESTAMP DEFAULT NOW() + INTERVAL '30 days'
     );
   `);
+
+  // Mevcut tablolara eksik kolonları ekle
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false`);
+    await pool.query(`ALTER TABLE working_hours ADD COLUMN IF NOT EXISTS opens_at VARCHAR(5) DEFAULT '09:00'`).catch(()=>{});
   console.log('✅ Veritabanı tabloları hazır');
 }
 
