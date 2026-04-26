@@ -1590,6 +1590,7 @@ if(window.location.pathname === '/reset-password') {
   document.getElementById('auth-view').style.display = 'flex';
   document.getElementById('app-view').style.display = 'none';
   authTab('reset');
+}
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('verified') === '1') {
   // Token varsa çıkış yap — kullanıcı tekrar giriş yapmalı
