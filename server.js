@@ -212,6 +212,7 @@ CREATE TABLE IF NOT EXISTS working_hours (
 
   // Mevcut tablolara eksik kolonları ekle
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false`);
+    await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS image_url VARCHAR(500)`);
     await pool.query(`ALTER TABLE working_hours ADD COLUMN IF NOT EXISTS opens_at VARCHAR(5) DEFAULT '09:00'`).catch(()=>{});
   console.log('✅ Veritabanı tabloları hazır');
 }
@@ -661,10 +662,10 @@ app.get('/api/campaigns', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/campaigns', authMiddleware, async (req, res) => {
-  const { title, description, emoji } = req.body;
+  const { title, description, emoji, image_url } = req.body;
   const result = await pool.query(
-    'INSERT INTO campaigns (restaurant_id, title, description, emoji) VALUES ($1,$2,$3,$4) RETURNING *',
-    [req.user.restaurantId, title, description, emoji || '🎉']
+    'INSERT INTO campaigns (restaurant_id, title, description, emoji, image_url) VALUES ($1,$2,$3,$4,$5) RETURNING *',
+    [req.user.restaurantId, title, description, emoji || '🎉', image_url || null]
   );
   res.json(result.rows[0]);
 });

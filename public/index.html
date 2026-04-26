@@ -233,12 +233,8 @@ textarea.form-input{resize:vertical;min-height:80px}
 .camp-overlay.open{display:flex}
 .camp-box{background:#fff;border-radius:20px;overflow:hidden;width:300px;text-align:center;animation:popIn .4s cubic-bezier(.34,1.56,.64,1)}
 @keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
-.camp-img{height:150px;display:flex;align-items:center;justify-content:center;font-size:64px}
-.camp-body{padding:20px}
-.camp-title{font-size:18px;font-weight:700;color:#111;margin-bottom:6px}
-.camp-sub{font-size:13px;color:#666;margin-bottom:16px}
-.camp-close-btn{width:100%;background:#111;color:#fff;border:none;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans)}
-
+.camp-img{height:140px;display:flex;align-items:center;justify-content:center;font-size:60px;background:linear-gradient(135deg,#fde68a,#f59e0b);overflow:hidden}
+.camp-img img{width:100%;height:100%;object-fit:cover}
 .fb-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:none;align-items:flex-end;justify-content:center}
 .fb-modal.open{display:flex}
 .fb-inner{background:#fff;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:500px;animation:slideUp .3s ease}
@@ -708,6 +704,20 @@ textarea.form-input{resize:vertical;min-height:80px}
     <div class="form-group"><label class="form-label">BAŞLIK</label><input class="form-input" id="camp-title" placeholder="Hafta sonu %20 indirim!"></div>
     <div class="form-group"><label class="form-label">AÇIKLAMA</label><input class="form-input" id="camp-desc-input" placeholder="Kısa açıklama"></div>
     <div class="form-group"><label class="form-label">EMOJİ</label><input class="form-input" id="camp-emoji-input" placeholder="🎉" maxlength="4"></div>
+    <div class="form-group">
+  <label class="form-label">KAMPANYA GÖRSELİ (opsiyonel)</label>
+  <div class="img-upload-area">
+    <div class="img-upload-row">
+      <div class="img-preview-box" id="camp-img-preview" style="width:80px;height:60px;border-radius:8px">🎉</div>
+      <div class="img-upload-info">
+        <input type="file" id="camp-image" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="previewCampImage(this)">
+        <button class="btn-sm" onclick="document.getElementById('camp-image').click()" type="button">📁 Görsel Seç</button>
+        <p>JPG, PNG — maks 5MB</p>
+        <span id="camp-img-status" style="font-size:11px;color:var(--green)"></span>
+      </div>
+    </div>
+  </div>
+</div>
     <div class="modal-footer">
       <button class="btn-sm" onclick="closeModal('camp-modal')">İptal</button>
       <button class="btn-sm btn-accent" onclick="saveCampaign()">Yayınla</button>
@@ -1047,6 +1057,16 @@ function closeModal(id){
   if(id==='prod-modal'){editingProductId=null;document.getElementById('prod-modal-title').textContent='Ürün Ekle';document.getElementById('prod-name').value='';document.getElementById('prod-desc').value='';document.getElementById('prod-price').value='';document.getElementById('prod-emoji').value='';document.getElementById('prod-image').value='';document.getElementById('img-preview').innerHTML='📷';document.getElementById('img-status').textContent='';}
 }
 
+function previewCampImage(input){
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById('camp-img-preview');
+    preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:7px">`;
+  };
+  reader.readAsDataURL(file);
+}
+
 function previewImage(input){
   const file=input.files[0]; if(!file) return;
   const reader=new FileReader();
@@ -1249,11 +1269,40 @@ function renderCampaigns(){
 }
 
 async function saveCampaign(){
-  const title=document.getElementById('camp-title').value.trim();
-  const description=document.getElementById('camp-desc-input').value.trim();
-  const emoji=document.getElementById('camp-emoji-input').value.trim()||'🎉';
-  if(!title) return toast('Başlık zorunlu','error');
-  try{const camp=await api('POST','/campaigns',{title,description,emoji});campaigns.unshift(camp);closeModal('camp-modal');renderCampaigns();toast('Kampanya yayında! 🎉','success');document.getElementById('camp-title').value='';document.getElementById('camp-desc-input').value='';document.getElementById('camp-emoji-input').value='';}catch(e){toast(e.message,'error');}
+  const title = document.getElementById('camp-title').value.trim();
+  const description = document.getElementById('camp-desc-input').value.trim();
+  const emoji = document.getElementById('camp-emoji-input').value.trim() || '🎉';
+  const imageFile = document.getElementById('camp-image').files[0];
+  if(!title) return toast('Başlık zorunlu', 'error');
+  let image_url = null;
+  if(imageFile){
+    document.getElementById('camp-img-status').textContent = '⏳ Yükleniyor...';
+    try{
+      const formData = new FormData();
+      formData.append('image', imageFile);
+      const uploadRes = await fetch(API+'/upload/product-image', {
+        method:'POST', headers:{'Authorization':'Bearer '+TOKEN}, body:formData
+      });
+      const uploadData = await uploadRes.json();
+      if(uploadData.imageUrl) {
+        image_url = uploadData.imageUrl;
+        document.getElementById('camp-img-status').textContent = '✅ Yüklendi';
+      }
+    }catch{ toast('Görsel yüklenemedi','error'); }
+  }
+  try{
+    const camp = await api('POST', '/campaigns', { title, description, emoji, image_url });
+    campaigns.unshift(camp);
+    closeModal('camp-modal');
+    renderCampaigns();
+    toast('Kampanya yayında! 🎉', 'success');
+    document.getElementById('camp-title').value = '';
+    document.getElementById('camp-desc-input').value = '';
+    document.getElementById('camp-emoji-input').value = '';
+    document.getElementById('camp-image').value = '';
+    document.getElementById('camp-img-preview').innerHTML = '🎉';
+    document.getElementById('camp-img-status').textContent = '';
+  }catch(e){toast(e.message,'error');}
 }
 
 async function toggleCampaign(id){
