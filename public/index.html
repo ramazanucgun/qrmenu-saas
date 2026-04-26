@@ -1592,7 +1592,14 @@ if(window.location.pathname === '/reset-password') {
   authTab('reset');
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('verified') === '1') {
-  setTimeout(() => toast('✅ Email adresiniz doğrulandı! Giriş yapabilirsiniz.', 'success'), 500);
+  // Token varsa çıkış yap — kullanıcı tekrar giriş yapmalı
+  localStorage.removeItem('qrmenu_token');
+  localStorage.removeItem('qrmenu_rest');
+  TOKEN = null;
+  setTimeout(() => {
+    document.getElementById('auth-view').classList.add('active');
+    toast('✅ Email adresiniz doğrulandı! Şimdi giriş yapabilirsiniz.', 'success');
+  }, 300);
 }
 if (urlParams.get('error') === 'invalid_token') {
   setTimeout(() => toast('❌ Doğrulama linki geçersiz. Tekrar gönderin.', 'error'), 500);
