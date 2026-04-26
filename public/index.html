@@ -1604,9 +1604,9 @@ const currentPath = window.location.pathname;
 if (currentPath === '/verify-email') {
   const vToken = urlParams.get('token');
   if (vToken) {
-    fetch(API + '/auth/verify-email?token=' + vToken)
-      .then(r => { if (!r.ok) throw new Error(); })
-      .catch(() => toast('Doğrulama linki geçersiz', 'error'));
+    window.location.href = API + '/auth/verify-email?token=' + vToken;
+  } else {
+    toast('Geçersiz doğrulama linki', 'error');
   }
 }
 if (currentPath.startsWith('/menu/')) {
