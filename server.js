@@ -695,6 +695,25 @@ app.post('/api/campaigns', authMiddleware, async (req, res) => {
   res.json(result.rows[0]);
 });
 
+app.patch('/api/campaigns/:id', authMiddleware, async (req, res) => {
+  const { title, description, emoji, image_url } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE campaigns SET
+        title = COALESCE($1, title),
+        description = COALESCE($2, description),
+        emoji = COALESCE($3, emoji),
+        image_url = COALESCE($4, image_url)
+       WHERE id=$5 AND restaurant_id=$6 RETURNING *`,
+      [title || null, description || null, emoji || null, image_url || null, req.params.id, req.user.restaurantId]
+    );
+    if (!result.rows[0]) return res.status(404).json({ error: 'Kampanya bulunamadı' });
+    res.json(result.rows[0]);
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.patch('/api/campaigns/:id/toggle', authMiddleware, async (req, res) => {
   const result = await pool.query(
     'UPDATE campaigns SET is_active = NOT is_active WHERE id=$1 AND restaurant_id=$2 RETURNING *',
@@ -883,16 +902,20 @@ app.post('/api/admin/login', async (req, res) => {
 
 // Tüm kullanıcılar
 app.get('/api/admin/users', adminMiddleware, async (req, res) => {
-  const result = await pool.query(`
-    SELECT u.id, u.email, u.role, u.created_at,
-           r.name as restaurant_name, r.slug,
-           s.plan, s.status, s.trial_ends_at
-    FROM users u
-    LEFT JOIN restaurants r ON r.user_id = u.id
-    LEFT JOIN subscriptions s ON s.user_id = u.id
-    ORDER BY u.created_at DESC
-  `);
-  res.json(result.rows);
+  try {
+    const result = await pool.query(`
+      SELECT u.id, u.email, u.role, u.created_at,
+             r.name as restaurant_name, r.slug,
+             s.plan, s.status, s.trial_ends_at
+      FROM users u
+      LEFT JOIN restaurants r ON r.user_id = u.id
+      LEFT JOIN subscriptions s ON s.user_id = u.id
+      ORDER BY u.created_at DESC
+    `);
+    res.json(result.rows);
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Kullanıcı sil
@@ -924,29 +947,37 @@ app.delete('/api/admin/users/:id', adminMiddleware, async (req, res) => {
 // Abonelik güncelle
 app.put('/api/admin/subscription/:userId', adminMiddleware, async (req, res) => {
   const { plan, status } = req.body;
-  await pool.query(
-    'UPDATE subscriptions SET plan=$1, status=$2 WHERE user_id=$3',
-    [plan, status, req.params.userId]
-  );
-  res.json({ success: true });
+  try {
+    await pool.query(
+      'UPDATE subscriptions SET plan=$1, status=$2 WHERE user_id=$3',
+      [plan, status, req.params.userId]
+    );
+    res.json({ success: true });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Platform istatistikleri
 app.get('/api/admin/stats', adminMiddleware, async (req, res) => {
-  const [users, restaurants, products, feedbacks, subs] = await Promise.all([
-    pool.query('SELECT COUNT(*) FROM users WHERE role=$1', ['owner']),
-    pool.query('SELECT COUNT(*) FROM restaurants'),
-    pool.query('SELECT COUNT(*) FROM products'),
-    pool.query('SELECT COUNT(*) FROM feedbacks'),
-    pool.query('SELECT plan, COUNT(*) FROM subscriptions GROUP BY plan'),
-  ]);
-  res.json({
-    totalUsers: parseInt(users.rows[0].count),
-    totalRestaurants: parseInt(restaurants.rows[0].count),
-    totalProducts: parseInt(products.rows[0].count),
-    totalFeedbacks: parseInt(feedbacks.rows[0].count),
-    planDistribution: subs.rows,
-  });
+  try {
+    const [users, restaurants, products, feedbacks, subs] = await Promise.all([
+      pool.query('SELECT COUNT(*) FROM users WHERE role=$1', ['owner']),
+      pool.query('SELECT COUNT(*) FROM restaurants'),
+      pool.query('SELECT COUNT(*) FROM products'),
+      pool.query('SELECT COUNT(*) FROM feedbacks'),
+      pool.query('SELECT plan, COUNT(*) FROM subscriptions GROUP BY plan'),
+    ]);
+    res.json({
+      totalUsers: parseInt(users.rows[0].count),
+      totalRestaurants: parseInt(restaurants.rows[0].count),
+      totalProducts: parseInt(products.rows[0].count),
+      totalFeedbacks: parseInt(feedbacks.rows[0].count),
+      planDistribution: subs.rows,
+    });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Admin oluştur (sadece development ortamında aktif)
