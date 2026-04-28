@@ -18,6 +18,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const s3 = new S3Client({
   region: 'auto',
   endpoint: process.env.R2_ENDPOINT,
+  forcePathStyle: false, // Cloudflare R2 virtual-hosted style kullanır
   credentials: {
     accessKeyId: process.env.R2_ACCESS_KEY,
     secretAccessKey: process.env.R2_SECRET_KEY,
@@ -1203,8 +1204,13 @@ app.post('/api/upload/product-image', authMiddleware, upload.single('image'), as
     const imageUrl = `${process.env.R2_PUBLIC_URL}/${fileName}`;
     res.json({ imageUrl });
   } catch (err) {
-    console.error('R2 Yükleme Hatası:', err);
-    res.status(500).json({ error: 'Yükleme hatası: ' + err.message });
+    console.error('R2 Yükleme Hatası:', {
+      message: err.message,
+      code: err.Code || err.code,
+      statusCode: err.$metadata?.httpStatusCode,
+      requestId: err.$metadata?.requestId,
+    });
+    res.status(500).json({ error: 'Yükleme hatası: ' + (err.Code || err.message) });
   }
 });
 
