@@ -182,6 +182,15 @@ CREATE TABLE IF NOT EXISTS email_verifications (
   expires_at TIMESTAMP NOT NULL,
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS password_resets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) NOT NULL,
+  token VARCHAR(100) UNIQUE NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
     CREATE TABLE IF NOT EXISTS working_hours (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   restaurant_id UUID REFERENCES restaurants(id) ON DELETE CASCADE,
@@ -755,7 +764,6 @@ app.get('/api/subscription', authMiddleware, async (req, res) => {
 // ═══════════════════════════════
 // ŞİFRE SIFIRLAMA
 // ═══════════════════════════════
-const resetTokens = {}; // Geçici token store
 
 // Email doğrulama
 app.get('/api/auth/verify-email', async (req, res) => {
@@ -789,8 +797,15 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     if (!result.rows[0]) return res.json({ success: true }); // Güvenlik için her zaman success dön
 
     const token = uuidv4();
-    const expires = Date.now() + 3600000; // 1 saat
-    resetTokens[token] = { email, expires };
+    const expiresAt = new Date(Date.now() + 3600000); // 1 saat
+    await pool.query(
+      'DELETE FROM password_resets WHERE email=$1',
+      [email]
+    );
+    await pool.query(
+      'INSERT INTO password_resets (email, token, expires_at) VALUES ($1,$2,$3)',
+      [email, token, expiresAt]
+    );
 
     const resetUrl = `${process.env.APP_URL}/reset-password?token=${token}`;
 
@@ -817,14 +832,19 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
 app.post('/api/auth/reset-password', async (req, res) => {
   const { token, password } = req.body;
-  const record = resetTokens[token];
-  if (!record || record.expires < Date.now()) {
-    return res.status(400).json({ error: 'Link geçersiz veya süresi dolmuş' });
-  }
+  if (!token || !password) return res.status(400).json({ error: 'token ve password zorunlu' });
   try {
+    const result = await pool.query(
+      'SELECT * FROM password_resets WHERE token=$1',
+      [token]
+    );
+    const record = result.rows[0];
+    if (!record || new Date(record.expires_at) < new Date()) {
+      return res.status(400).json({ error: 'Link geçersiz veya süresi dolmuş' });
+    }
     const hash = await bcrypt.hash(password, 10);
     await pool.query('UPDATE users SET password_hash=$1 WHERE email=$2', [hash, record.email]);
-    delete resetTokens[token];
+    await pool.query('DELETE FROM password_resets WHERE token=$1', [token]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -929,8 +949,11 @@ app.get('/api/admin/stats', adminMiddleware, async (req, res) => {
   });
 });
 
-// Admin oluştur (sadece bir kez çalıştırılır)
+// Admin oluştur (sadece development ortamında aktif)
 app.post('/api/admin/create', async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not found' });
+  }
   const { email, password, secret } = req.body;
   if (secret !== process.env.ADMIN_SECRET) return res.status(403).json({ error: 'Yetkisiz' });
   try {
@@ -1172,6 +1195,25 @@ app.post('/api/upload/logo', authMiddleware, upload.single('image'), async (req,
     res.status(500).json({ error: 'Yükleme hatası: ' + err.message });
   }
 });
+app.post('/api/upload/campaign-image', authMiddleware, upload.single('image'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Dosya seçilmedi' });
+  try {
+    const ext = req.file.mimetype === 'image/png' ? 'png' : req.file.mimetype === 'image/webp' ? 'webp' : 'jpg';
+    const fileName = `restaurants/${req.user.restaurantId}/campaigns/${Date.now()}.${ext}`;
+    await s3.send(new PutObjectCommand({
+      Bucket: process.env.R2_BUCKET,
+      Key: fileName,
+      Body: req.file.buffer,
+      ContentType: req.file.mimetype,
+    }));
+    const imageUrl = `${process.env.R2_PUBLIC_URL}/${fileName}`;
+    res.json({ imageUrl });
+  } catch (err) {
+    console.error('Kampanya görsel yükleme hatası:', err);
+    res.status(500).json({ error: 'Yükleme hatası: ' + err.message });
+  }
+});
+
 // ═══════════════════════════════
 // OTOMATİK YEDEKLEME — Her gün saat 03:00'da
 // ═══════════════════════════════
