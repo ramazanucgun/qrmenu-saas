@@ -11,6 +11,8 @@ const { v4: uuidv4 } = require('uuid');
 const WebSocket = require('ws');
 const http = require('http');
 const { Resend } = require('resend');
+const { OAuth2Client } = require('google-auth-library');
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 require('dotenv').config();
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -219,6 +221,8 @@ CREATE TABLE IF NOT EXISTS password_resets (
 
   // Mevcut tablolara eksik kolonları ekle
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(255)`).catch(()=>{});
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT`).catch(()=>{});
   await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS image_url TEXT`);
   await pool.query(`ALTER TABLE products ALTER COLUMN image_url TYPE TEXT`).catch(()=>{});
   await pool.query(`ALTER TABLE restaurants ALTER COLUMN logo_url TYPE TEXT`).catch(()=>{});
@@ -231,6 +235,77 @@ CREATE TABLE IF NOT EXISTS password_resets (
 // ═══════════════════════════════
 
 // Kayıt ol
+app.post('/api/auth/google', async (req, res) => {
+  const { credential, restaurantName } = req.body;
+  if (!credential) return res.status(400).json({ error: 'Google token zorunlu' });
+  try {
+    // Google token doğrula
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name, picture } = payload;
+
+    // Kullanıcı var mı kontrol et
+    let userResult = await pool.query(
+      'SELECT u.*, r.id as restaurant_id FROM users u LEFT JOIN restaurants r ON r.user_id = u.id WHERE u.email=$1',
+      [email]
+    );
+
+    let user = userResult.rows[0];
+    let restaurantId;
+
+    if (user) {
+      // Mevcut kullanıcı — google_id güncelle
+      await pool.query(
+        'UPDATE users SET google_id=$1, avatar_url=$2, is_verified=true WHERE id=$3',
+        [googleId, picture, user.id]
+      );
+      restaurantId = user.restaurant_id;
+    } else {
+      // Yeni kullanıcı — kayıt ol
+      if (!restaurantName) {
+        return res.status(200).json({ needsRestaurantName: true, email, googleId, picture });
+      }
+      const newUser = await pool.query(
+        'INSERT INTO users (email, password_hash, google_id, avatar_url, is_verified) VALUES ($1,$2,$3,$4,true) RETURNING id',
+        [email, '', googleId, picture]
+      );
+      user = newUser.rows[0];
+
+      const slug = restaurantName
+        .toLowerCase()
+        .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
+        .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c')
+        .replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
+        + '-' + Math.random().toString(36).substr(2, 4);
+
+      const restResult = await pool.query(
+        'INSERT INTO restaurants (user_id, slug, name) VALUES ($1,$2,$3) RETURNING id',
+        [user.id, slug, restaurantName]
+      );
+      restaurantId = restResult.rows[0].id;
+
+      await pool.query('INSERT INTO subscriptions (user_id) VALUES ($1)', [user.id]);
+    }
+
+    const token = jwt.sign(
+      { userId: user.id, restaurantId },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    res.json({ token, restaurantId });
+  } catch (err) {
+    console.error('Google auth hatası:', err.message);
+    res.status(500).json({ error: 'Google girişi başarısız: ' + err.message });
+  }
+});
+
+app.get('/api/auth/google-client-id', (req, res) => {
+  res.json({ clientId: process.env.GOOGLE_CLIENT_ID || '' });
+});
+
 app.post('/api/auth/register', async (req, res) => {
   const { email, password, restaurantName } = req.body;
   if (!email || !password || !restaurantName) {
