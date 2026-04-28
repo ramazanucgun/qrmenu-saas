@@ -80,7 +80,10 @@ function notifyRestaurant(restaurantId, data) {
 // Veritabanı bağlantısı
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 30000,
+  max: 10,
 });
 
 app.use(cors());
@@ -1279,8 +1282,17 @@ app.get('/menu/:slug', (req, res) => {
 app.get('*', (req, res) => {
   res.sendFile('index.html', { root: 'public' });
 });
-server.listen(PORT, async () => {
-  console.log(`🚀 QRMenu API çalışıyor: port ${PORT}`);
-  await initDB();
-  scheduleBackup();
-});
+async function startServer() {
+  try {
+    await initDB();
+    server.listen(PORT, () => {
+      console.log(`🚀 QRMenu API çalışıyor: port ${PORT}`);
+      scheduleBackup();
+    });
+  } catch (err) {
+    console.error('❌ Sunucu başlatılamadı:', err.message);
+    process.exit(1);
+  }
+}
+
+startServer();
