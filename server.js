@@ -186,15 +186,6 @@ CREATE TABLE IF NOT EXISTS email_verifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   restaurant_id UUID REFERENCES restaurants(id) ON DELETE CASCADE,
   day_of_week INTEGER NOT NULL,
-  opens_at VARCHAR(5),
-  closes_at VARCHAR(5),
-  is_closed BOOLEAN DEFAULT false
-);
-
-CREATE TABLE IF NOT EXISTS working_hours (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  restaurant_id UUID REFERENCES restaurants(id) ON DELETE CASCADE,
-  day_of_week INTEGER NOT NULL,
   opens_at VARCHAR(5) DEFAULT '09:00',
   closes_at VARCHAR(5) DEFAULT '22:00',
   is_closed BOOLEAN DEFAULT false,
@@ -214,9 +205,8 @@ CREATE TABLE IF NOT EXISTS working_hours (
   `);
 
   // Mevcut tablolara eksik kolonları ekle
-    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false`);
-    await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS image_url VARCHAR(500)`);
-    await pool.query(`ALTER TABLE working_hours ADD COLUMN IF NOT EXISTS opens_at VARCHAR(5) DEFAULT '09:00'`).catch(()=>{});
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false`);
+  await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS image_url VARCHAR(500)`);
   console.log('✅ Veritabanı tabloları hazır');
 }
 
@@ -444,13 +434,20 @@ app.delete('/api/categories/:id', authMiddleware, async (req, res) => {
 
 app.patch('/api/categories/reorder', authMiddleware, async (req, res) => {
   const { ids } = req.body;
-  for (let i = 0; i < ids.length; i++) {
-    await pool.query(
-      'UPDATE categories SET sort_order=$1 WHERE id=$2 AND restaurant_id=$3',
-      [i, ids[i], req.user.restaurantId]
-    );
+  if (!Array.isArray(ids) || !ids.length) {
+    return res.status(400).json({ error: 'ids dizisi zorunlu' });
   }
-  res.json({ success: true });
+  try {
+    await pool.query(
+      `UPDATE categories SET sort_order = t.ord
+       FROM (SELECT unnest($1::uuid[]) AS id, generate_series(0, $2) AS ord) AS t
+       WHERE categories.id = t.id AND categories.restaurant_id = $3`,
+      [ids, ids.length - 1, req.user.restaurantId]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ═══════════════════════════════
@@ -546,7 +543,10 @@ app.patch('/api/products/bulk-price', authMiddleware, async (req, res) => {
 app.get('/api/menu/:slug', async (req, res) => {
   try {
     const restResult = await pool.query(
-      'SELECT * FROM restaurants WHERE slug=$1 AND is_published=true',
+      `SELECT id, slug, name, logo_url, brand_color, font_family,
+              wifi_name, wifi_password, instagram_url, facebook_url,
+              is_published, created_at
+       FROM restaurants WHERE slug=$1 AND is_published=true`,
       [req.params.slug]
     );
     if (!restResult.rows[0]) return res.status(404).json({ error: 'Menü bulunamadı' });
@@ -586,7 +586,7 @@ const currentTime = `${String(now.getHours()).padStart(2,'0')}:${String(now.getM
 const isOpen = todayHours && !todayHours.is_closed && currentTime >= todayHours.opens_at && currentTime <= todayHours.closes_at;
 
 res.json({
-  restaurant: { ...restaurant, password_hash: undefined },
+  restaurant,
   categories,
   campaign: campResult.rows[0] || null,
   working_hours: hoursResult.rows,
@@ -604,11 +604,24 @@ res.json({
 
 app.post('/api/feedback', async (req, res) => {
   const { restaurant_id, type, message, rating } = req.body;
-  const result = await pool.query(
-    'INSERT INTO feedbacks (restaurant_id, type, message, rating) VALUES ($1,$2,$3,$4) RETURNING *',
-    [restaurant_id, type, message, rating]
-  );
-  res.json(result.rows[0]);
+  if (!restaurant_id || !message) {
+    return res.status(400).json({ error: 'restaurant_id ve message zorunlu' });
+  }
+  try {
+    const restCheck = await pool.query(
+      'SELECT id FROM restaurants WHERE id=$1 AND is_published=true',
+      [restaurant_id]
+    );
+    if (!restCheck.rows[0]) return res.status(404).json({ error: 'Restoran bulunamadı' });
+
+    const result = await pool.query(
+      'INSERT INTO feedbacks (restaurant_id, type, message, rating) VALUES ($1,$2,$3,$4) RETURNING *',
+      [restaurant_id, type || 'suggestion', message, rating || 5]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get('/api/feedback', authMiddleware, async (req, res) => {
@@ -688,35 +701,6 @@ app.delete('/api/campaigns/:id', authMiddleware, async (req, res) => {
   );
   res.json({ success: true });
 });
-// ═══════════════════════════════
-// ÇALIŞMA SAATLERİ
-// ═══════════════════════════════
-
-app.get('/api/working-hours', authMiddleware, async (req, res) => {
-  const result = await pool.query(
-    'SELECT * FROM working_hours WHERE restaurant_id=$1 ORDER BY day_of_week',
-    [req.user.restaurantId]
-  );
-  // Eğer hiç kayıt yoksa varsayılan oluştur
-  if (!result.rows.length) {
-    const days = ['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
-    for (let i = 0; i < 7; i++) {
-      await pool.query(
-        'INSERT INTO working_hours (restaurant_id, day_of_week, opens_at, closes_at, is_closed) VALUES ($1,$2,$3,$4,$5)',
-        [req.user.restaurantId, i, '09:00', '22:00', false]
-      );
-    }
-    const newResult = await pool.query(
-      'SELECT * FROM working_hours WHERE restaurant_id=$1 ORDER BY day_of_week',
-      [req.user.restaurantId]
-    );
-    return res.json(newResult.rows);
-  }
-  res.json(result.rows);
-});
-
-
-
 // ═══════════════════════════════
 // ÇALIŞMA SAATLERİ
 // ═══════════════════════════════
