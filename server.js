@@ -118,7 +118,7 @@ async function initDB() {
       user_id UUID REFERENCES users(id),
       slug VARCHAR(100) UNIQUE NOT NULL,
       name VARCHAR(200) NOT NULL,
-      logo_url VARCHAR(500),
+      logo_url TEXT,
       brand_color VARCHAR(7) DEFAULT '#e8c547',
       font_family VARCHAR(50) DEFAULT 'DM Sans',
       wifi_name VARCHAR(100),
@@ -216,7 +216,10 @@ CREATE TABLE IF NOT EXISTS password_resets (
 
   // Mevcut tablolara eksik kolonları ekle
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false`);
-  await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS image_url VARCHAR(500)`);
+  await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS image_url TEXT`);
+  await pool.query(`ALTER TABLE products ALTER COLUMN image_url TYPE TEXT`).catch(()=>{});
+  await pool.query(`ALTER TABLE restaurants ALTER COLUMN logo_url TYPE TEXT`).catch(()=>{});
+  await pool.query(`ALTER TABLE campaigns ALTER COLUMN image_url TYPE TEXT`).catch(()=>{});
   console.log('✅ Veritabanı tabloları hazır');
 }
 
@@ -1186,46 +1189,19 @@ app.get('/api/products/import/template', (req, res) => {
 app.post('/api/upload/product-image', authMiddleware, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Dosya seçilmedi' });
   try {
-    console.log('Upload başladı:', req.file?.originalname, process.env.R2_BUCKET, process.env.R2_ENDPOINT);
-    console.log('R2 Ayarları:', {
-      endpoint: process.env.R2_ENDPOINT,
-      bucket: process.env.R2_BUCKET,
-      accessKey: process.env.R2_ACCESS_KEY ? 'VAR' : 'YOK',
-      secretKey: process.env.R2_SECRET_KEY ? 'VAR' : 'YOK'
-    });
-    const ext = req.file.mimetype === 'image/png' ? 'png' : req.file.mimetype === 'image/webp' ? 'webp' : 'jpg';
-    const fileName = `restaurants/${req.user.restaurantId}/products/${Date.now()}.${ext}`;
-    await s3.send(new PutObjectCommand({
-      Bucket: process.env.R2_BUCKET,
-      Key: fileName,
-      Body: req.file.buffer,
-      ContentType: req.file.mimetype,
-    }));
-    const imageUrl = `${process.env.R2_PUBLIC_URL}/${fileName}`;
+    const base64 = req.file.buffer.toString('base64');
+    const imageUrl = `data:${req.file.mimetype};base64,${base64}`;
     res.json({ imageUrl });
   } catch (err) {
-    console.error('R2 Yükleme Hatası:', {
-      message: err.message,
-      code: err.Code || err.code,
-      statusCode: err.$metadata?.httpStatusCode,
-      requestId: err.$metadata?.requestId,
-    });
-    res.status(500).json({ error: 'Yükleme hatası: ' + (err.Code || err.message) });
+    res.status(500).json({ error: 'Yükleme hatası: ' + err.message });
   }
 });
 
 app.post('/api/upload/logo', authMiddleware, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Dosya seçilmedi' });
   try {
-    const ext = req.file.mimetype === 'image/png' ? 'png' : 'jpg';
-    const fileName = `restaurants/${req.user.restaurantId}/logo.${ext}`;
-    await s3.send(new PutObjectCommand({
-      Bucket: process.env.R2_BUCKET,
-      Key: fileName,
-      Body: req.file.buffer,
-      ContentType: req.file.mimetype,
-    }));
-    const logoUrl = `${process.env.R2_PUBLIC_URL}/${fileName}`;
+    const base64 = req.file.buffer.toString('base64');
+    const logoUrl = `data:${req.file.mimetype};base64,${base64}`;
     await pool.query('UPDATE restaurants SET logo_url=$1 WHERE id=$2', [logoUrl, req.user.restaurantId]);
     res.json({ logoUrl });
   } catch (err) {
@@ -1235,18 +1211,10 @@ app.post('/api/upload/logo', authMiddleware, upload.single('image'), async (req,
 app.post('/api/upload/campaign-image', authMiddleware, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Dosya seçilmedi' });
   try {
-    const ext = req.file.mimetype === 'image/png' ? 'png' : req.file.mimetype === 'image/webp' ? 'webp' : 'jpg';
-    const fileName = `restaurants/${req.user.restaurantId}/campaigns/${Date.now()}.${ext}`;
-    await s3.send(new PutObjectCommand({
-      Bucket: process.env.R2_BUCKET,
-      Key: fileName,
-      Body: req.file.buffer,
-      ContentType: req.file.mimetype,
-    }));
-    const imageUrl = `${process.env.R2_PUBLIC_URL}/${fileName}`;
+    const base64 = req.file.buffer.toString('base64');
+    const imageUrl = `data:${req.file.mimetype};base64,${base64}`;
     res.json({ imageUrl });
   } catch (err) {
-    console.error('Kampanya görsel yükleme hatası:', err);
     res.status(500).json({ error: 'Yükleme hatası: ' + err.message });
   }
 });
@@ -1278,15 +1246,14 @@ async function runBackup() {
         backupData[table] = result.rows;
       } catch(e) { backupData[table] = []; }
     }
+    const fs = require('fs');
     const now = new Date();
-    const fileName = `backups/${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}.json`;
-    await s3.send(new PutObjectCommand({
-      Bucket: process.env.R2_BUCKET,
-      Key: fileName,
-      Body: JSON.stringify(backupData, null, 2),
-      ContentType: 'application/json',
-    }));
-    console.log(`✅ Yedek kaydedildi: ${fileName}`);
+    const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    const backupDir = './backups';
+    if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir);
+    const filePath = `${backupDir}/${dateStr}.json`;
+    fs.writeFileSync(filePath, JSON.stringify(backupData, null, 2));
+    console.log(`✅ Yedek kaydedildi: ${filePath}`);
   } catch(err) {
     console.error('❌ Yedekleme hatası:', err.message);
   }
