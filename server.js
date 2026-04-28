@@ -10,7 +10,10 @@ const QRCode = require('qrcode');
 const { v4: uuidv4 } = require('uuid');
 const WebSocket = require('ws');
 const http = require('http');
+const { Resend } = require('resend');
 require('dotenv').config();
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 // R2 Storage client
 const s3 = new S3Client({
   region: 'auto',
@@ -360,7 +363,7 @@ app.post('/api/auth/login', async (req, res) => {
       { expiresIn: '7d' }
     );
     res.json({ token, restaurantId: user.restaurant_id });
-  } catch {
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
@@ -768,8 +771,6 @@ app.get('/api/subscription', authMiddleware, async (req, res) => {
 // ═══════════════════════════════
 // ŞİFRE SIFIRLAMA
 // ═══════════════════════════════
-const { Resend } = require('resend');
-const resend = new Resend(process.env.RESEND_API_KEY);
 const resetTokens = {}; // Geçici token store
 
 // Email doğrulama
