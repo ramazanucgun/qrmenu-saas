@@ -44,11 +44,14 @@ self.addEventListener('fetch', event => {
   }
 
   // Statik dosyalar — network first, sonra cache
+  // chrome-extension ve data URL'leri cache'leme
+  if (!event.request.url.startsWith('http')) return;
+
   event.respondWith(
     fetch(event.request)
       .then(response => {
         // Başarılı yanıtı cache'e de yaz
-        if (response.ok) {
+        if (response.ok && response.type !== 'opaque') {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }

@@ -252,6 +252,34 @@ textarea.form-input{resize:vertical;min-height:80px}
 .star-btn{background:none;border:none;font-size:24px;cursor:pointer;opacity:.4;transition:all .15s}
 .star-btn.active{opacity:1}
 </style>
+<script>
+// Temel UI fonksiyonları — DOM yüklenmeden önce tanımlanmalı
+function authTab(t) {
+  var e = event;
+  document.querySelectorAll('.auth-tab').forEach(function(el){ el.classList.remove('active'); });
+  if((t==='login'||t==='register') && e && e.currentTarget) e.currentTarget.classList.add('active');
+  var gn = document.getElementById('google-name-form');
+  if(gn) gn.style.display = 'none';
+  if(window.GOOGLE_CLIENT_ID && typeof google !== 'undefined') {
+    setTimeout(function(){ if(typeof initGoogleButtons==='function') initGoogleButtons(window.GOOGLE_CLIENT_ID); }, 50);
+  }
+  ['login-form','register-form','forgot-form','reset-form'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.style.display = 'none';
+  });
+  var target = document.getElementById(t+'-form');
+  if(target) target.style.display = 'block';
+  var err = document.getElementById('auth-error');
+  if(err) err.style.display = 'none';
+}
+
+// Stub fonksiyonlar — asıl script yüklenene kadar çalışır
+function doLogin(){ if(typeof _doLogin==='function') _doLogin(); }
+function doRegister(){ if(typeof _doRegister==='function') _doRegister(); }
+function doForgotPassword(){ if(typeof _doForgotPassword==='function') _doForgotPassword(); }
+function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPassword(); }
+function showApp(){ if(typeof _showApp==='function') _showApp(); }
+</script>
 </head>
 <body>
 
@@ -260,8 +288,8 @@ textarea.form-input{resize:vertical;min-height:80px}
   <div class="auth-logo"><img src="https://pub-752c2dbea9a347528b807bb139a28366.r2.dev/restaurants/cafemenulogo.jpg" style="height:80px;object-fit:contain"></div>
   <div class="auth-box">
     <div class="auth-tabs">
-      <button class="auth-tab active" onclick="authTab('login')">Giriş Yap</button>
-      <button class="auth-tab" onclick="authTab('register')">Kayıt Ol</button>
+      <button class="auth-tab active" onclick="typeof authTab==='function'&&authTab('login')">Giriş Yap</button>
+      <button class="auth-tab" onclick="typeof authTab==='function'&&authTab('register')">Kayıt Ol</button>
     </div>
     <div id="auth-error" class="auth-error"></div>
     <!-- ŞİFRE SIFIRLAMA SAYFASI -->
@@ -838,25 +866,12 @@ function showAuthError(msg) {
 function onAuthSuccess(data) {
   TOKEN = data.token;
   localStorage.setItem('qrmenu_token', TOKEN);
-  showApp();
+  _showApp();
 }
 
-function authTab(t) {
-  document.querySelectorAll('.auth-tab').forEach(e => e.classList.remove('active'));
-  if(t === 'login' || t === 'register') event?.currentTarget?.classList.add('active');
-  document.getElementById('google-name-form').style.display = 'none';
-  // Google butonlarını yeniden render et (tab değişince kaybolabilir)
-  if (window.GOOGLE_CLIENT_ID && typeof google !== 'undefined') {
-    setTimeout(() => initGoogleButtons(window.GOOGLE_CLIENT_ID), 50);
-  }
-  document.getElementById('login-form').style.display = t==='login' ? 'block' : 'none';
-  document.getElementById('register-form').style.display = t==='register' ? 'block' : 'none';
-  document.getElementById('forgot-form').style.display = t==='forgot' ? 'block' : 'none';
-  document.getElementById('reset-form').style.display = t==='reset' ? 'block' : 'none';
-  document.getElementById('auth-error').style.display = 'none';
-}
+// authTab head'de tanımlı
 
-async function doForgotPassword() {
+async function _doForgotPassword() {
   const email = document.getElementById('forgot-email').value;
   if(!email) return showAuthError('Email zorunlu');
   try {
@@ -868,7 +883,7 @@ async function doForgotPassword() {
   } catch(e) { showAuthError(e.message); }
 }
 
-async function doResetPassword() {
+async function _doResetPassword() {
   const password = document.getElementById('reset-pass').value;
   const password2 = document.getElementById('reset-pass2').value;
   if(password.length < 8) return showAuthError('Şifre en az 8 karakter olmalı');
@@ -914,7 +929,7 @@ async function resendFromLogin() {
   } catch(e) { showAuthError(e.message); }
 }
 
-async function doLogin() {
+async function _doLogin() {
   const email = document.getElementById('l-email').value;
   const password = document.getElementById('l-pass').value;
   if (!email || !password) return showAuthError('Email ve şifre zorunlu');
@@ -934,7 +949,7 @@ async function doLogin() {
   }
 }
 
-async function doRegister() {
+async function _doRegister() {
   const restaurantName = document.getElementById('r-name').value.trim();
   const email = document.getElementById('r-email').value.trim();
   const password = document.getElementById('r-pass').value;
@@ -1361,9 +1376,9 @@ function renderCampaigns(){
       + '<div style="font-size:14px;font-weight:600;margin-bottom:4px">'+c.title+'</div>'
       + '<div style="font-size:12px;color:var(--text2);margin-bottom:14px">'+(c.description||'')+'</div>'
       + '<div style="display:flex;gap:8px;align-items:center">'
-      + '<div class="toggle-pill '+(c.is_active?'on':'off')+'" onclick="toggleCampaign(''+c.id+'')" style="cursor:pointer;flex:1;text-align:center">'+(c.is_active?'🟢 Yayında':'⚫ Pasif')+'</div>'
-      + '<button class="icon-btn" style="cursor:pointer" onclick="editCampaign(''+c.id+'')">✏️</button>'
-      + '<button class="icon-btn" style="cursor:pointer;color:var(--red)" onclick="deleteCampaign(''+c.id+'')">🗑</button>'
+      + '<div class="toggle-pill '+(c.is_active?'on':'off')+'" onclick="toggleCampaign(\'' + c.id + '\')" style="cursor:pointer;flex:1;text-align:center">'+(c.is_active?'🟢 Yayında':'⚫ Pasif')+'</div>'
+      + '<button class="icon-btn" style="cursor:pointer" onclick="editCampaign(\'' + c.id + '\')">✏️</button>'
+      + '<button class="icon-btn" style="cursor:pointer;color:var(--red)" onclick="deleteCampaign(\'' + c.id + '\')">🗑</button>'
       + '</div>'
       + '</div>'
       + '</div>';
