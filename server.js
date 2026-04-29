@@ -89,6 +89,18 @@ const pool = new Pool({
 });
 
 app.use(cors());
+
+// Google OAuth popup'ının çalışması için COOP/COEP header'larını ayarla
+app.use((req, res, next) => {
+  // Sadece HTML sayfaları için — API ve statik dosyalara dokunma
+  const isHtml = !req.path.startsWith('/api/') && !req.path.includes('.');
+  if (isHtml) {
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+    res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  }
+  next();
+});
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static('public'));
