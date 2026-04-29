@@ -1,0 +1,13 @@
+# qrmenu-saas
+QR Menu SaaS Platform
+
+
+value
+cfat_6VjGsrR3zuZzOCMDjzdYbs5tHE8yVxSlnX7y6Vmf68e42f70
+ acces key id
+7752ac95164a89baed8c094104c77ad6
+secret acsey key
+66ebbcf4fc744603acf09d27a873fc6c6155a56d0dc43a5c27930845d3e9b387
+
+default
+https://6849b665eb6f7e1e23a79adc5c345092.r2.cloudflarestorage.com

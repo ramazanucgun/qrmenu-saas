@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Admin Panel — CafeMenu</title>
+<meta name="theme-color" content="#e8c547">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CafeMenu">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<style>
+:root{--accent:#e8c547;--bg:#0d0d0f;--bg2:#141416;--bg3:#1c1c20;--border:rgba(255,255,255,0.08);--text:#f0f0ee;--text2:#a8a8a4;--text3:#555;--green:#47c97e;--red:#e84747;--blue:#4799e8;--sans:'DM Sans',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh}
+button{cursor:pointer;font-family:var(--sans)}
+.view{display:none;min-height:100vh}
+.view.active{display:flex}
+#login-view{align-items:center;justify-content:center;flex-direction:column;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(232,197,71,.1),transparent 60%),var(--bg)}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:36px;width:360px}
+.login-title{font-size:1.4rem;font-weight:600;margin-bottom:8px}
+.login-sub{font-size:13px;color:var(--text2);margin-bottom:28px}
+.form-group{margin-bottom:16px}
+.form-label{font-size:11px;color:var(--text2);font-weight:600;letter-spacing:.06em;display:block;margin-bottom:6px}
+.form-input{width:100%;background:var(--bg3);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:11px 14px;color:var(--text);font-size:14px;outline:none;transition:border-color .2s;font-family:var(--sans)}
+.form-input:focus{border-color:var(--accent)}
+.btn-primary{width:100%;background:var(--accent);border:none;border-radius:10px;color:#0d0d0f;font-weight:700;font-size:14px;padding:13px;transition:all .15s}
+.btn-primary:hover{filter:brightness(1.1)}
+.error-box{background:rgba(232,71,71,.1);border:1px solid rgba(232,71,71,.3);color:var(--red);border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:16px;display:none}
+#app-view{flex-direction:row}
+.sidebar{width:200px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0}
+.sidebar-logo{padding:20px 16px;font-size:1rem;font-weight:700;border-bottom:1px solid var(--border);color:var(--accent)}
+.sidebar-nav{flex:1;padding:10px 8px}
+.nav-item{padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text2);transition:all .15s;margin-bottom:4px}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:rgba(232,197,71,.1);color:var(--accent)}
+.sidebar-footer{padding:14px;border-top:1px solid var(--border)}
+.logout-btn{width:100%;background:rgba(232,71,71,.1);border:1px solid rgba(232,71,71,.2);border-radius:8px;color:var(--red);font-size:13px;padding:8px;font-family:var(--sans)}
+.main{margin-left:200px;flex:1;padding:24px}
+.topbar{margin-bottom:24px;display:flex;align-items:center;justify-content:space-between}
+.page-title{font-size:1.3rem;font-weight:600}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:18px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--c,var(--accent))}
+.stat-val{font-size:2rem;font-weight:700;margin-bottom:4px}
+.stat-label{font-size:12px;color:var(--text2)}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px}
+.panel-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.panel-title{font-size:13px;font-weight:600}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px 14px;font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.08em;border-bottom:1px solid var(--border)}
+td{padding:12px 14px;font-size:13px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.badge{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600}
+.b-green{background:rgba(71,201,126,.1);color:var(--green)}
+.b-yellow{background:rgba(232,197,71,.1);color:var(--accent)}
+.b-red{background:rgba(232,71,71,.1);color:var(--red)}
+.b-blue{background:rgba(71,153,232,.1);color:var(--blue)}
+.btn-sm{background:var(--bg3);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--text);font-size:11px;padding:5px 10px;transition:all .15s}
+.btn-sm:hover{background:var(--bg2)}
+.btn-danger{background:rgba(232,71,71,.1);border-color:rgba(232,71,71,.2);color:var(--red)}
+.page{display:none}
+.page.active{display:block}
+.toast-wrap{position:fixed;bottom:20px;right:20px;z-index:500;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--bg2);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px 18px;font-size:13px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.4);animation:toastIn .3s ease}
+@keyframes toastIn{from{transform:translateX(16px);opacity:0}to{transform:translateX(0);opacity:1}}
+.toast-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.t-success .toast-dot{background:var(--green)}
+.t-error .toast-dot{background:var(--red)}
+.t-info .toast-dot{background:var(--blue)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:28px;width:400px}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.modal-title{font-size:15px;font-weight:600}
+.modal-close{background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+select.form-input{cursor:pointer}
+.empty{padding:40px;text-align:center;color:var(--text3);font-size:13px}
+</style>
+</head>
+<body>
+
+<!-- GİRİŞ -->
+<div id="login-view" class="view active">
+  <div class="login-box">
+    <div class="login-title">⚙️ Admin Panel</div>
+    <div class="login-sub">CafeMenu yönetim paneli</div>
+    <div id="login-error" class="error-box"></div>
+    <div class="form-group"><label class="form-label">E-POSTA</label><input class="form-input" id="a-email" type="email" placeholder="admin@cafemenu.com.tr"></div>
+    <div class="form-group"><label class="form-label">ŞİFRE</label><input class="form-input" id="a-pass" type="password" placeholder="••••••••"></div>
+    <button class="btn-primary" onclick="doLogin()">Giriş Yap</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-view" class="view">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><img src="https://pub-752c2dbea9a347528b807bb139a28366.r2.dev/restaurants/cafemenulogo.jpg" style="height:36px;object-fit:contain;margin-bottom:4px"><br>Admin Panel</div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" onclick="goPage('stats',this)">📊 İstatistikler</div>
+      <div class="nav-item" onclick="goPage('users',this)">👥 Kullanıcılar</div>
+      <div class="nav-item" onclick="goPage('subscriptions',this)">💳 Abonelikler</div>
+    </nav>
+    <div class="sidebar-footer">
+      <button id="install-btn" onclick="installApp()" style="display:none;width:100%;background:rgba(232,197,71,.15);border:1px solid rgba(232,197,71,.3);border-radius:8px;color:#e8c547;font-size:13px;padding:8px;font-family:var(--sans);cursor:pointer;margin-bottom:8px">📲 Uygulamayı Yükle</button>
+      <button class="logout-btn" onclick="doLogout()">🚪 Çıkış Yap</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- İSTATİSTİKLER -->
+    <div class="page active" id="page-stats">
+      <div class="topbar"><div class="page-title">Platform İstatistikleri</div><button class="btn-sm" onclick="loadStats()">🔄 Yenile</button></div>
+      <div class="stats-grid">
+        <div class="stat-card" style="--c:var(--accent)"><div class="stat-val" id="s-users">—</div><div class="stat-label">Toplam Kullanıcı</div></div>
+        <div class="stat-card" style="--c:var(--green)"><div class="stat-val" id="s-rests">—</div><div class="stat-label">Restoran</div></div>
+        <div class="stat-card" style="--c:var(--blue)"><div class="stat-val" id="s-prods">—</div><div class="stat-label">Toplam Ürün</div></div>
+        <div class="stat-card" style="--c:var(--red)"><div class="stat-val" id="s-feeds">—</div><div class="stat-label">Geri Bildirim</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Plan Dağılımı</span></div>
+        <div id="plan-dist" style="padding:16px;display:flex;gap:12px;flex-wrap:wrap"></div>
+      </div>
+    </div>
+
+    <!-- KULLANICILAR -->
+    <div class="page" id="page-users">
+      <div class="topbar"><div class="page-title">Kullanıcı Yönetimi</div><button class="btn-sm" onclick="loadUsers()">🔄 Yenile</button></div>
+      <div class="panel">
+        <table>
+          <thead><tr><th>KULLANICI</th><th>RESTORAN</th><th>PLAN</th><th>DURUM</th><th>KAYIT TARİHİ</th><th>İŞLEM</th></tr></thead>
+          <tbody id="users-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ABONELİKLER -->
+    <div class="page" id="page-subscriptions">
+      <div class="topbar"><div class="page-title">Abonelik Yönetimi</div><button class="btn-sm" onclick="loadUsers()">🔄 Yenile</button></div>
+      <div class="panel">
+        <table>
+          <thead><tr><th>KULLANICI</th><th>PLAN</th><th>DURUM</th><th>BİTİŞ TARİHİ</th><th>İŞLEM</th></tr></thead>
+          <tbody id="subs-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ABONELİK DÜZENLEME MODAL -->
+<div class="modal-overlay" id="sub-modal">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">Abonelik Düzenle</span><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <input type="hidden" id="edit-user-id">
+    <div class="form-group"><label class="form-label">PLAN</label>
+      <select class="form-input" id="edit-plan">
+        <option value="trial">Trial</option>
+        <option value="starter">Starter</option>
+        <option value="pro">Pro</option>
+        <option value="enterprise">Enterprise</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">DURUM</label>
+      <select class="form-input" id="edit-status">
+        <option value="active">Aktif</option>
+        <option value="cancelled">İptal</option>
+        <option value="expired">Süresi Doldu</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm" onclick="closeModal()">İptal</button>
+      <button class="btn-sm" style="background:var(--accent);border-color:var(--accent);color:#000;font-weight:700" onclick="saveSubscription()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+const API = '/api';
+let TOKEN = localStorage.getItem('admin_token');
+let allUsers = [];
+
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (TOKEN) opts.headers['Authorization'] = 'Bearer ' + TOKEN;
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  const data = await res.json();
+  if (res.status === 401) {
+    TOKEN = null;
+    localStorage.removeItem('admin_token');
+    document.getElementById('app-view').classList.remove('active');
+    document.getElementById('login-view').classList.add('active');
+    throw new Error('Oturum süresi doldu, lütfen tekrar giriş yapın');
+  }
+  if (!res.ok) throw new Error(data.error || 'Hata');
+  return data;
+}
+
+async function doLogin() {
+  const email = document.getElementById('a-email').value;
+  const password = document.getElementById('a-pass').value;
+  if (!email || !password) return showError('Email ve şifre zorunlu');
+  try {
+    const data = await api('POST', '/admin/login', { email, password });
+    TOKEN = data.token;
+    localStorage.setItem('admin_token', TOKEN);
+    showApp();
+  } catch(e) { showError(e.message); }
+}
+
+function showError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+function doLogout() {
+  TOKEN = null; localStorage.removeItem('admin_token');
+  document.getElementById('app-view').classList.remove('active');
+  document.getElementById('login-view').classList.add('active');
+}
+
+function showApp() {
+  document.getElementById('login-view').classList.remove('active');
+  document.getElementById('app-view').classList.add('active');
+  loadStats(); loadUsers();
+}
+
+function goPage(id, el) {
+  document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+  if(el) el.classList.add('active');
+  document.querySelectorAll('.page').forEach(e => e.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+}
+
+async function loadStats() {
+  try {
+    const data = await api('GET', '/admin/stats');
+    document.getElementById('s-users').textContent = data.totalUsers;
+    document.getElementById('s-rests').textContent = data.totalRestaurants;
+    document.getElementById('s-prods').textContent = data.totalProducts;
+    document.getElementById('s-feeds').textContent = data.totalFeedbacks;
+    const planColors = { trial:'b-yellow', starter:'b-blue', pro:'b-green', enterprise:'b-red' };
+    document.getElementById('plan-dist').innerHTML = data.planDistribution.map(p => `
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px 20px;text-align:center">
+        <div style="font-size:1.5rem;font-weight:700">${p.count}</div>
+        <div><span class="badge ${planColors[p.plan]||'b-blue'}">${p.plan.toUpperCase()}</span></div>
+      </div>
+    `).join('');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function loadUsers() {
+  try {
+    allUsers = await api('GET', '/admin/users');
+    renderUsers();
+    renderSubs();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function renderUsers() {
+  const tbody = document.getElementById('users-table');
+  if (!allUsers.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">Kullanıcı yok</td></tr>'; return; }
+  const planBadge = { trial:'b-yellow', starter:'b-blue', pro:'b-green', enterprise:'b-red' };
+  const statusBadge = { active:'b-green', cancelled:'b-red', expired:'b-red' };
+  tbody.innerHTML = allUsers.map(u => `
+    <tr>
+      <td>
+        <div style="font-weight:600">${u.email}</div>
+      </td>
+      <td>${u.restaurant_name || '—'}<br><span style="font-size:11px;color:var(--text3)">${u.slug ? '/menu/'+u.slug : ''}</span></td>
+      <td><span class="badge ${planBadge[u.plan]||'b-blue'}">${(u.plan||'trial').toUpperCase()}</span></td>
+      <td><span class="badge ${statusBadge[u.status]||'b-yellow'}">${u.status==='active'?'Aktif':u.status==='cancelled'?'İptal':'Süresi Doldu'}</span></td>
+      <td style="font-size:12px;color:var(--text3)">${new Date(u.created_at).toLocaleDateString('tr-TR')}</td>
+      <td>
+        <button class="btn-sm" onclick="editSub('${u.id}','${u.plan||'trial'}','${u.status||'active'}')" style="margin-right:4px">✏️ Plan</button>
+        <button class="btn-sm btn-danger" onclick="deleteUser('${u.id}','${u.email}')">🗑 Sil</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderSubs() {
+  const tbody = document.getElementById('subs-table');
+  if (!allUsers.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">Abonelik yok</td></tr>'; return; }
+  const planBadge = { trial:'b-yellow', starter:'b-blue', pro:'b-green', enterprise:'b-red' };
+  const statusBadge = { active:'b-green', cancelled:'b-red', expired:'b-red' };
+  tbody.innerHTML = allUsers.map(u => `
+    <tr>
+      <td>${u.email}</td>
+      <td><span class="badge ${planBadge[u.plan]||'b-yellow'}">${(u.plan||'trial').toUpperCase()}</span></td>
+      <td><span class="badge ${statusBadge[u.status]||'b-yellow'}">${u.status==='active'?'Aktif':u.status==='cancelled'?'İptal':'Süresi Doldu'}</span></td>
+      <td style="font-size:12px;color:var(--text3)">${u.trial_ends_at ? new Date(u.trial_ends_at).toLocaleDateString('tr-TR') : '—'}</td>
+      <td><button class="btn-sm" onclick="editSub('${u.id}','${u.plan||'trial'}','${u.status||'active'}')">✏️ Düzenle</button></td>
+    </tr>
+  `).join('');
+}
+
+function editSub(userId, plan, status) {
+  document.getElementById('edit-user-id').value = userId;
+  document.getElementById('edit-plan').value = plan;
+  document.getElementById('edit-status').value = status;
+  document.getElementById('sub-modal').classList.add('open');
+}
+
+async function saveSubscription() {
+  const userId = document.getElementById('edit-user-id').value;
+  const plan = document.getElementById('edit-plan').value;
+  const status = document.getElementById('edit-status').value;
+  try {
+    await api('PUT', '/admin/subscription/' + userId, { plan, status });
+    closeModal();
+    await loadUsers();
+    toast('Abonelik güncellendi ✅', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteUser(id, email) {
+  if (!confirm(`"${email}" kullanıcısını silmek istediğinize emin misiniz?\nTüm verileri silinecek!`)) return;
+  try {
+    await api('DELETE', '/admin/users/' + id);
+    await loadUsers();
+    toast('Kullanıcı silindi', 'info');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function closeModal() { document.getElementById('sub-modal').classList.remove('open'); }
+
+function toast(msg, type='info') {
+  const wrap = document.getElementById('toast-wrap');
+  const el = document.createElement('div');
+  el.className = `toast t-${type}`;
+  el.innerHTML = `<div class="toast-dot"></div>${msg}`;
+  wrap.appendChild(el);
+  setTimeout(() => { el.style.opacity='0'; el.style.transition='.3s'; setTimeout(()=>el.remove(),300); }, 3500);
+}
+
+document.addEventListener('click', e => {
+  if(e.target.id === 'sub-modal') closeModal();
+});
+
+if (TOKEN) {
+  api('GET', '/admin/stats').then(() => {
+    // token geçerli, showApp zaten çağrıldı
+  }).catch(() => {
+    // 401 handler yukarıda zaten login'e yönlendiriyor
+  });
+  showApp();
+}
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('SW kayıtlı:', reg.scope))
+      .catch(err => console.log('SW hatası:', err));
+  });
+}
+
+// iOS ve Android için "Ana ekrana ekle" prompt'u
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Butonu göster
+  const btn = document.getElementById('install-btn');
+  if (btn) btn.style.display = 'flex';
+});
+
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+  }
+}
+
+window.addEventListener('appinstalled', () => {
+  const btn = document.getElementById('install-btn');
+  if (btn) btn.style.display = 'none';
+});
+</script>
+</body>
+</html>
