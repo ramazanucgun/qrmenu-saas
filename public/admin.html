@@ -2,8 +2,16 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Admin Panel — CafeMenu</title>
+<meta name="theme-color" content="#e8c547">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CafeMenu">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <style>
 :root{--accent:#e8c547;--bg:#0d0d0f;--bg2:#141416;--bg3:#1c1c20;--border:rgba(255,255,255,0.08);--text:#f0f0ee;--text2:#a8a8a4;--text3:#555;--green:#47c97e;--red:#e84747;--blue:#4799e8;--sans:'DM Sans',sans-serif}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -99,6 +107,7 @@ select.form-input{cursor:pointer}
       <div class="nav-item" onclick="goPage('subscriptions',this)">💳 Abonelikler</div>
     </nav>
     <div class="sidebar-footer">
+      <button id="install-btn" onclick="installApp()" style="display:none;width:100%;background:rgba(232,197,71,.15);border:1px solid rgba(232,197,71,.3);border-radius:8px;color:#e8c547;font-size:13px;padding:8px;font-family:var(--sans);cursor:pointer;margin-bottom:8px">📲 Uygulamayı Yükle</button>
       <button class="logout-btn" onclick="doLogout()">🚪 Çıkış Yap</button>
     </div>
   </aside>
@@ -183,6 +192,13 @@ async function api(method, path, body) {
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(API + path, opts);
   const data = await res.json();
+  if (res.status === 401) {
+    TOKEN = null;
+    localStorage.removeItem('admin_token');
+    document.getElementById('app-view').classList.remove('active');
+    document.getElementById('login-view').classList.add('active');
+    throw new Error('Oturum süresi doldu, lütfen tekrar giriş yapın');
+  }
   if (!res.ok) throw new Error(data.error || 'Hata');
   return data;
 }
@@ -329,7 +345,45 @@ document.addEventListener('click', e => {
   if(e.target.id === 'sub-modal') closeModal();
 });
 
-if (TOKEN) showApp();
+if (TOKEN) {
+  api('GET', '/admin/stats').then(() => {
+    // token geçerli, showApp zaten çağrıldı
+  }).catch(() => {
+    // 401 handler yukarıda zaten login'e yönlendiriyor
+  });
+  showApp();
+}
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('SW kayıtlı:', reg.scope))
+      .catch(err => console.log('SW hatası:', err));
+  });
+}
+
+// iOS ve Android için "Ana ekrana ekle" prompt'u
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Butonu göster
+  const btn = document.getElementById('install-btn');
+  if (btn) btn.style.display = 'flex';
+});
+
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+  }
+}
+
+window.addEventListener('appinstalled', () => {
+  const btn = document.getElementById('install-btn');
+  if (btn) btn.style.display = 'none';
+});
 </script>
 </body>
 </html>

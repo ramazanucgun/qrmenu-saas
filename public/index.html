@@ -2,6 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
+  <script src="https://accounts.google.com/gsi/client" async></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QRMenu — app.ucgun.com.tr</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@400;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
@@ -27,6 +28,10 @@ input,textarea,select{font-family:var(--sans)}
 .btn-primary{width:100%;background:var(--accent);border:none;border-radius:var(--r);color:#0d0d0f;font-weight:700;font-size:14px;padding:13px;transition:all .15s}
 .btn-primary:hover{filter:brightness(1.1)}
 .auth-error{background:rgba(232,71,71,.1);border:1px solid rgba(232,71,71,.3);color:var(--red);border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:16px;display:none}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--text3);font-size:12px}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.btn-google{width:100%;padding:11px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;font-family:var(--sans)}
+.btn-google:hover{background:var(--bg2);border-color:rgba(255,255,255,.2)}
 #app-view{flex-direction:row}
 .sidebar{width:220px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100}
 .sidebar-logo{padding:22px 18px;font-family:var(--serif);font-size:1.2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
@@ -277,6 +282,8 @@ textarea.form-input{resize:vertical;min-height:80px}
   <button class="btn-primary" onclick="doResetPassword()">Şifremi Güncelle</button>
 </div>
     <div id="login-form">
+      <div id="g-login-btn" style="display:flex;justify-content:center;min-height:44px"></div>
+      <div class="auth-divider">veya</div>
       <div class="form-group"><label class="form-label">E-POSTA</label><input class="form-input" id="l-email" type="email" placeholder="email@ornek.com"></div>
       <div class="form-group"><label class="form-label">ŞİFRE</label><input class="form-input" id="l-pass" type="password" placeholder="••••••••"></div>
       <button class="btn-primary" onclick="doLogin()">Giriş Yap</button>
@@ -288,10 +295,18 @@ textarea.form-input{resize:vertical;min-height:80px}
 </div>
     </div>
     <div id="register-form" style="display:none">
+      <div id="g-register-btn" style="display:flex;justify-content:center;min-height:44px"></div>
+      <div class="auth-divider">veya</div>
       <div class="form-group"><label class="form-label">RESTORAN ADI</label><input class="form-input" id="r-name" placeholder="Cafe Riviera"></div>
       <div class="form-group"><label class="form-label">E-POSTA</label><input class="form-input" id="r-email" type="email" placeholder="email@ornek.com"></div>
       <div class="form-group"><label class="form-label">ŞİFRE</label><input class="form-input" id="r-pass" type="password" placeholder="En az 8 karakter"></div>
       <button class="btn-primary" onclick="doRegister()">14 Gün Ücretsiz Başla</button>
+    </div>
+    <!-- Google - Restoran adı modal -->
+    <div id="google-name-form" style="display:none">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:20px">Google hesabınız doğrulandı. Restoranınızın adını girin:</p>
+      <div class="form-group"><label class="form-label">RESTORAN ADI</label><input class="form-input" id="g-restaurant-name" placeholder="Cafe Riviera"></div>
+      <button class="btn-primary" onclick="completeGoogleRegister()">Hesabı Oluştur →</button>
     </div>
   </div>
 </div>
@@ -700,7 +715,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 
 <div class="modal-overlay" id="camp-modal">
   <div class="modal" style="width:380px">
-    <div class="modal-head"><span class="modal-title">Kampanya Ekle</span><button class="modal-close" onclick="closeModal('camp-modal')">✕</button></div>
+    <div class="modal-head"><span class="modal-title" id="camp-modal-title">Kampanya Ekle</span><button class="modal-close" onclick="closeModal('camp-modal')">✕</button></div>
     <div class="form-group"><label class="form-label">BAŞLIK</label><input class="form-input" id="camp-title" placeholder="Hafta sonu %20 indirim!"></div>
     <div class="form-group"><label class="form-label">AÇIKLAMA</label><input class="form-input" id="camp-desc-input" placeholder="Kısa açıklama"></div>
     <div class="form-group"><label class="form-label">EMOJİ</label><input class="form-input" id="camp-emoji-input" placeholder="🎉" maxlength="4"></div>
@@ -720,7 +735,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 </div>
     <div class="modal-footer">
       <button class="btn-sm" onclick="closeModal('camp-modal')">İptal</button>
-      <button class="btn-sm btn-accent" onclick="saveCampaign()">Yayınla</button>
+      <button class="btn-sm btn-accent" id="camp-save-btn" onclick="saveCampaign()">Yayınla</button>
     </div>
   </div>
 </div>
@@ -754,9 +769,86 @@ async function api(method, path, body) {
   return data;
 }
 
+// ═══════════════════════════════
+// GOOGLE OAUTH
+// ═══════════════════════════════
+let pendingGoogleCredential = null;
+
+function initGoogleButtons(clientId) {
+  if (!clientId || typeof google === 'undefined') return;
+  google.accounts.id.initialize({
+    client_id: clientId,
+    callback: handleGoogleCredential,
+    auto_select: false,
+    cancel_on_tap_outside: true,
+  });
+  // Her iki forma da buton render et
+  ['g-login-btn', 'g-register-btn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      google.accounts.id.renderButton(el, {
+        theme: 'outline',
+        size: 'large',
+        width: 308,
+        text: id === 'g-login-btn' ? 'signin_with' : 'signup_with',
+        locale: 'tr',
+      });
+    }
+  });
+}
+
+async function handleGoogleCredential(response) {
+  pendingGoogleCredential = response.credential;
+  try {
+    const data = await api('POST', '/auth/google', { credential: pendingGoogleCredential });
+    if (data.needsRestaurantName) {
+      authTab('google-name');
+      return;
+    }
+    onAuthSuccess(data);
+  } catch(e) {
+    showAuthError(e.message);
+  }
+}
+
+async function completeGoogleRegister() {
+  const restaurantName = document.getElementById('g-restaurant-name').value.trim();
+  if (!restaurantName) return showAuthError('Restoran adı zorunlu');
+  try {
+    let data;
+    if (pendingGoogleCredential && typeof pendingGoogleCredential === 'string' && pendingGoogleCredential.split('.').length === 3) {
+      // ID token (GSI yöntemi)
+      data = await api('POST', '/auth/google', { credential: pendingGoogleCredential, restaurantName });
+    } else if (window._pendingGoogleToken) {
+      // Access token (popup yöntemi)
+      data = await api('POST', '/auth/google-token', { ...window._pendingGoogleToken, restaurantName });
+    }
+    onAuthSuccess(data);
+  } catch(e) {
+    showAuthError(e.message);
+  }
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function onAuthSuccess(data) {
+  TOKEN = data.token;
+  localStorage.setItem('qrmenu_token', TOKEN);
+  showApp();
+}
+
 function authTab(t) {
   document.querySelectorAll('.auth-tab').forEach(e => e.classList.remove('active'));
   if(t === 'login' || t === 'register') event?.currentTarget?.classList.add('active');
+  document.getElementById('google-name-form').style.display = 'none';
+  // Google butonlarını yeniden render et (tab değişince kaybolabilir)
+  if (window.GOOGLE_CLIENT_ID && typeof google !== 'undefined') {
+    setTimeout(() => initGoogleButtons(window.GOOGLE_CLIENT_ID), 50);
+  }
   document.getElementById('login-form').style.display = t==='login' ? 'block' : 'none';
   document.getElementById('register-form').style.display = t==='register' ? 'block' : 'none';
   document.getElementById('forgot-form').style.display = t==='forgot' ? 'block' : 'none';
@@ -1055,6 +1147,7 @@ function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){
   document.getElementById(id).classList.remove('open');
   if(id==='prod-modal'){editingProductId=null;document.getElementById('prod-modal-title').textContent='Ürün Ekle';document.getElementById('prod-name').value='';document.getElementById('prod-desc').value='';document.getElementById('prod-price').value='';document.getElementById('prod-emoji').value='';document.getElementById('prod-image').value='';document.getElementById('img-preview').innerHTML='📷';document.getElementById('img-status').textContent='';}
+  if(id==='camp-modal'){editingCampaignId=null;document.getElementById('camp-modal-title').textContent='Kampanya Ekle';document.getElementById('camp-save-btn').textContent='Yayınla';document.getElementById('camp-title').value='';document.getElementById('camp-desc-input').value='';document.getElementById('camp-emoji-input').value='';document.getElementById('camp-image').value='';document.getElementById('camp-img-preview').innerHTML='🎉';document.getElementById('camp-img-status').textContent='';}
 }
 
 function previewCampImage(input){
@@ -1256,16 +1349,46 @@ function updateNotifBadge(){const count=calls.filter(c=>c.status==='pending').le
 function renderCampaigns(){
   const el=document.getElementById('camp-list');
   if(!campaigns.length){el.innerHTML='<div class="empty"><div class="empty-icon">📢</div>Kampanya yok</div>';return;}
-  el.innerHTML=campaigns.map(c=>`
-    <div class="panel" style="padding:20px">
-      <div style="font-size:36px;margin-bottom:10px">${c.emoji}</div>
-      <div style="font-size:14px;font-weight:600;margin-bottom:5px">${c.title}</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:14px">${c.description||''}</div>
-      <div style="display:flex;gap:8px">
-        <div class="toggle-pill ${c.is_active?'on':'off'}" onclick="toggleCampaign('${c.id}')" style="cursor:pointer">${c.is_active?'🟢 Yayında':'⚫ Pasif'}</div>
-        <button class="icon-btn" onclick="deleteCampaign('${c.id}')">🗑</button>
-      </div>
-    </div>`).join('');
+  el.innerHTML=campaigns.map(function(c){
+    var imgHtml = c.image_url
+      ? '<img src="'+c.image_url+'" style="width:100%;height:100%;object-fit:cover">'
+      : (c.emoji||'🎉');
+    return '<div class="panel" style="padding:0;overflow:hidden">'
+      + '<div style="height:120px;background:linear-gradient(135deg,#fde68a,#f59e0b);display:flex;align-items:center;justify-content:center;font-size:52px;overflow:hidden">'
+      + imgHtml
+      + '</div>'
+      + '<div style="padding:16px">'
+      + '<div style="font-size:14px;font-weight:600;margin-bottom:4px">'+c.title+'</div>'
+      + '<div style="font-size:12px;color:var(--text2);margin-bottom:14px">'+(c.description||'')+'</div>'
+      + '<div style="display:flex;gap:8px;align-items:center">'
+      + '<div class="toggle-pill '+(c.is_active?'on':'off')+'" onclick="toggleCampaign(''+c.id+'')" style="cursor:pointer;flex:1;text-align:center">'+(c.is_active?'🟢 Yayında':'⚫ Pasif')+'</div>'
+      + '<button class="icon-btn" style="cursor:pointer" onclick="editCampaign(''+c.id+'')">✏️</button>'
+      + '<button class="icon-btn" style="cursor:pointer;color:var(--red)" onclick="deleteCampaign(''+c.id+'')">🗑</button>'
+      + '</div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+let editingCampaignId = null;
+
+function editCampaign(id){
+  const c = campaigns.find(x => x.id === id);
+  if(!c) return;
+  editingCampaignId = id;
+  document.getElementById('camp-modal-title').textContent = 'Kampanya Düzenle';
+  document.getElementById('camp-title').value = c.title || '';
+  document.getElementById('camp-desc-input').value = c.description || '';
+  document.getElementById('camp-emoji-input').value = c.emoji || '🎉';
+  document.getElementById('camp-img-status').textContent = '';
+  const preview = document.getElementById('camp-img-preview');
+  if(c.image_url){
+    preview.innerHTML = '<img src="'+c.image_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:7px">';
+  } else {
+    preview.innerHTML = c.emoji || '🎉';
+  }
+  document.getElementById('camp-save-btn').textContent = 'Güncelle';
+  openModal('camp-modal');
 }
 
 async function saveCampaign(){
@@ -1280,28 +1403,42 @@ async function saveCampaign(){
     try{
       const formData = new FormData();
       formData.append('image', imageFile);
-      const uploadRes = await fetch(API+'/upload/product-image', {
+      const uploadRes = await fetch(API+'/upload/campaign-image', {
         method:'POST', headers:{'Authorization':'Bearer '+TOKEN}, body:formData
       });
+      if(!uploadRes.ok){
+        const errData = await uploadRes.json().catch(()=>({}));
+        throw new Error(errData.error || 'Yükleme başarısız ('+uploadRes.status+')');
+      }
       const uploadData = await uploadRes.json();
-      if(uploadData.imageUrl) {
+      if(uploadData.imageUrl){
         image_url = uploadData.imageUrl;
         document.getElementById('camp-img-status').textContent = '✅ Yüklendi';
+      } else {
+        throw new Error('Sunucudan URL alınamadı');
       }
-    }catch{ toast('Görsel yüklenemedi','error'); }
+    }catch(uploadErr){
+      toast('Görsel yüklenemedi: ' + uploadErr.message, 'error');
+      document.getElementById('camp-img-status').textContent = '❌ Hata';
+      return;
+    }
   }
   try{
-    const camp = await api('POST', '/campaigns', { title, description, emoji, image_url });
-    campaigns.unshift(camp);
+    let camp;
+    if(editingCampaignId){
+      const body = { title, description, emoji };
+      if(image_url) body.image_url = image_url;
+      camp = await api('PATCH', '/campaigns/'+editingCampaignId, body);
+      const idx = campaigns.findIndex(x => x.id === editingCampaignId);
+      if(idx > -1) campaigns[idx] = camp;
+      toast('Kampanya güncellendi ✅', 'success');
+    } else {
+      camp = await api('POST', '/campaigns', { title, description, emoji, image_url });
+      campaigns.unshift(camp);
+      toast('Kampanya yayında! 🎉', 'success');
+    }
     closeModal('camp-modal');
     renderCampaigns();
-    toast('Kampanya yayında! 🎉', 'success');
-    document.getElementById('camp-title').value = '';
-    document.getElementById('camp-desc-input').value = '';
-    document.getElementById('camp-emoji-input').value = '';
-    document.getElementById('camp-image').value = '';
-    document.getElementById('camp-img-preview').innerHTML = '🎉';
-    document.getElementById('camp-img-status').textContent = '';
   }catch(e){toast(e.message,'error');}
 }
 
@@ -1573,8 +1710,13 @@ function renderPublicMenu(data){
   if(campaign){
     document.getElementById('camp-popup-title').textContent=campaign.title;
     document.getElementById('camp-popup-desc').textContent=campaign.description||'';
-    document.getElementById('camp-emoji-display').textContent=campaign.emoji||'🎉';
-    if(!window.location.pathname.startsWith('/menu/')) if(!window.location.pathname.startsWith('/menu/')) setTimeout(()=>document.getElementById('camp-popup').classList.add('open'),1200);
+    const campDisplay1 = document.getElementById('camp-emoji-display');
+    if(campaign.image_url){
+      campDisplay1.innerHTML=`<img src="${campaign.image_url}" style="width:100%;height:100%;object-fit:cover">`;
+    } else {
+      campDisplay1.textContent=campaign.emoji||'🎉';
+    }
+    if(!window.location.pathname.startsWith('/menu/')) setTimeout(()=>document.getElementById('camp-popup').classList.add('open'),1200);
   }
 }
 
@@ -1684,7 +1826,12 @@ if (currentPath.startsWith('/menu/')) {
         if (data.campaign) {
           document.getElementById('camp-popup-title').textContent = data.campaign.title;
           document.getElementById('camp-popup-desc').textContent = data.campaign.description || '';
-          document.getElementById('camp-emoji-display').textContent = data.campaign.emoji || '🎉';
+          const campDisplay2 = document.getElementById('camp-emoji-display');
+          if(data.campaign.image_url){
+            campDisplay2.innerHTML=`<img src="${data.campaign.image_url}" style="width:100%;height:100%;object-fit:cover">`;
+          } else {
+            campDisplay2.textContent = data.campaign.emoji || '🎉';
+          }
           setTimeout(() => document.getElementById('camp-popup').classList.add('open'), 2000);
         }
       }
@@ -1693,7 +1840,95 @@ if (currentPath.startsWith('/menu/')) {
       document.getElementById('menu-public').innerHTML = '<div style="padding:60px;text-align:center">Baglanti hatasi</div>';
     });
     
-} else if (TOKEN) {
+} else // Google butonlarını başlat
+function tryInitGoogle() {
+  fetch('/api/auth/google-client-id').then(r=>r.json()).then(d=>{
+    if (!d.clientId) return;
+    window.GOOGLE_CLIENT_ID = d.clientId;
+
+    function doInit() {
+      if (typeof google !== 'undefined' && google.accounts) {
+        initGoogleButtons(d.clientId);
+      } else {
+        // Script yüklenmemişse fallback buton göster
+        showGoogleFallbackButtons(d.clientId);
+      }
+    }
+
+    // GSI hazırsa hemen, değilse 2 saniye bekle sonra fallback
+    if (typeof google !== 'undefined' && google.accounts) {
+      doInit();
+    } else {
+      let waited = 0;
+      const interval = setInterval(() => {
+        waited += 100;
+        if (typeof google !== 'undefined' && google.accounts) {
+          clearInterval(interval);
+          doInit();
+        } else if (waited >= 3000) {
+          clearInterval(interval);
+          showGoogleFallbackButtons(d.clientId);
+        }
+      }, 100);
+    }
+  }).catch(()=>{});
+}
+
+function showGoogleFallbackButtons(clientId) {
+  // GSI yüklenemedi — OAuth popup ile manuel giriş
+  const btnHtml = '<button class="btn-google" onclick="openGooglePopup()"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Google ile Devam Et</button>';
+  ['g-login-btn','g-register-btn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = btnHtml;
+  });
+  window._googleClientId = clientId;
+}
+
+function openGooglePopup() {
+  const clientId = window._googleClientId || window.GOOGLE_CLIENT_ID;
+  const redirectUri = encodeURIComponent(window.location.origin + '/auth/google/callback');
+  const scope = encodeURIComponent('email profile');
+  const url = 'https://accounts.google.com/o/oauth2/v2/auth'
+    + '?client_id=' + clientId
+    + '&redirect_uri=' + redirectUri
+    + '&response_type=token'
+    + '&scope=' + scope;
+  const popup = window.open(url, 'google-auth', 'width=500,height=600,left=200,top=100');
+  window._googlePopup = popup;
+  const timer = setInterval(() => {
+    try {
+      if (popup.closed) { clearInterval(timer); return; }
+      const href = popup.location.href;
+      if (href.includes('access_token=')) {
+        clearInterval(timer);
+        popup.close();
+        const params = new URLSearchParams(href.split('#')[1]);
+        const accessToken = params.get('access_token');
+        fetchGoogleUserInfo(accessToken);
+      }
+    } catch(e) {}
+  }, 200);
+}
+
+async function fetchGoogleUserInfo(accessToken) {
+  try {
+    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    });
+    const user = await res.json();
+    const payload = { accessToken, email: user.email, name: user.name, picture: user.picture, googleId: user.sub };
+    window._pendingGoogleToken = payload;
+    const data = await api('POST', '/auth/google-token', payload);
+    if (data.needsRestaurantName) { authTab('google-name'); return; }
+    onAuthSuccess(data);
+  } catch(e) {
+    showAuthError('Google girişi başarısız: ' + e.message);
+  }
+}
+
+tryInitGoogle();
+
+if (TOKEN) {
   loadApp();
 }
 </script>
