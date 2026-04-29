@@ -302,6 +302,52 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
+// Google access_token ile giriş (GSI yüklenemediğinde fallback)
+app.post('/api/auth/google-token', async (req, res) => {
+  const { accessToken, email, name, picture, googleId, restaurantName } = req.body;
+  if (!accessToken || !email) return res.status(400).json({ error: 'Eksik bilgi' });
+  try {
+    // Access token'ı Google ile doğrula
+    const verify = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    });
+    if (!verify.ok) return res.status(401).json({ error: 'Geçersiz Google token' });
+    const gUser = await verify.json();
+    if (gUser.email !== email) return res.status(401).json({ error: 'Email uyuşmuyor' });
+
+    let userResult = await pool.query(
+      'SELECT u.*, r.id as restaurant_id FROM users u LEFT JOIN restaurants r ON r.user_id = u.id WHERE u.email=$1',
+      [email]
+    );
+    let user = userResult.rows[0];
+    let restaurantId;
+
+    if (user) {
+      await pool.query('UPDATE users SET google_id=$1, avatar_url=$2, is_verified=true WHERE id=$3', [googleId, picture, user.id]);
+      restaurantId = user.restaurant_id;
+    } else {
+      if (!restaurantName) return res.status(200).json({ needsRestaurantName: true });
+      const newUser = await pool.query(
+        'INSERT INTO users (email, password_hash, google_id, avatar_url, is_verified) VALUES ($1,$2,$3,$4,true) RETURNING id',
+        [email, '', googleId, picture]
+      );
+      user = newUser.rows[0];
+      const slug = (restaurantName).toLowerCase()
+        .replace(/[ğ]/g,'g').replace(/[ü]/g,'u').replace(/[ş]/g,'s')
+        .replace(/[ı]/g,'i').replace(/[ö]/g,'o').replace(/[ç]/g,'c')
+        .replace(/[^a-z0-9]/g,'-').replace(/-+/g,'-')
+        + '-' + Math.random().toString(36).substr(2,4);
+      const rest = await pool.query('INSERT INTO restaurants (user_id, slug, name) VALUES ($1,$2,$3) RETURNING id', [user.id, slug, restaurantName]);
+      restaurantId = rest.rows[0].id;
+      await pool.query('INSERT INTO subscriptions (user_id) VALUES ($1)', [user.id]);
+    }
+    const token = jwt.sign({ userId: user.id, restaurantId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, restaurantId });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/auth/google-client-id', (req, res) => {
   res.json({ clientId: process.env.GOOGLE_CLIENT_ID || '' });
 });
