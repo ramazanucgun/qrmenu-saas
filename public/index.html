@@ -1824,7 +1824,9 @@ if (currentPath === '/verify-email') {
   }
 }
 if (currentPath.startsWith('/menu/')) {
-  const slug = currentPath.replace('/menu/', '').split('/')[0];
+  const pathParts = currentPath.split('/').filter(Boolean);
+  // /menu/slug veya /slug formatını destekle
+  const slug = pathParts[0] === 'menu' ? pathParts[1] : pathParts[0];
   document.getElementById('auth-view').style.display = 'none';
   document.getElementById('app-view').style.display = 'none';
   document.getElementById('menu-view').style.display = 'flex';
