@@ -247,6 +247,7 @@ CREATE TABLE IF NOT EXISTS password_resets (
   await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS image_url TEXT`);
   await pool.query(`ALTER TABLE products ALTER COLUMN image_url TYPE TEXT`).catch(()=>{});
   await pool.query(`ALTER TABLE restaurants ALTER COLUMN logo_url TYPE TEXT`).catch(()=>{});
+  await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS waiter_enabled BOOLEAN DEFAULT true`).catch(()=>{});
   await pool.query(`ALTER TABLE campaigns ALTER COLUMN image_url TYPE TEXT`).catch(()=>{});
   console.log('✅ Veritabanı tabloları hazır');
 }
@@ -529,21 +530,30 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/restaurant/me', authMiddleware, async (req, res) => {
   const result = await pool.query(
-    'SELECT * FROM restaurants WHERE id = $1',
+    `SELECT id, slug, name, logo_url, brand_color, font_family,
+            wifi_name, wifi_password, instagram_url, facebook_url,
+            is_published, waiter_enabled, created_at
+     FROM restaurants WHERE id = $1`,
     [req.user.restaurantId]
   );
   res.json(result.rows[0]);
 });
 
 app.put('/api/restaurant/me', authMiddleware, async (req, res) => {
-  const { name, brand_color, font_family, wifi_name, wifi_password, instagram_url, facebook_url } = req.body;
-  const result = await pool.query(
-    `UPDATE restaurants SET name=$1, brand_color=$2, font_family=$3,
-     wifi_name=$4, wifi_password=$5, instagram_url=$6, facebook_url=$7
-     WHERE id=$8 RETURNING *`,
-    [name, brand_color, font_family, wifi_name, wifi_password, instagram_url, facebook_url, req.user.restaurantId]
-  );
-  res.json(result.rows[0]);
+  const { name, brand_color, font_family, wifi_name, wifi_password, instagram_url, facebook_url, waiter_enabled } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE restaurants SET name=$1, brand_color=$2, font_family=$3,
+       wifi_name=$4, wifi_password=$5, instagram_url=$6, facebook_url=$7,
+       waiter_enabled=COALESCE($8, waiter_enabled)
+       WHERE id=$9 RETURNING *`,
+      [name, brand_color, font_family, wifi_name, wifi_password, instagram_url, facebook_url,
+       waiter_enabled !== undefined ? waiter_enabled : null, req.user.restaurantId]
+    );
+    res.json(result.rows[0]);
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // QR kod üret
@@ -866,15 +876,20 @@ app.get('/api/feedback', authMiddleware, async (req, res) => {
 
 app.post('/api/waiter-call', async (req, res) => {
   const { restaurant_id, table_no } = req.body;
-  const result = await pool.query(
-    'INSERT INTO waiter_calls (restaurant_id, table_no) VALUES ($1,$2) RETURNING *',
-    [restaurant_id, table_no || 'Belirsiz']
-  );
-  notifyRestaurant(restaurant_id, {
-    type: 'waiter_call',
-    data: result.rows[0]
-  });
-  res.json(result.rows[0]);
+  try {
+    const restCheck = await pool.query('SELECT waiter_enabled FROM restaurants WHERE id=$1', [restaurant_id]);
+    if (restCheck.rows[0] && restCheck.rows[0].waiter_enabled === false) {
+      return res.status(403).json({ error: 'Garson çağrı sistemi şu an aktif değil' });
+    }
+    const result = await pool.query(
+      'INSERT INTO waiter_calls (restaurant_id, table_no) VALUES ($1,$2) RETURNING *',
+      [restaurant_id, table_no || 'Belirsiz']
+    );
+    notifyRestaurant(restaurant_id, { type: 'waiter_call', data: result.rows[0] });
+    res.json(result.rows[0]);
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get('/api/waiter-calls', authMiddleware, async (req, res) => {
