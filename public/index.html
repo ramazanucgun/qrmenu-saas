@@ -2003,45 +2003,60 @@ if (currentPath === '/verify-email') {
     toast('Geçersiz doğrulama linki', 'error');
   }
 }
-if (currentPath.startsWith('/menu/')) {
+
+// Menü sayfası tespiti — /menu/slug VEYA /slug (kısa format)
+const RESERVED_PATHS = ['', '/', '/admin', '/verify-email', '/reset-password'];
+const isMenuPath = !RESERVED_PATHS.includes(currentPath) &&
+  !currentPath.startsWith('/api/') &&
+  !currentPath.startsWith('/icons/') &&
+  !currentPath.includes('.');
+
+if (isMenuPath) {
   const pathParts = currentPath.split('/').filter(Boolean);
-  // /menu/slug veya /slug formatını destekle
   const slug = pathParts[0] === 'menu' ? pathParts[1] : pathParts[0];
-  document.getElementById('auth-view').style.display = 'none';
-  document.getElementById('app-view').style.display = 'none';
-  document.getElementById('menu-view').style.display = 'flex';
-  document.getElementById('menu-view').style.flexDirection = 'column';
-  const adminBar = document.querySelector('.menu-topbar-admin');
-  if (adminBar) adminBar.style.display = 'none';
-  fetch(API + '/menu/' + slug)
-    .then(r => r.json())
-    .then(data => {
-      if (data.error) {
-        document.getElementById('menu-public').innerHTML = '<div style="padding:60px;text-align:center">Menu bulunamadi</div>';
-      } else {
-        renderPublicMenu(data);
-        // Ziyareti kaydet
-        if (data.restaurant?.slug) {
-          fetch(API + '/menu/' + data.restaurant.slug + '/view', { method: 'POST' }).catch(() => {});
+
+  if (slug) {
+    // Önce slug'ın geçerli olup olmadığını kontrol et
+    fetch(API + '/menu/' + slug)
+      .then(r => r.json())
+      .then(data => {
+        if (data.error || !data.restaurant) {
+          // Geçersiz slug — giriş sayfasına dön
+          return;
         }
+        // Geçerli menü — menü görünümünü göster
+        document.getElementById('auth-view').style.display = 'none';
+        document.getElementById('app-view').style.display = 'none';
+        document.getElementById('menu-view').style.display = 'flex';
+        document.getElementById('menu-view').style.flexDirection = 'column';
+        const adminBar = document.querySelector('.menu-topbar-admin');
+        if (adminBar) adminBar.style.display = 'none';
+
+        renderPublicMenu(data);
+
+        // Ziyareti kaydet
+        fetch(API + '/menu/' + data.restaurant.slug + '/view', { method: 'POST' }).catch(() => {});
+
+        // Kampanya popup
         if (data.campaign) {
           document.getElementById('camp-popup-title').textContent = data.campaign.title;
           document.getElementById('camp-popup-desc').textContent = data.campaign.description || '';
           const campDisplay2 = document.getElementById('camp-emoji-display');
-          if(data.campaign.image_url){
-            campDisplay2.innerHTML=`<img src="${data.campaign.image_url}" style="width:100%;height:100%;object-fit:cover">`;
+          if (data.campaign.image_url) {
+            campDisplay2.innerHTML = '<img src="' + data.campaign.image_url + '" style="width:100%;height:100%;object-fit:cover">';
           } else {
             campDisplay2.textContent = data.campaign.emoji || '🎉';
           }
           setTimeout(() => document.getElementById('camp-popup').classList.add('open'), 2000);
         }
-      }
-    })
-    .catch(() => {
-      document.getElementById('menu-public').innerHTML = '<div style="padding:60px;text-align:center">Baglanti hatasi</div>';
-    });
-    
-} else // Google butonlarını başlat
+      })
+      .catch(() => {
+        // Bağlantı hatası — giriş sayfası kalır
+      });
+  }
+}
+
+// Google butonlarını başlat
 function tryInitGoogle() {
   fetch('/api/auth/google-client-id').then(r=>r.json()).then(d=>{
     if (!d.clientId) return;
