@@ -552,6 +552,25 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
           </div>
 
 <div class="panel" style="margin-bottom:14px">
+  <div class="panel-head"><span class="panel-title">🔔 Garson Çağrı Sistemi</span></div>
+  <div style="padding:18px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Garson Çağır Butonu</div>
+        <div style="font-size:12px;color:var(--text2)">Müşterilerin menüden garson çağırmasını aktif/pasif yapın</div>
+      </div>
+      <label style="position:relative;display:inline-block;width:48px;height:26px;flex-shrink:0;cursor:pointer">
+        <input type="checkbox" id="d-waiter-enabled" style="opacity:0;width:0;height:0" onchange="updateWaiterToggle(this.checked)">
+        <span id="d-waiter-slider" style="position:absolute;inset:0;background:#555;border-radius:26px;transition:.3s">
+          <span style="position:absolute;height:20px;width:20px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;display:block" id="d-waiter-knob"></span>
+        </span>
+      </label>
+    </div>
+    <div id="d-waiter-status" style="margin-top:10px;font-size:12px;color:var(--green)">🟢 Garson çağrı sistemi aktif</div>
+  </div>
+</div>
+
+<div class="panel" style="margin-bottom:14px">
   <div class="panel-head"><span class="panel-title">🕐 Çalışma Saatleri</span></div>
   <div style="padding:16px">
     <div id="hours-list" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -1574,12 +1593,30 @@ async function deleteCampaign(id){
   try{await api('DELETE','/campaigns/'+id);campaigns=campaigns.filter(c=>c.id!==id);renderCampaigns();toast('Kampanya silindi','info');}catch(e){toast(e.message,'error');}
 }
 
+function updateWaiterToggle(enabled){
+  const slider = document.getElementById('d-waiter-slider');
+  const knob = document.getElementById('d-waiter-knob');
+  const status = document.getElementById('d-waiter-status');
+  if(slider){
+    slider.style.background = enabled ? 'var(--accent)' : '#555';
+    if(knob) knob.style.transform = enabled ? 'translateX(22px)' : 'translateX(0)';
+  }
+  if(status){
+    status.textContent = enabled ? '🟢 Garson çağrı sistemi aktif' : '🔴 Garson çağrı sistemi pasif';
+    status.style.color = enabled ? 'var(--green)' : 'var(--red)';
+  }
+}
+
 function loadDesignFields(){
   if(!RESTAURANT) return;
   document.getElementById('d-color').value=RESTAURANT.brand_color||'#e8c547';
   document.getElementById('d-color-hex').value=RESTAURANT.brand_color||'#e8c547';
   document.getElementById('d-font').value=RESTAURANT.font_family||'DM Serif Display';
   document.getElementById('d-wifi').value=RESTAURANT.wifi_name||'';
+  // Garson toggle
+  const waiterEnabled = RESTAURANT.waiter_enabled !== false;
+  const cb = document.getElementById('d-waiter-enabled');
+  if(cb) { cb.checked = waiterEnabled; updateWaiterToggle(waiterEnabled); }
   document.getElementById('d-wpass').value=RESTAURANT.wifi_password||'';
   document.getElementById('d-ig').value=RESTAURANT.instagram_url||'';
   document.getElementById('d-fb').value=RESTAURANT.facebook_url||'';
@@ -1655,7 +1692,8 @@ async function saveWorkingHours(){
 }
 
 async function saveDesign(){
-  const body={name:document.getElementById('d-rest-name').value||RESTAURANT?.name,brand_color:document.getElementById('d-color').value,font_family:document.getElementById('d-font').value,wifi_name:document.getElementById('d-wifi').value,wifi_password:document.getElementById('d-wpass').value,instagram_url:document.getElementById('d-ig').value,facebook_url:document.getElementById('d-fb').value};
+  const waiterCb = document.getElementById('d-waiter-enabled');
+  const body={name:document.getElementById('d-rest-name').value||RESTAURANT?.name,brand_color:document.getElementById('d-color').value,font_family:document.getElementById('d-font').value,wifi_name:document.getElementById('d-wifi').value,wifi_password:document.getElementById('d-wpass').value,instagram_url:document.getElementById('d-ig').value,facebook_url:document.getElementById('d-fb').value,waiter_enabled:waiterCb?waiterCb.checked:true};
   try{RESTAURANT=await api('PUT','/restaurant/me',body);localStorage.setItem('qrmenu_rest',JSON.stringify(RESTAURANT));toast('Tasarım kaydedildi ✅','success');updatePreview();}catch(e){toast(e.message,'error');}
 }
 
@@ -1762,7 +1800,7 @@ function renderPublicMenu(data){
     ${today_hours&&!today_hours.is_closed?`<div style="display:inline-flex;align-items:center;gap:6px;background:${is_open?'rgba(71,201,126,.1)':'rgba(232,71,71,.1)'};border:1px solid ${is_open?'rgba(71,201,126,.3)':'rgba(232,71,71,.3)'};border-radius:20px;padding:5px 14px;font-size:12px;font-weight:500;color:${is_open?'#47c97e':'#e84747'};margin-bottom:10px">${is_open?'🟢 Şu an açık':'🔴 Şu an kapalı'} · ${today_hours.opens_at} - ${today_hours.closes_at}</div>`:''}
     <div class="m-pills">
       <button class="m-pill" style="background:${t.pillBg};color:${t.pillColor};border-color:${t.pillBorder}" onclick="document.getElementById('fb-modal').classList.add('open')">💬 Geri Bildirim</button>
-      <button class="m-pill" style="background:${t.pillBg};color:${t.pillColor};border-color:${t.pillBorder}" onclick="callWaiter('${restaurant.id}')">🔔 Garson Çağır</button>
+      ${restaurant.waiter_enabled !== false ? `<button class="m-pill" style="background:${t.pillBg};color:${t.pillColor};border-color:${t.pillBorder}" onclick="callWaiter('${restaurant.id}')">🔔 Garson Çağır</button>` : ''}
     </div>
   </div>`;
 
@@ -1813,7 +1851,7 @@ function renderPublicMenu(data){
   }).join('');
 
   const footer=`<div class="m-footer" style="background:${t.footerBg};border-color:${t.border}">
-    <button class="waiter-btn" style="background:${color}" onclick="callWaiter('${restaurant.id}')">🔔 Garson Çağır</button>
+    ${restaurant.waiter_enabled !== false ? `<button class="waiter-btn" style="background:${color}" onclick="callWaiter('${restaurant.id}')">🔔 Garson Çağır</button>` : ''}
     ${restaurant.wifi_name?`<div class="wifi-card" style="background:${t.wifiBg};border-color:${t.wifiBorder}"><span style="font-size:22px">📡</span><div><div class="wifi-name-text" style="color:${t.text}">${restaurant.wifi_name}</div><div class="wifi-pass-text" style="color:${t.text2}">${restaurant.wifi_password||''}</div></div></div>`:''}
     <div class="social-row">
       ${restaurant.instagram_url?`<button class="social-btn" style="background:${t.socialBg};border-color:${t.socialBorder}" onclick="window.open('https://instagram.com/${restaurant.instagram_url.replace('@','')}','_blank')">📸</button>`:''}
