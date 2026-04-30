@@ -792,32 +792,27 @@ app.get('/api/analytics', authMiddleware, async (req, res) => {
     const { period = '30' } = req.query;
     const days = parseInt(period) || 30;
 
+    // days integer olarak doğrulandı, direkt SQL'e gömülebilir
+    const interval = days + " days";
     const [total, byDevice, byDay, today, thisWeek] = await Promise.all([
-      // Toplam ziyaret
       pool.query(
-        'SELECT COUNT(*) FROM menu_views WHERE restaurant_id=$1 AND viewed_at > NOW() - INTERVAL '1 day' * $2',
-        [rId, days]
+        "SELECT COUNT(*) FROM menu_views WHERE restaurant_id=$1 AND viewed_at > NOW() - $2::interval",
+        [rId, interval]
       ),
-      // Cihaz dağılımı
       pool.query(
-        'SELECT device, COUNT(*) FROM menu_views WHERE restaurant_id=$1 AND viewed_at > NOW() - INTERVAL '1 day' * $2 GROUP BY device',
-        [rId, days]
+        "SELECT device, COUNT(*) FROM menu_views WHERE restaurant_id=$1 AND viewed_at > NOW() - $2::interval GROUP BY device",
+        [rId, interval]
       ),
-      // Günlük ziyaret (son N gün)
       pool.query(
-        `SELECT DATE(viewed_at) as date, COUNT(*) as count
-         FROM menu_views WHERE restaurant_id=$1 AND viewed_at > NOW() - INTERVAL '1 day' * $2
-         GROUP BY DATE(viewed_at) ORDER BY date ASC`,
-        [rId, days]
+        "SELECT DATE(viewed_at) as date, COUNT(*) as count FROM menu_views WHERE restaurant_id=$1 AND viewed_at > NOW() - $2::interval GROUP BY DATE(viewed_at) ORDER BY date ASC",
+        [rId, interval]
       ),
-      // Bugün
       pool.query(
-        'SELECT COUNT(*) FROM menu_views WHERE restaurant_id=$1 AND DATE(viewed_at)=CURRENT_DATE',
+        "SELECT COUNT(*) FROM menu_views WHERE restaurant_id=$1 AND DATE(viewed_at)=CURRENT_DATE",
         [rId]
       ),
-      // Bu hafta
       pool.query(
-        'SELECT COUNT(*) FROM menu_views WHERE restaurant_id=$1 AND viewed_at > NOW() - INTERVAL '7 days'',
+        "SELECT COUNT(*) FROM menu_views WHERE restaurant_id=$1 AND viewed_at > NOW() - INTERVAL '7 days'",
         [rId]
       ),
     ]);
