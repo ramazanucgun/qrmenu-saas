@@ -202,14 +202,6 @@ CREATE TABLE IF NOT EXISTS email_verifications (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS menu_views (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  restaurant_id UUID REFERENCES restaurants(id) ON DELETE CASCADE,
-  viewed_at TIMESTAMP DEFAULT NOW(),
-  device VARCHAR(20) DEFAULT 'unknown',
-  country VARCHAR(50)
-);
-
 CREATE TABLE IF NOT EXISTS password_resets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email VARCHAR(255) NOT NULL,
@@ -766,74 +758,6 @@ res.json({
 // ═══════════════════════════════
 // FEEDBACK
 // ═══════════════════════════════
-
-// Menü ziyareti kaydet
-app.post('/api/menu/:slug/view', async (req, res) => {
-  try {
-    const restResult = await pool.query('SELECT id FROM restaurants WHERE slug=$1', [req.params.slug]);
-    if (!restResult.rows[0]) return res.status(404).json({ error: 'Restoran bulunamadı' });
-    const restaurantId = restResult.rows[0].id;
-    const ua = req.headers['user-agent'] || '';
-    const device = /mobile|android|iphone|ipad/i.test(ua) ? 'mobile' : 'desktop';
-    await pool.query(
-      'INSERT INTO menu_views (restaurant_id, device) VALUES ($1, $2)',
-      [restaurantId, device]
-    );
-    res.json({ ok: true });
-  } catch(err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Analiz verileri
-app.get('/api/analytics', authMiddleware, async (req, res) => {
-  try {
-    const rId = req.user.restaurantId;
-    const { period = '30' } = req.query;
-    const days = parseInt(period) || 30;
-
-    const [total, byDevice, byDay, today, thisWeek] = await Promise.all([
-      // Toplam ziyaret
-      pool.query(
-        'SELECT COUNT(*) FROM menu_views WHERE restaurant_id=$1 AND viewed_at > NOW() - INTERVAL '1 day' * $2',
-        [rId, days]
-      ),
-      // Cihaz dağılımı
-      pool.query(
-        'SELECT device, COUNT(*) FROM menu_views WHERE restaurant_id=$1 AND viewed_at > NOW() - INTERVAL '1 day' * $2 GROUP BY device',
-        [rId, days]
-      ),
-      // Günlük ziyaret (son N gün)
-      pool.query(
-        `SELECT DATE(viewed_at) as date, COUNT(*) as count
-         FROM menu_views WHERE restaurant_id=$1 AND viewed_at > NOW() - INTERVAL '1 day' * $2
-         GROUP BY DATE(viewed_at) ORDER BY date ASC`,
-        [rId, days]
-      ),
-      // Bugün
-      pool.query(
-        'SELECT COUNT(*) FROM menu_views WHERE restaurant_id=$1 AND DATE(viewed_at)=CURRENT_DATE',
-        [rId]
-      ),
-      // Bu hafta
-      pool.query(
-        'SELECT COUNT(*) FROM menu_views WHERE restaurant_id=$1 AND viewed_at > NOW() - INTERVAL '7 days'',
-        [rId]
-      ),
-    ]);
-
-    res.json({
-      total: parseInt(total.rows[0].count),
-      today: parseInt(today.rows[0].count),
-      thisWeek: parseInt(thisWeek.rows[0].count),
-      byDevice: byDevice.rows,
-      byDay: byDay.rows,
-      period: days,
-    });
-  } catch(err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 app.post('/api/feedback', async (req, res) => {
   const { restaurant_id, type, message, rating } = req.body;
