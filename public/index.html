@@ -350,7 +350,6 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
       <div class="nav-item" onclick="goPage('campaigns',this)">📢 Kampanyalar</div>
       <div class="nav-section">ARAÇLAR</div>
       <div class="nav-item" onclick="goPage('qr',this)">⬛ QR Kodlar</div>
-      <div class="nav-item" onclick="goPage('analytics',this)">📊 Analiz</div>
       <div class="nav-item" onclick="goPage('feedback',this)">💬 Geri Bildirimler</div>
       <div class="nav-section">HESAP</div>
       <div class="nav-item" onclick="goPage('subscription',this)">💳 Abonelik</div>
@@ -599,40 +598,6 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
     </div>
 
     <!-- FEEDBACK -->
-    <div class="page" id="page-analytics">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-        <div style="font-size:16px;font-weight:600;color:var(--text)">Menü Ziyaret Analizi</div>
-        <select id="analytics-period" onchange="loadAnalytics()" style="background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 12px;font-size:13px">
-          <option value="7">Son 7 gün</option>
-          <option value="30" selected>Son 30 gün</option>
-          <option value="90">Son 90 gün</option>
-        </select>
-      </div>
-
-      <!-- Özet kartlar -->
-      <div class="stats-grid" style="margin-bottom:20px">
-        <div class="stat-card" style="--c:var(--accent)"><div class="stat-val" id="an-today">—</div><div class="stat-label">Bugün</div></div>
-        <div class="stat-card" style="--c:var(--blue)"><div class="stat-val" id="an-week">—</div><div class="stat-label">Bu Hafta</div></div>
-        <div class="stat-card" style="--c:var(--green)"><div class="stat-val" id="an-total">—</div><div class="stat-label">Seçili Dönem</div></div>
-        <div class="stat-card" style="--c:var(--red)"><div class="stat-val" id="an-mobile">—</div><div class="stat-label">Mobil Oranı</div></div>
-      </div>
-
-      <!-- Günlük grafik -->
-      <div class="panel" style="margin-bottom:16px">
-        <div class="panel-head"><span class="panel-title">Günlük Ziyaret</span></div>
-        <div style="padding:20px">
-          <div id="an-chart" style="display:flex;align-items:flex-end;gap:4px;height:140px;border-bottom:1px solid var(--border);padding-bottom:8px"></div>
-          <div id="an-chart-labels" style="display:flex;gap:4px;margin-top:6px;overflow:hidden"></div>
-        </div>
-      </div>
-
-      <!-- Cihaz dağılımı -->
-      <div class="panel">
-        <div class="panel-head"><span class="panel-title">Cihaz Dağılımı</span></div>
-        <div id="an-devices" style="padding:20px;display:flex;gap:20px;flex-wrap:wrap"></div>
-      </div>
-    </div>
-
     <div class="page" id="page-feedback">
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap" id="fb-filters">
         <button class="btn-sm btn-accent" onclick="filterFB('all',this)">Tümü</button>
@@ -1055,87 +1020,15 @@ function updateStats(){
   document.getElementById('stat-calls').textContent=calls.filter(c=>c.status==='pending').length;
 }
 
-// ═══════════════════════════════
-// ANALİZ
-// ═══════════════════════════════
-async function loadAnalytics(){
-  const period = document.getElementById('analytics-period')?.value || '30';
-  try {
-    const data = await api('GET', '/analytics?period=' + period);
-
-    document.getElementById('an-today').textContent = data.today;
-    document.getElementById('an-week').textContent = data.thisWeek;
-    document.getElementById('an-total').textContent = data.total;
-
-    // Mobil oranı
-    const mobile = data.byDevice.find(d => d.device === 'mobile');
-    const mobileCount = mobile ? parseInt(mobile.count) : 0;
-    const mobileRate = data.total > 0 ? Math.round((mobileCount / data.total) * 100) : 0;
-    document.getElementById('an-mobile').textContent = '%' + mobileRate;
-
-    // Günlük grafik
-    renderAnalyticsChart(data.byDay, parseInt(period));
-
-    // Cihaz dağılımı
-    const deviceEl = document.getElementById('an-devices');
-    const icons = { mobile: '📱', desktop: '🖥️', unknown: '❓' };
-    deviceEl.innerHTML = data.byDevice.map(d => `
-      <div style="display:flex;align-items:center;gap:12px;background:var(--bg3);border-radius:10px;padding:14px 18px;flex:1;min-width:140px">
-        <span style="font-size:28px">${icons[d.device] || '❓'}</span>
-        <div>
-          <div style="font-size:20px;font-weight:700;color:var(--text)">${d.count}</div>
-          <div style="font-size:12px;color:var(--text2)">${d.device === 'mobile' ? 'Mobil' : d.device === 'desktop' ? 'Masaüstü' : 'Bilinmiyor'}</div>
-        </div>
-      </div>`).join('') || '<div style="color:var(--text3);font-size:13px">Henüz veri yok</div>';
-
-  } catch(e) { console.error('Analiz yüklenemedi:', e.message); }
-}
-
-function renderAnalyticsChart(byDay, period){
-  const chartEl = document.getElementById('an-chart');
-  const labelsEl = document.getElementById('an-chart-labels');
-  if (!chartEl) return;
-
-  // Seçili dönemdeki tüm günleri doldur
-  const map = {};
-  byDay.forEach(d => { map[d.date.slice(0,10)] = parseInt(d.count); });
-
-  const days = [];
-  for (let i = period - 1; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0,10);
-    days.push({ key, count: map[key] || 0, label: d.toLocaleDateString('tr-TR', { day:'numeric', month:'short' }) });
-  }
-
-  const max = Math.max(...days.map(d => d.count), 1);
-  const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#e8c547';
-
-  // Sadece her N günde bir label göster
-  const labelStep = period <= 7 ? 1 : period <= 30 ? 5 : 15;
-
-  chartEl.innerHTML = days.map((d, i) => `
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;min-width:0" title="${d.label}: ${d.count} ziyaret">
-      <div style="font-size:9px;color:var(--text3)">${d.count > 0 ? d.count : ''}</div>
-      <div style="width:100%;border-radius:4px 4px 0 0;background:${accentColor};opacity:${d.count > 0 ? 0.85 : 0.15};height:${Math.max(d.count / max * 120, d.count > 0 ? 4 : 2)}px;transition:height .3s"></div>
-    </div>`).join('');
-
-  labelsEl.innerHTML = days.map((d, i) => `
-    <div style="flex:1;font-size:9px;color:var(--text3);text-align:center;overflow:hidden;white-space:nowrap;min-width:0">
-      ${i % labelStep === 0 ? d.label : ''}
-    </div>`).join('');
-}
-
 function goPage(id,el){
   document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
   if(el) el.classList.add('active');
   document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  const titles={home:'Genel Bakış',editor:'Menü Editörü',design:'Tasarım',qr:'QR Kodlar',feedback:'Geri Bildirimler',notifications:'Garson Çağrıları',subscription:'Abonelik',campaigns:'Kampanyalar',analytics:'Analiz'};
+  const titles={home:'Genel Bakış',editor:'Menü Editörü',design:'Tasarım',qr:'QR Kodlar',feedback:'Geri Bildirimler',notifications:'Garson Çağrıları',subscription:'Abonelik',campaigns:'Kampanyalar'};
   document.getElementById('topbar-title').textContent=titles[id]||id;
   if(id==='editor') renderCatList();
   if(id==='design') loadDesignFields();
-  if(id==='analytics') loadAnalytics();
 }
 
 // TEMA SEÇİCİ
@@ -1982,10 +1875,6 @@ if (currentPath.startsWith('/menu/')) {
         document.getElementById('menu-public').innerHTML = '<div style="padding:60px;text-align:center">Menu bulunamadi</div>';
       } else {
         renderPublicMenu(data);
-        // Ziyareti kaydet
-        if (data.restaurant?.slug) {
-          fetch(API + '/menu/' + data.restaurant.slug + '/view', { method: 'POST' }).catch(() => {});
-        }
         if (data.campaign) {
           document.getElementById('camp-popup-title').textContent = data.campaign.title;
           document.getElementById('camp-popup-desc').textContent = data.campaign.description || '';
