@@ -515,15 +515,15 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
             <div class="panel-head"><span class="panel-title">📋 Ürün Kart Stili</span></div>
             <div style="padding:16px">
               <div class="card-style-grid">
-                <div class="card-style-btn selected" onclick="selectCardStyle('list',this)">
+                <div class="card-style-btn card-style-opt selected" data-style="list" onclick="selectCardStyle('list',this)">
                   <div class="cs-icon">☰</div>
                   <div class="cs-name">Liste</div>
                 </div>
-                <div class="card-style-btn" onclick="selectCardStyle('card',this)">
+                <div class="card-style-btn card-style-opt" data-style="card" onclick="selectCardStyle('card',this)">
                   <div class="cs-icon">⊞</div>
                   <div class="cs-name">Kart</div>
                 </div>
-                <div class="card-style-btn" onclick="selectCardStyle('compact',this)">
+                <div class="card-style-btn card-style-opt" data-style="compact" onclick="selectCardStyle('compact',this)">
                   <div class="cs-icon">≡</div>
                   <div class="cs-name">Kompakt</div>
                 </div>
@@ -1205,10 +1205,11 @@ function selectTheme(theme, el) {
 }
 
 function selectCardStyle(style, el) {
-  currentCardStyle=style;
-  localStorage.setItem('qrmenu_cardstyle',style);
-  document.querySelectorAll('.card-style-btn').forEach(b=>b.classList.remove('selected'));
+  currentCardStyle = style;
+  localStorage.setItem('qrmenu_cardstyle', style);
+  document.querySelectorAll('.card-style-btn').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
+  if (RESTAURANT) RESTAURANT.card_style = style;
   updatePreview();
 }
 
@@ -1725,8 +1726,8 @@ function loadDesignFields(){
   // DB'deki kart stili yükle
   if(RESTAURANT.card_style) {
     currentCardStyle = RESTAURANT.card_style;
-    document.querySelectorAll('.card-style-opt').forEach(el => {
-      el.classList.toggle('active', el.dataset.style === currentCardStyle);
+    document.querySelectorAll('.card-style-btn').forEach(el => {
+      el.classList.toggle('selected', el.dataset.style === currentCardStyle);
     });
     updatePreview();
   }

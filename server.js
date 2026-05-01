@@ -554,14 +554,18 @@ app.post('/api/auth/login', async (req, res) => {
 // ═══════════════════════════════
 
 app.get('/api/restaurant/me', authMiddleware, async (req, res) => {
-  const result = await pool.query(
-    `SELECT id, slug, name, logo_url, brand_color, font_family,
-            wifi_name, wifi_password, instagram_url, facebook_url,
-            is_published, waiter_enabled, created_at
-     FROM restaurants WHERE id = $1`,
-    [req.user.restaurantId]
-  );
-  res.json(result.rows[0]);
+  try {
+    const result = await pool.query(
+      `SELECT id, slug, name, logo_url, brand_color, font_family,
+              theme, card_style, wifi_name, wifi_password,
+              instagram_url, facebook_url, is_published, waiter_enabled, created_at
+       FROM restaurants WHERE id = $1`,
+      [req.user.restaurantId]
+    );
+    res.json(result.rows[0]);
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.put('/api/restaurant/me', authMiddleware, async (req, res) => {
