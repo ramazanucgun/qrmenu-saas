@@ -1904,24 +1904,27 @@ async function loadMenuImages(slug) {
   try {
     const images = await fetch(API + '/menu/' + slug + '/images').then(r => r.json());
     if (!Array.isArray(images)) return;
-    // Cache'e kaydet — showProdDetail kullanır
     window._menuImages = {};
     images.forEach(({ id, image_url }) => {
       if (!image_url) return;
       window._menuImages[id] = image_url;
-      // DOM'da placeholder'ı bul ve görseli yerleştir
       document.querySelectorAll('[data-prod-id="' + id + '"]').forEach(el => {
         const placeholder = el.querySelector('.m-prod-img-placeholder');
-        if (placeholder) {
-          const img = document.createElement('img');
-          img.src = image_url;
-          img.loading = 'lazy';
-          img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:10px;display:block';
-          img.onload = () => placeholder.replaceWith(img);
+        if (!placeholder) return;
+        const img = document.createElement('img');
+        img.src = image_url;
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:10px;display:block';
+        // onload ve onerror her iki durumda da çalış
+        const doReplace = () => { if (placeholder.parentNode) placeholder.replaceWith(img); };
+        if (img.complete) {
+          doReplace();
+        } else {
+          img.onload = doReplace;
+          img.onerror = () => {}; // hata olursa emoji kalsın
         }
       });
     });
-  } catch(e) { /* görseller yüklenemedi, emoji kalır */ }
+  } catch(e) {}
 }
 
 function renderPublicMenu(data){
@@ -1980,7 +1983,7 @@ function renderPublicMenu(data){
         </div>`).join('')}
       </div>`;
     }else if(cardStyle==='compact'){
-      prodsHtml=cat.products.map(p=>`<div class="m-product style-compact" style="border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
+      prodsHtml=cat.products.map(p=>`<div class="m-product style-compact" data-prod-id="${p.id}" style="border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
         <div class="m-prod-left">
           <div class="m-prod-name" style="color:${t.text}">${p.name}</div>
           <div class="m-prod-desc" style="color:${t.text2}">${(p.description||'').slice(0,50)}</div>
@@ -2200,8 +2203,8 @@ if (isMenuPath) {
         // Ziyareti kaydet
         fetch(API + '/menu/' + data.restaurant.slug + '/view', { method: 'POST' }).catch(() => {});
 
-        // Görselleri lazy yükle — menü açıldıktan sonra arka planda
-        setTimeout(() => loadMenuImages(slug), 300);
+        // Görselleri hemen yükle
+        loadMenuImages(slug);
 
         // Kampanya popup
         if (data.campaign) {
