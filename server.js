@@ -11,6 +11,8 @@ const { v4: uuidv4 } = require('uuid');
 const WebSocket = require('ws');
 const http = require('http');
 const { Resend } = require('resend');
+let sharp;
+try { sharp = require('sharp'); } catch(e) { sharp = null; console.warn('sharp yüklü değil, resimler sıkıştırılmadan kaydedilecek'); }
 let compression;
 try { compression = require('compression'); } catch(e) { compression = null; }
 const { OAuth2Client } = require('google-auth-library');
@@ -18,6 +20,24 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 require('dotenv').config();
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+// Resim sıkıştırma helper
+async function resizeImage(buffer, mimeType, options = {}) {
+  if (!sharp) {
+    // sharp yok — orijinal base64 döndür
+    return { buffer, mimeType };
+  }
+  const {
+    width = 800,
+    height = 800,
+    quality = 72,
+  } = options;
+  const resized = await sharp(buffer)
+    .resize(width, height, { fit: 'inside', withoutEnlargement: true })
+    .webp({ quality })
+    .toBuffer();
+  return { buffer: resized, mimeType: 'image/webp' };
+}
+
 // R2 Storage client
 const s3 = new S3Client({
   region: 'auto',
@@ -1453,8 +1473,10 @@ app.get('/api/products/import/template', (req, res) => {
 app.post('/api/upload/product-image', authMiddleware, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Dosya seçilmedi' });
   try {
-    const base64 = req.file.buffer.toString('base64');
-    const imageUrl = `data:${req.file.mimetype};base64,${base64}`;
+    const { buffer, mimeType } = await resizeImage(req.file.buffer, req.file.mimetype, {
+      width: 600, height: 600, quality: 72
+    });
+    const imageUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;
     res.json({ imageUrl });
   } catch (err) {
     res.status(500).json({ error: 'Yükleme hatası: ' + err.message });
@@ -1464,8 +1486,10 @@ app.post('/api/upload/product-image', authMiddleware, upload.single('image'), as
 app.post('/api/upload/logo', authMiddleware, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Dosya seçilmedi' });
   try {
-    const base64 = req.file.buffer.toString('base64');
-    const logoUrl = `data:${req.file.mimetype};base64,${base64}`;
+    const { buffer, mimeType } = await resizeImage(req.file.buffer, req.file.mimetype, {
+      width: 200, height: 200, quality: 80
+    });
+    const logoUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;
     await pool.query('UPDATE restaurants SET logo_url=$1 WHERE id=$2', [logoUrl, req.user.restaurantId]);
     res.json({ logoUrl });
   } catch (err) {
@@ -1475,8 +1499,10 @@ app.post('/api/upload/logo', authMiddleware, upload.single('image'), async (req,
 app.post('/api/upload/campaign-image', authMiddleware, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Dosya seçilmedi' });
   try {
-    const base64 = req.file.buffer.toString('base64');
-    const imageUrl = `data:${req.file.mimetype};base64,${base64}`;
+    const { buffer, mimeType } = await resizeImage(req.file.buffer, req.file.mimetype, {
+      width: 800, height: 500, quality: 75
+    });
+    const imageUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;
     res.json({ imageUrl });
   } catch (err) {
     res.status(500).json({ error: 'Yükleme hatası: ' + err.message });
