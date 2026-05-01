@@ -248,6 +248,7 @@ CREATE TABLE IF NOT EXISTS password_resets (
   await pool.query(`ALTER TABLE products ALTER COLUMN image_url TYPE TEXT`).catch(()=>{});
   await pool.query(`ALTER TABLE restaurants ALTER COLUMN logo_url TYPE TEXT`).catch(()=>{});
   await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS waiter_enabled BOOLEAN DEFAULT true`).catch(()=>{});
+  await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS theme VARCHAR(50) DEFAULT 'classic'`).catch(()=>{});
   await pool.query(`ALTER TABLE campaigns ALTER COLUMN image_url TYPE TEXT`).catch(()=>{});
   console.log('✅ Veritabanı tabloları hazır');
 }
@@ -540,17 +541,19 @@ app.get('/api/restaurant/me', authMiddleware, async (req, res) => {
 });
 
 app.put('/api/restaurant/me', authMiddleware, async (req, res) => {
-  const { name, brand_color, font_family, wifi_name, wifi_password, instagram_url, facebook_url, waiter_enabled, is_published } = req.body;
+  const { name, brand_color, font_family, theme, wifi_name, wifi_password, instagram_url, facebook_url, waiter_enabled, is_published } = req.body;
   try {
     const result = await pool.query(
       `UPDATE restaurants SET name=$1, brand_color=$2, font_family=$3,
        wifi_name=$4, wifi_password=$5, instagram_url=$6, facebook_url=$7,
        waiter_enabled=COALESCE($8, waiter_enabled),
-       is_published=COALESCE($9, is_published)
-       WHERE id=$10 RETURNING *`,
+       is_published=COALESCE($9, is_published),
+       theme=COALESCE($10, theme)
+       WHERE id=$11 RETURNING *`,
       [name, brand_color, font_family, wifi_name, wifi_password, instagram_url, facebook_url,
        waiter_enabled !== undefined ? waiter_enabled : null,
        is_published !== undefined ? is_published : null,
+       theme || null,
        req.user.restaurantId]
     );
     res.json(result.rows[0]);
@@ -721,7 +724,7 @@ app.patch('/api/products/bulk-price', authMiddleware, async (req, res) => {
 app.get('/api/menu/:slug', async (req, res) => {
   try {
     const restResult = await pool.query(
-      `SELECT id, slug, name, logo_url, brand_color, font_family,
+      `SELECT id, slug, name, logo_url, brand_color, font_family, theme,
               wifi_name, wifi_password, instagram_url, facebook_url,
               is_published, waiter_enabled, created_at
        FROM restaurants WHERE slug=$1 AND is_published=true`,
