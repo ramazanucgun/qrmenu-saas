@@ -2158,33 +2158,39 @@ if (isMenuPath) {
       .then(r => r.json())
       .then(data => {
         if (data.error || !data.restaurant) {
-          // Geçersiz slug — giriş sayfasına dön
           document.getElementById('auth-view').style.display = '';
           document.getElementById('menu-view').style.display = 'none';
           return;
         }
-
-        renderPublicMenu(data);
+        try {
+          renderPublicMenu(data);
+        } catch(renderErr) {
+          console.error('renderPublicMenu hatası:', renderErr);
+          if (menuPublic) menuPublic.innerHTML = '<div style="padding:40px;text-align:center;color:#888">Menü yüklenirken hata oluştu.<br><br><button onclick="location.reload()" style="padding:8px 16px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer">Tekrar Dene</button></div>';
+          return;
+        }
 
         // Ziyareti kaydet
         fetch(API + '/menu/' + data.restaurant.slug + '/view', { method: 'POST' }).catch(() => {});
 
         // Kampanya popup
         if (data.campaign) {
-          document.getElementById('camp-popup-title').textContent = data.campaign.title;
-          document.getElementById('camp-popup-desc').textContent = data.campaign.description || '';
-          const campDisplay2 = document.getElementById('camp-emoji-display');
-          if (data.campaign.image_url) {
-            campDisplay2.innerHTML = '<img src="' + data.campaign.image_url + '" style="width:100%;height:100%;object-fit:cover">';
-          } else {
-            campDisplay2.textContent = data.campaign.emoji || '🎉';
-          }
-          setTimeout(() => document.getElementById('camp-popup').classList.add('open'), 2000);
+          try {
+            document.getElementById('camp-popup-title').textContent = data.campaign.title;
+            document.getElementById('camp-popup-desc').textContent = data.campaign.description || '';
+            const campDisplay2 = document.getElementById('camp-emoji-display');
+            if (data.campaign.image_url) {
+              campDisplay2.innerHTML = '<img src="' + data.campaign.image_url + '" style="width:100%;height:100%;object-fit:cover">';
+            } else {
+              campDisplay2.textContent = data.campaign.emoji || '🎉';
+            }
+            setTimeout(() => document.getElementById('camp-popup').classList.add('open'), 2000);
+          } catch(e) {}
         }
       })
-      .catch(() => {
-        document.getElementById('auth-view').style.display = '';
-        document.getElementById('menu-view').style.display = 'none';
+      .catch(err => {
+        console.error('Menü fetch hatası:', err);
+        if (menuPublic) menuPublic.innerHTML = '<div style="padding:40px;text-align:center;color:#888">Bağlantı hatası.<br><br><button onclick="location.reload()" style="padding:8px 16px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer">Tekrar Dene</button></div>';
       });
   }
 }
@@ -2277,7 +2283,8 @@ async function fetchGoogleUserInfo(accessToken) {
 
 tryInitGoogle();
 
-if (TOKEN) {
+// Menü sayfasında loadApp çalıştırma
+if (TOKEN && !isMenuPath) {
   loadApp();
 }
 </script>
