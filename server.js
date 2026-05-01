@@ -11,7 +11,8 @@ const { v4: uuidv4 } = require('uuid');
 const WebSocket = require('ws');
 const http = require('http');
 const { Resend } = require('resend');
-const compression = require('compression');
+let compression;
+try { compression = require('compression'); } catch(e) { compression = null; }
 const { OAuth2Client } = require('google-auth-library');
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 require('dotenv').config();
@@ -90,7 +91,7 @@ const pool = new Pool({
 });
 
 app.use(cors());
-app.use(compression());
+if (compression) app.use(compression());
 
 // Google OAuth popup'ının çalışması için COOP/COEP header'larını ayarla
 app.use((req, res, next) => {
