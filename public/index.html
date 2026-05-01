@@ -1666,8 +1666,13 @@ async function toggleWaiterQuick(enabled){
     await api('PUT','/restaurant/me',{...RESTAURANT, waiter_enabled: enabled});
     RESTAURANT.waiter_enabled = enabled;
     toast(enabled ? '🔔 Garson çağrı sistemi açıldı' : '🔕 Garson çağrı sistemi kapatıldı', 'success');
+    // Admin önizleme menüsündeki garson butonlarını anında güncelle
+    document.querySelectorAll('.waiter-btn, .m-pill').forEach(btn => {
+      if(btn.getAttribute('onclick')?.includes('callWaiter')) {
+        btn.style.display = enabled ? '' : 'none';
+      }
+    });
   }catch(e){
-    // Hata olursa geri al
     const wt = document.getElementById('home-waiter-toggle');
     if(wt){ wt.checked = !enabled; setToggleUI('home-waiter-slider','home-waiter-knob', !enabled); }
     toast('Güncelleme başarısız: '+e.message,'error');
