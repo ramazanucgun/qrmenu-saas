@@ -1722,6 +1722,14 @@ function loadDesignFields(){
     document.getElementById('preview-theme-label').textContent = THEMES[currentTheme].name;
     updatePreview();
   }
+  // DB'deki kart stili yükle
+  if(RESTAURANT.card_style) {
+    currentCardStyle = RESTAURANT.card_style;
+    document.querySelectorAll('.card-style-opt').forEach(el => {
+      el.classList.toggle('active', el.dataset.style === currentCardStyle);
+    });
+    updatePreview();
+  }
   document.getElementById('d-wifi').value=RESTAURANT.wifi_name||'';
   // Garson toggle
   const waiterEnabled = RESTAURANT.waiter_enabled !== false;
@@ -1803,7 +1811,7 @@ async function saveWorkingHours(){
 
 async function saveDesign(){
   const waiterCb = document.getElementById('d-waiter-enabled');
-  const body={name:document.getElementById('d-rest-name').value||RESTAURANT?.name,brand_color:document.getElementById('d-color').value,font_family:document.getElementById('d-font').value,theme:currentTheme||'classic',wifi_name:document.getElementById('d-wifi').value,wifi_password:document.getElementById('d-wpass').value,instagram_url:document.getElementById('d-ig').value,facebook_url:document.getElementById('d-fb').value,waiter_enabled:waiterCb?waiterCb.checked:true};
+  const body={name:document.getElementById('d-rest-name').value||RESTAURANT?.name,brand_color:document.getElementById('d-color').value,font_family:document.getElementById('d-font').value,theme:currentTheme||'classic',card_style:currentCardStyle||'list',wifi_name:document.getElementById('d-wifi').value,wifi_password:document.getElementById('d-wpass').value,instagram_url:document.getElementById('d-ig').value,facebook_url:document.getElementById('d-fb').value,waiter_enabled:waiterCb?waiterCb.checked:true};
   try{RESTAURANT=await api('PUT','/restaurant/me',body);localStorage.setItem('qrmenu_rest',JSON.stringify(RESTAURANT));toast('Tasarım kaydedildi ✅','success');updatePreview();}catch(e){toast(e.message,'error');}
 }
 
@@ -1901,7 +1909,7 @@ function renderPublicMenu(data){
   el.style.color=t.text;
 
   const logoHtml=restaurant.logo_url
-    ?`<img class="m-logo" src="${restaurant.logo_url}" alt="${restaurant.name}">`
+    ?`<img class="m-logo" src="${restaurant.logo_url}" alt="${restaurant.name}" loading="lazy">`
     :`<div class="m-logo-placeholder" style="background:${color};color:#fff">${restaurant.name.charAt(0)}</div>`;
 
   const hero=`<div class="m-hero" style="background:${t.heroBg}">
@@ -1923,13 +1931,21 @@ function renderPublicMenu(data){
     ${cats.map((c,i)=>`<div class="snav-item ${i===0?'active':''}" style="color:${i===0?color:t.text2};${i===0?`border-color:${color}`:''}" onclick="scrollToSec('${c.id}',this,'${color}','${t.text2}')">${c.name}</div>`).join('')}
   </div>`;
 
+  // Card style: DB'den al, yoksa admin panelindeki currentCardStyle
+  const cardStyle = restaurant.card_style || currentCardStyle || 'list';
+
+  // Lazy loading için img helper
+  const lazyImg = (src, alt, style) => src
+    ? `<img src="${src}" alt="${alt}" loading="lazy" style="${style}">`
+    : '';
+
   const sections=cats.map(cat=>{
     if(!cat.products.length) return'';
     let prodsHtml='';
-    if(currentCardStyle==='card'){
+    if(cardStyle==='card'){
       prodsHtml=`<div class="m-products-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         ${cat.products.map(p=>`<div class="m-product" style="background:${t.bg2};border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
-          <div class="m-prod-img" style="background:${t.bg2}">${p.image_url?`<img src="${p.image_url}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;display:block">`:(p.emoji||'🍽️')}</div>
+          <div class="m-prod-img" style="background:${t.bg2}">${p.image_url?lazyImg(p.image_url,p.name,'width:100%;height:100%;object-fit:cover;border-radius:10px;display:block'):(p.emoji||'🍽️')}</div>
           <div class="m-prod-body">
             <div class="m-prod-name" style="color:${t.text}">${p.name}</div>
             <div class="m-prod-desc" style="color:${t.text2}">${p.description||''}</div>
@@ -1937,7 +1953,7 @@ function renderPublicMenu(data){
           </div>
         </div>`).join('')}
       </div>`;
-    }else if(currentCardStyle==='compact'){
+    }else if(cardStyle==='compact'){
       prodsHtml=cat.products.map(p=>`<div class="m-product style-compact" style="border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
         <div class="m-prod-left">
           <div class="m-prod-name" style="color:${t.text}">${p.name}</div>
@@ -1947,7 +1963,7 @@ function renderPublicMenu(data){
       </div>`).join('');
     }else{
       prodsHtml=cat.products.map(p=>`<div class="m-product style-list" style="border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
-        <div class="m-prod-img" style="background:${t.bg2};border-radius:10px">${p.image_url?`<img src="${p.image_url}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;display:block">`:(p.emoji||'🍽️')}</div>
+        <div class="m-prod-img" style="background:${t.bg2};border-radius:10px">${p.image_url?lazyImg(p.image_url,p.name,'width:100%;height:100%;object-fit:cover;border-radius:10px;display:block'):(p.emoji||'🍽️')}</div>
         <div style="flex:1">
           <div class="m-prod-name" style="color:${t.text}">${p.name}</div>
           <div class="m-prod-desc" style="color:${t.text2}">${p.description||''}</div>
