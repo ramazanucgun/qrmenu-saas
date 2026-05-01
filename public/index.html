@@ -1077,7 +1077,7 @@ async function loadApp() {
   document.getElementById('qr-url').textContent=menuUrl;
   document.getElementById('menu-topbar-url').textContent=menuUrl;
   await Promise.all([loadCategories(),loadProducts(),loadCalls(),loadFeedback(),loadCampaigns()]);
-  updateStats(); loadQR(); loadDesignFields(); connectWS(); initHomeToggles();
+  updateStats(); loadQR(); loadDesignFields(); connectWS(); initHomeToggles(); preloadWaiterSound();
   // Kayıtlı temayı uygula
   const savedTheme=localStorage.getItem('qrmenu_theme')||'classic';
   const savedCard=localStorage.getItem('qrmenu_cardstyle')||'list';
@@ -1096,7 +1096,7 @@ function connectWS() {
   if(!RESTAURANT) return;
   const proto=location.protocol==='https:'?'wss':'ws';
   ws=new WebSocket(`${proto}://${location.host}/?restaurantId=${RESTAURANT.id}`);
-  ws.onmessage=e=>{ const msg=JSON.parse(e.data); if(msg.type==='waiter_call'){ calls.unshift(msg.data); updateNotifBadge(); updateStats(); renderCalls(); renderHomeCalls(); toast(`🔔 ${msg.data.table_no} — Garson çağrısı!`,'info'); } };
+  ws.onmessage=e=>{ const msg=JSON.parse(e.data); if(msg.type==='waiter_call'){ calls.unshift(msg.data); updateNotifBadge(); updateStats(); renderCalls(); renderHomeCalls(); toast(`🔔 ${msg.data.table_no} — Garson çağrısı!`,'info'); playWaiterSound(); } };
   ws.onclose=()=>setTimeout(connectWS,3000);
 }
 
@@ -1698,6 +1698,57 @@ async function togglePublishQuick(enabled){
   }
 }
 
+// ═══════════════════════════════
+// GARSON SES SİSTEMİ
+// ═══════════════════════════════
+let _audioCtx = null;
+let _waiterAudio = null;
+
+function getAudioCtx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtx;
+}
+
+// MP3 dosyasını önceden yükle
+function preloadWaiterSound() {
+  try {
+    const audio = new Audio('/sounds/waiter.mp3');
+    audio.preload = 'auto';
+    audio.load();
+    _waiterAudio = audio;
+  } catch(e) {}
+}
+
+function playWaiterSound() {
+  // Önce MP3 dosyasını dene
+  if (_waiterAudio) {
+    _waiterAudio.currentTime = 0;
+    _waiterAudio.play().catch(() => playBeep()); // başarısız olursa beep çal
+    return;
+  }
+  // MP3 yoksa Web Audio API ile bip sesi üret
+  playBeep();
+}
+
+function playBeep() {
+  try {
+    const ctx = getAudioCtx();
+    // Üç kısa bip — bildirim sesi
+    [0, 0.25, 0.5].forEach(delay => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.4, ctx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.18);
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.2);
+    });
+  } catch(e) {}
+}
+
 function updateWaiterToggle(enabled){
   const slider = document.getElementById('d-waiter-slider');
   const knob = document.getElementById('d-waiter-knob');
@@ -2129,9 +2180,58 @@ function showProdDetail(prodId,catId){
   document.getElementById('prod-detail-overlay').classList.add('open');
 }
 
-async function callWaiter(restaurantId){
-  const tableNo=prompt('Masa numaranızı girin (opsiyonel):','')||'Belirsiz';
-  try{await fetch(API+'/waiter-call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({restaurant_id:restaurantId,table_no:tableNo})});toast('✅ Garson yolda!','success');}catch{toast('Çağrı gönderilemedi','error');}
+function callWaiter(restaurantId){
+  // Masa numarası giriş modalı oluştur
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding:0 0 20px';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:20px 20px 20px 20px;padding:28px 24px;width:100%;max-width:380px;text-align:center;animation:slideUp .3s ease">
+      <div style="font-size:36px;margin-bottom:12px">🔔</div>
+      <div style="font-size:18px;font-weight:700;color:#111;margin-bottom:6px">Garson Çağır</div>
+      <div style="font-size:13px;color:#888;margin-bottom:20px">Masa numaranızı girin</div>
+      <input id="waiter-table-input" type="number" min="1" placeholder="Örn: 5"
+        style="width:100%;padding:14px;border:2px solid #eee;border-radius:12px;font-size:18px;text-align:center;outline:none;margin-bottom:16px;font-family:inherit"
+        oninput="this.style.borderColor=this.value?'#22c55e':'#eee'">
+      <div id="waiter-table-error" style="color:#ef4444;font-size:12px;margin-bottom:12px;display:none">Lütfen masa numarasını girin</div>
+      <button onclick="submitWaiterCall('${restaurantId}')" 
+        style="width:100%;background:#e8c547;color:#111;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:10px">
+        ✅ Garson Çağır
+      </button>
+      <button onclick="this.closest('[style*=fixed]').remove()"
+        style="width:100%;background:transparent;color:#888;border:none;padding:10px;font-size:14px;cursor:pointer">
+        İptal
+      </button>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+  setTimeout(() => document.getElementById('waiter-table-input')?.focus(), 100);
+}
+
+async function submitWaiterCall(restaurantId) {
+  const input = document.getElementById('waiter-table-input');
+  const errorEl = document.getElementById('waiter-table-error');
+  const tableNo = input?.value?.trim();
+  if (!tableNo) {
+    if(errorEl) { errorEl.style.display='block'; input.style.borderColor='#ef4444'; }
+    return;
+  }
+  const overlay = input?.closest('[style*=fixed]');
+  try {
+    await fetch(API+'/waiter-call', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({restaurant_id:restaurantId, table_no:'Masa '+tableNo})
+    });
+    if(overlay) overlay.remove();
+    // Başarı mesajı göster
+    const success = document.createElement('div');
+    success.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:14px 28px;border-radius:14px;font-size:15px;font-weight:600;z-index:9999;animation:slideUp .3s ease';
+    success.textContent = '✅ Garson yolda!';
+    document.body.appendChild(success);
+    setTimeout(() => success.remove(), 2500);
+  } catch {
+    toast('Çağrı gönderilemedi','error');
+  }
 }
 
 function selectFBType(type,btn){fbType=type;document.querySelectorAll('.fb-type-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');}
