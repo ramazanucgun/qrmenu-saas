@@ -744,8 +744,11 @@ app.get('/api/menu/:slug', async (req, res) => {
       [restaurant.id]
     );
 
+    // Görselsiz ürünleri hızlıca döndür — görseller ayrı endpoint'ten lazy yüklenir
     const prodResult = await pool.query(
-      'SELECT * FROM products WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order',
+      `SELECT id, category_id, restaurant_id, name, description, price, emoji,
+              sort_order, is_visible
+       FROM products WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order`,
       [restaurant.id]
     );
 const hoursResult = await pool.query(
@@ -755,7 +758,8 @@ const hoursResult = await pool.query(
 
 
     const campResult = await pool.query(
-      `SELECT * FROM campaigns WHERE restaurant_id=$1 AND is_active=true
+      `SELECT id, title, description, emoji, is_active, starts_at, ends_at
+       FROM campaigns WHERE restaurant_id=$1 AND is_active=true
        AND starts_at <= NOW() AND ends_at >= NOW() LIMIT 1`,
       [restaurant.id]
     );
@@ -781,6 +785,24 @@ res.json({
   is_open: isOpen
 });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Ürün görselleri — ayrı endpoint, lazy yükleme için
+app.get('/api/menu/:slug/images', async (req, res) => {
+  try {
+    const restResult = await pool.query(
+      'SELECT id FROM restaurants WHERE slug=$1 AND is_published=true',
+      [req.params.slug]
+    );
+    if (!restResult.rows[0]) return res.status(404).json({ error: 'Bulunamadı' });
+    const result = await pool.query(
+      'SELECT id, image_url FROM products WHERE restaurant_id=$1 AND is_visible=true AND image_url IS NOT NULL',
+      [restResult.rows[0].id]
+    );
+    res.json(result.rows);
+  } catch(err) {
     res.status(500).json({ error: err.message });
   }
 });
