@@ -540,15 +540,18 @@ app.get('/api/restaurant/me', authMiddleware, async (req, res) => {
 });
 
 app.put('/api/restaurant/me', authMiddleware, async (req, res) => {
-  const { name, brand_color, font_family, wifi_name, wifi_password, instagram_url, facebook_url, waiter_enabled } = req.body;
+  const { name, brand_color, font_family, wifi_name, wifi_password, instagram_url, facebook_url, waiter_enabled, is_published } = req.body;
   try {
     const result = await pool.query(
       `UPDATE restaurants SET name=$1, brand_color=$2, font_family=$3,
        wifi_name=$4, wifi_password=$5, instagram_url=$6, facebook_url=$7,
-       waiter_enabled=COALESCE($8, waiter_enabled)
-       WHERE id=$9 RETURNING *`,
+       waiter_enabled=COALESCE($8, waiter_enabled),
+       is_published=COALESCE($9, is_published)
+       WHERE id=$10 RETURNING *`,
       [name, brand_color, font_family, wifi_name, wifi_password, instagram_url, facebook_url,
-       waiter_enabled !== undefined ? waiter_enabled : null, req.user.restaurantId]
+       waiter_enabled !== undefined ? waiter_enabled : null,
+       is_published !== undefined ? is_published : null,
+       req.user.restaurantId]
     );
     res.json(result.rows[0]);
   } catch(err) {
