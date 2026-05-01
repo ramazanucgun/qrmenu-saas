@@ -1898,6 +1898,31 @@ async function openMenu(){
 
 function closeMenu(){document.getElementById('menu-view').style.display='none';document.getElementById('app-view').classList.add('active');document.getElementById('camp-popup').classList.remove('open');document.getElementById('fb-modal').classList.remove('open');}
 
+// Görselleri arka planda yükle — menü açıldıktan sonra çağrılır
+async function loadMenuImages(slug) {
+  try {
+    const images = await fetch(API + '/menu/' + slug + '/images').then(r => r.json());
+    if (!Array.isArray(images)) return;
+    // Cache'e kaydet — showProdDetail kullanır
+    window._menuImages = {};
+    images.forEach(({ id, image_url }) => {
+      if (!image_url) return;
+      window._menuImages[id] = image_url;
+      // DOM'da placeholder'ı bul ve görseli yerleştir
+      document.querySelectorAll('[data-prod-id="' + id + '"]').forEach(el => {
+        const placeholder = el.querySelector('.m-prod-img-placeholder');
+        if (placeholder) {
+          const img = document.createElement('img');
+          img.src = image_url;
+          img.loading = 'lazy';
+          img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:10px;display:block';
+          img.onload = () => placeholder.replaceWith(img);
+        }
+      });
+    });
+  } catch(e) { /* görseller yüklenemedi, emoji kalır */ }
+}
+
 function renderPublicMenu(data){
   const{restaurant,categories:cats,campaign,today_hours,is_open}=data;
   // DB'den gelen tema kullan, yoksa currentTheme, yoksa classic
@@ -1944,8 +1969,8 @@ function renderPublicMenu(data){
     let prodsHtml='';
     if(cardStyle==='card'){
       prodsHtml=`<div class="m-products-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        ${cat.products.map(p=>`<div class="m-product" style="background:${t.bg2};border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
-          <div class="m-prod-img" style="background:${t.bg2}">${p.image_url?lazyImg(p.image_url,p.name,'width:100%;height:100%;object-fit:cover;border-radius:10px;display:block'):(p.emoji||'🍽️')}</div>
+        ${cat.products.map(p=>`<div class="m-product" data-prod-id="${p.id}" style="background:${t.bg2};border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
+          <div class="m-prod-img" style="background:${t.bg2}"><span class="m-prod-img-placeholder">${p.emoji||'🍽️'}</span></div>
           <div class="m-prod-body">
             <div class="m-prod-name" style="color:${t.text}">${p.name}</div>
             <div class="m-prod-desc" style="color:${t.text2}">${p.description||''}</div>
@@ -1962,8 +1987,8 @@ function renderPublicMenu(data){
         <div class="m-prod-price" style="color:${color}">₺${parseFloat(p.price).toFixed(2)}</div>
       </div>`).join('');
     }else{
-      prodsHtml=cat.products.map(p=>`<div class="m-product style-list" style="border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
-        <div class="m-prod-img" style="background:${t.bg2};border-radius:10px">${p.image_url?lazyImg(p.image_url,p.name,'width:100%;height:100%;object-fit:cover;border-radius:10px;display:block'):(p.emoji||'🍽️')}</div>
+      prodsHtml=cat.products.map(p=>`<div class="m-product style-list" data-prod-id="${p.id}" style="border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
+        <div class="m-prod-img" style="background:${t.bg2};border-radius:10px"><span class="m-prod-img-placeholder">${p.emoji||'🍽️'}</span></div>
         <div style="flex:1">
           <div class="m-prod-name" style="color:${t.text}">${p.name}</div>
           <div class="m-prod-desc" style="color:${t.text2}">${p.description||''}</div>
@@ -2065,7 +2090,8 @@ function showProdDetail(prodId,catId){
   const box=document.getElementById('prod-detail-box');
   box.style.background=t.bg;
   document.getElementById('prod-detail-img').style.background=t.bg2;
-  document.getElementById('prod-detail-img').innerHTML=p.image_url?`<img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover">`:`<span style="font-size:80px">${p.emoji||'🍽️'}</span>`;
+  const prodImgUrl = (window._menuImages && window._menuImages[p.id]) || p.image_url;
+  document.getElementById('prod-detail-img').innerHTML=prodImgUrl?`<img src="${prodImgUrl}" loading="lazy" style="width:100%;height:100%;object-fit:cover">`:`<span style="font-size:80px">${p.emoji||'🍽️'}</span>`;
   document.getElementById('prod-detail-name').style.color=t.text;
   document.getElementById('prod-detail-name').textContent=p.name;
   document.getElementById('prod-detail-desc').style.color=t.text2;
@@ -2172,6 +2198,9 @@ if (isMenuPath) {
 
         // Ziyareti kaydet
         fetch(API + '/menu/' + data.restaurant.slug + '/view', { method: 'POST' }).catch(() => {});
+
+        // Görselleri lazy yükle — menü açıldıktan sonra arka planda
+        setTimeout(() => loadMenuImages(slug), 300);
 
         // Kampanya popup
         if (data.campaign) {
