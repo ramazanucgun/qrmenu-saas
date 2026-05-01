@@ -1713,6 +1713,15 @@ function loadDesignFields(){
   document.getElementById('d-color').value=RESTAURANT.brand_color||'#e8c547';
   document.getElementById('d-color-hex').value=RESTAURANT.brand_color||'#e8c547';
   document.getElementById('d-font').value=RESTAURANT.font_family||'DM Serif Display';
+  // DB'deki tema yükle
+  if(RESTAURANT.theme && THEMES[RESTAURANT.theme]) {
+    currentTheme = RESTAURANT.theme;
+    document.querySelectorAll('.theme-opt').forEach(el => {
+      el.classList.toggle('active', el.dataset.theme === currentTheme);
+    });
+    document.getElementById('preview-theme-label').textContent = THEMES[currentTheme].name;
+    updatePreview();
+  }
   document.getElementById('d-wifi').value=RESTAURANT.wifi_name||'';
   // Garson toggle
   const waiterEnabled = RESTAURANT.waiter_enabled !== false;
@@ -1794,7 +1803,7 @@ async function saveWorkingHours(){
 
 async function saveDesign(){
   const waiterCb = document.getElementById('d-waiter-enabled');
-  const body={name:document.getElementById('d-rest-name').value||RESTAURANT?.name,brand_color:document.getElementById('d-color').value,font_family:document.getElementById('d-font').value,wifi_name:document.getElementById('d-wifi').value,wifi_password:document.getElementById('d-wpass').value,instagram_url:document.getElementById('d-ig').value,facebook_url:document.getElementById('d-fb').value,waiter_enabled:waiterCb?waiterCb.checked:true};
+  const body={name:document.getElementById('d-rest-name').value||RESTAURANT?.name,brand_color:document.getElementById('d-color').value,font_family:document.getElementById('d-font').value,theme:currentTheme||'classic',wifi_name:document.getElementById('d-wifi').value,wifi_password:document.getElementById('d-wpass').value,instagram_url:document.getElementById('d-ig').value,facebook_url:document.getElementById('d-fb').value,waiter_enabled:waiterCb?waiterCb.checked:true};
   try{RESTAURANT=await api('PUT','/restaurant/me',body);localStorage.setItem('qrmenu_rest',JSON.stringify(RESTAURANT));toast('Tasarım kaydedildi ✅','success');updatePreview();}catch(e){toast(e.message,'error');}
 }
 
@@ -1883,7 +1892,8 @@ function closeMenu(){document.getElementById('menu-view').style.display='none';d
 
 function renderPublicMenu(data){
   const{restaurant,categories:cats,campaign,today_hours,is_open}=data;
-  const t=THEMES[currentTheme]||THEMES.classic;
+  // DB'den gelen tema kullan, yoksa currentTheme, yoksa classic
+  const t=THEMES[restaurant.theme]||THEMES[currentTheme]||THEMES.classic;
   const color=restaurant.brand_color||t.accent;
   const font=restaurant.font_family||'DM Serif Display';
   const el=document.getElementById('menu-public');
@@ -2117,21 +2127,26 @@ if (isMenuPath) {
   const slug = pathParts[0] === 'menu' ? pathParts[1] : pathParts[0];
 
   if (slug) {
-    // Önce slug'ın geçerli olup olmadığını kontrol et
+    // HEMEN tüm diğer view'ları gizle, loading göster
+    document.getElementById('auth-view').style.display = 'none';
+    document.getElementById('app-view').style.display = 'none';
+    document.getElementById('menu-view').style.display = 'flex';
+    document.getElementById('menu-view').style.flexDirection = 'column';
+    const adminBar = document.querySelector('.menu-topbar-admin');
+    if (adminBar) adminBar.style.display = 'none';
+    // Loading göster
+    const menuPublic = document.getElementById('menu-public');
+    if (menuPublic) menuPublic.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#888;font-size:14px">Menü yükleniyor...</div>';
+
     fetch(API + '/menu/' + slug)
       .then(r => r.json())
       .then(data => {
         if (data.error || !data.restaurant) {
           // Geçersiz slug — giriş sayfasına dön
+          document.getElementById('auth-view').style.display = '';
+          document.getElementById('menu-view').style.display = 'none';
           return;
         }
-        // Geçerli menü — menü görünümünü göster
-        document.getElementById('auth-view').style.display = 'none';
-        document.getElementById('app-view').style.display = 'none';
-        document.getElementById('menu-view').style.display = 'flex';
-        document.getElementById('menu-view').style.flexDirection = 'column';
-        const adminBar = document.querySelector('.menu-topbar-admin');
-        if (adminBar) adminBar.style.display = 'none';
 
         renderPublicMenu(data);
 
@@ -2152,7 +2167,8 @@ if (isMenuPath) {
         }
       })
       .catch(() => {
-        // Bağlantı hatası — giriş sayfası kalır
+        document.getElementById('auth-view').style.display = '';
+        document.getElementById('menu-view').style.display = 'none';
       });
   }
 }
