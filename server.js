@@ -782,7 +782,7 @@ const hoursResult = await pool.query(
 
 
     const campResult = await pool.query(
-      `SELECT id, title, description, emoji, is_active, starts_at, ends_at
+      `SELECT id, title, description, emoji, image_url, is_active, starts_at, ends_at
        FROM campaigns WHERE restaurant_id=$1 AND is_active=true
        AND starts_at <= NOW() AND ends_at >= NOW() LIMIT 1`,
       [restaurant.id]

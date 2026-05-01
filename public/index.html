@@ -234,12 +234,13 @@ textarea.form-input{resize:vertical;min-height:80px}
 .prod-detail-desc{font-size:14px;line-height:1.6;opacity:.7;margin-bottom:16px}
 .prod-detail-price{font-size:1.5rem;font-weight:700}
 
-.camp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:none;align-items:center;justify-content:center}
+.camp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:none;align-items:center;justify-content:center;padding:20px}
 .camp-overlay.open{display:flex}
-.camp-box{background:#fff;border-radius:20px;overflow:hidden;width:300px;text-align:center;animation:popIn .4s cubic-bezier(.34,1.56,.64,1)}
+.camp-box{background:#fff;border-radius:20px;overflow:hidden;width:100%;max-width:340px;text-align:center;animation:popIn .4s cubic-bezier(.34,1.56,.64,1);box-shadow:0 20px 60px rgba(0,0,0,.3)}
 @keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
-.camp-img{height:140px;display:flex;align-items:center;justify-content:center;font-size:60px;background:linear-gradient(135deg,#fde68a,#f59e0b);overflow:hidden}
-.camp-img img{width:100%;height:100%;object-fit:cover}
+.camp-img{height:180px;display:flex;align-items:center;justify-content:center;font-size:64px;background:linear-gradient(135deg,#fde68a,#f59e0b);overflow:hidden;position:relative}
+.camp-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.camp-img-emoji{position:relative;z-index:1}
 .fb-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:none;align-items:flex-end;justify-content:center}
 .fb-modal.open{display:flex}
 .fb-inner{background:#fff;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:500px;animation:slideUp .3s ease}
@@ -746,7 +747,9 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
 <!-- KAMPANYA POPUP -->
 <div class="camp-overlay" id="camp-popup">
   <div class="camp-box">
-    <div class="camp-img" id="camp-emoji-display" style="background:linear-gradient(135deg,#fde68a,#f59e0b)">🎉</div>
+    <div class="camp-img" id="camp-emoji-display" style="background:linear-gradient(135deg,#fde68a,#f59e0b)">
+      <span class="camp-img-emoji" id="camp-popup-emoji">🎉</span>
+    </div>
     <div class="camp-body">
       <div class="camp-title" id="camp-popup-title"></div>
       <div class="camp-sub" id="camp-popup-desc"></div>
@@ -1897,6 +1900,32 @@ async function openMenu(){
   try{const data=await fetch(API+'/menu/'+slug).then(r=>r.json());renderPublicMenu(data);}catch{}
 }
 
+function renderCampPopup(campaign) {
+  if (!campaign) return;
+  const display = document.getElementById('camp-emoji-display');
+  const emojiEl = document.getElementById('camp-popup-emoji');
+  if (!display) return;
+
+  // Önce temizle
+  const existingImg = display.querySelector('img');
+  if (existingImg) existingImg.remove();
+  if (emojiEl) emojiEl.textContent = campaign.emoji || '🎉';
+
+  if (campaign.image_url) {
+    const img = document.createElement('img');
+    img.alt = campaign.title || '';
+    img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover';
+    img.src = campaign.image_url;
+    // Gradient arka planı kaldır, resim göster
+    display.style.background = '#000';
+    if (emojiEl) emojiEl.style.display = 'none';
+    display.appendChild(img);
+  } else {
+    display.style.background = 'linear-gradient(135deg,#fde68a,#f59e0b)';
+    if (emojiEl) emojiEl.style.display = '';
+  }
+}
+
 function closeMenu(){document.getElementById('menu-view').style.display='none';document.getElementById('app-view').classList.add('active');document.getElementById('camp-popup').classList.remove('open');document.getElementById('fb-modal').classList.remove('open');}
 
 // Görselleri arka planda yükle — menü açıldıktan sonra çağrılır
@@ -2032,12 +2061,7 @@ function renderPublicMenu(data){
   if(campaign){
     document.getElementById('camp-popup-title').textContent=campaign.title;
     document.getElementById('camp-popup-desc').textContent=campaign.description||'';
-    const campDisplay1 = document.getElementById('camp-emoji-display');
-    if(campaign.image_url){
-      campDisplay1.innerHTML=`<img src="${campaign.image_url}" style="width:100%;height:100%;object-fit:cover">`;
-    } else {
-      campDisplay1.textContent=campaign.emoji||'🎉';
-    }
+    renderCampPopup(campaign);
     if(!window.location.pathname.startsWith('/menu/')) setTimeout(()=>document.getElementById('camp-popup').classList.add('open'),1200);
   }
 }
@@ -2211,12 +2235,7 @@ if (isMenuPath) {
           try {
             document.getElementById('camp-popup-title').textContent = data.campaign.title;
             document.getElementById('camp-popup-desc').textContent = data.campaign.description || '';
-            const campDisplay2 = document.getElementById('camp-emoji-display');
-            if (data.campaign.image_url) {
-              campDisplay2.innerHTML = '<img src="' + data.campaign.image_url + '" style="width:100%;height:100%;object-fit:cover">';
-            } else {
-              campDisplay2.textContent = data.campaign.emoji || '🎉';
-            }
+            renderCampPopup(data.campaign);
             setTimeout(() => document.getElementById('camp-popup').classList.add('open'), 2000);
           } catch(e) {}
         }
