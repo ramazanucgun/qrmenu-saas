@@ -386,6 +386,42 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
           <button class="btn-sm" onclick="openMenu()">👁 Aç</button>
         </div>
       </div>
+      <!-- Hızlı Kontroller -->
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-head"><span class="panel-title">⚡ Hızlı Kontroller</span></div>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:0">
+
+          <!-- Garson Çağrı Toggle -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)">
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text)">🔔 Garson Çağrı Sistemi</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px" id="home-waiter-desc">Müşteriler menüden garson çağırabilir</div>
+            </div>
+            <label style="position:relative;display:inline-block;width:48px;height:26px;cursor:pointer;flex-shrink:0">
+              <input type="checkbox" id="home-waiter-toggle" style="opacity:0;width:0;height:0" onchange="toggleWaiterQuick(this.checked)">
+              <span id="home-waiter-slider" style="position:absolute;inset:0;background:#555;border-radius:26px;transition:.3s;display:block">
+                <span id="home-waiter-knob" style="position:absolute;height:20px;width:20px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;display:block"></span>
+              </span>
+            </label>
+          </div>
+
+          <!-- Menü Yayın Durumu -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0">
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text)">🌐 Menü Yayın Durumu</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px" id="home-pub-desc">Menünüz herkese açık</div>
+            </div>
+            <label style="position:relative;display:inline-block;width:48px;height:26px;cursor:pointer;flex-shrink:0">
+              <input type="checkbox" id="home-pub-toggle" style="opacity:0;width:0;height:0" onchange="togglePublishQuick(this.checked)">
+              <span id="home-pub-slider" style="position:absolute;inset:0;background:#555;border-radius:26px;transition:.3s;display:block">
+                <span id="home-pub-knob" style="position:absolute;height:20px;width:20px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;display:block"></span>
+              </span>
+            </label>
+          </div>
+
+        </div>
+      </div>
+
       <div class="panel">
         <div class="panel-head"><span class="panel-title">Son Garson Çağrıları</span></div>
         <div id="home-calls" style="padding:8px"></div>
@@ -1038,7 +1074,7 @@ async function loadApp() {
   document.getElementById('qr-url').textContent=menuUrl;
   document.getElementById('menu-topbar-url').textContent=menuUrl;
   await Promise.all([loadCategories(),loadProducts(),loadCalls(),loadFeedback(),loadCampaigns()]);
-  updateStats(); loadQR(); loadDesignFields(); connectWS();
+  updateStats(); loadQR(); loadDesignFields(); connectWS(); initHomeToggles();
   // Kayıtlı temayı uygula
   const savedTheme=localStorage.getItem('qrmenu_theme')||'classic';
   const savedCard=localStorage.getItem('qrmenu_cardstyle')||'list';
@@ -1591,6 +1627,66 @@ async function toggleCampaign(id){
 async function deleteCampaign(id){
   if(!confirm('Kampanya silinsin mi?')) return;
   try{await api('DELETE','/campaigns/'+id);campaigns=campaigns.filter(c=>c.id!==id);renderCampaigns();toast('Kampanya silindi','info');}catch(e){toast(e.message,'error');}
+}
+
+// ═══════════════════════════════
+// HIZLI KONTROLLER (Ana Sayfa)
+// ═══════════════════════════════
+function setToggleUI(sliderId, knobId, enabled){
+  const slider = document.getElementById(sliderId);
+  const knob = document.getElementById(knobId);
+  if(slider) slider.style.background = enabled ? 'var(--accent)' : '#555';
+  if(knob) knob.style.transform = enabled ? 'translateX(22px)' : 'translateX(0)';
+}
+
+function initHomeToggles(){
+  if(!RESTAURANT) return;
+  const waiterEnabled = RESTAURANT.waiter_enabled !== false;
+  const pubEnabled = RESTAURANT.is_published !== false;
+
+  const wt = document.getElementById('home-waiter-toggle');
+  if(wt){ wt.checked = waiterEnabled; setToggleUI('home-waiter-slider','home-waiter-knob', waiterEnabled); }
+  const wd = document.getElementById('home-waiter-desc');
+  if(wd) wd.textContent = waiterEnabled ? 'Müşteriler menüden garson çağırabilir' : 'Garson çağrı sistemi kapalı';
+
+  const pt = document.getElementById('home-pub-toggle');
+  if(pt){ pt.checked = pubEnabled; setToggleUI('home-pub-slider','home-pub-knob', pubEnabled); }
+  const pd = document.getElementById('home-pub-desc');
+  if(pd) pd.textContent = pubEnabled ? 'Menünüz herkese açık' : 'Menünüz gizli (yayında değil)';
+}
+
+async function toggleWaiterQuick(enabled){
+  setToggleUI('home-waiter-slider','home-waiter-knob', enabled);
+  // Tasarım sayfasındaki toggle'ı da güncelle
+  const cb = document.getElementById('d-waiter-enabled');
+  if(cb){ cb.checked = enabled; updateWaiterToggle(enabled); }
+  const desc = document.getElementById('home-waiter-desc');
+  if(desc) desc.textContent = enabled ? 'Müşteriler menüden garson çağırabilir' : 'Garson çağrı sistemi kapalı';
+  try{
+    await api('PUT','/restaurant/me',{...RESTAURANT, waiter_enabled: enabled});
+    RESTAURANT.waiter_enabled = enabled;
+    toast(enabled ? '🔔 Garson çağrı sistemi açıldı' : '🔕 Garson çağrı sistemi kapatıldı', 'success');
+  }catch(e){
+    // Hata olursa geri al
+    const wt = document.getElementById('home-waiter-toggle');
+    if(wt){ wt.checked = !enabled; setToggleUI('home-waiter-slider','home-waiter-knob', !enabled); }
+    toast('Güncelleme başarısız: '+e.message,'error');
+  }
+}
+
+async function togglePublishQuick(enabled){
+  setToggleUI('home-pub-slider','home-pub-knob', enabled);
+  const desc = document.getElementById('home-pub-desc');
+  if(desc) desc.textContent = enabled ? 'Menünüz herkese açık' : 'Menünüz gizli (yayında değil)';
+  try{
+    await api('PUT','/restaurant/me',{...RESTAURANT, is_published: enabled});
+    RESTAURANT.is_published = enabled;
+    toast(enabled ? '🌐 Menü yayına alındı' : '🔒 Menü gizlendi', 'success');
+  }catch(e){
+    const pt = document.getElementById('home-pub-toggle');
+    if(pt){ pt.checked = !enabled; setToggleUI('home-pub-slider','home-pub-knob', !enabled); }
+    toast('Güncelleme başarısız: '+e.message,'error');
+  }
 }
 
 function updateWaiterToggle(enabled){
