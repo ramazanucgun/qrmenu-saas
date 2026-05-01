@@ -260,9 +260,7 @@ function authTab(t) {
   if((t==='login'||t==='register') && e && e.currentTarget) e.currentTarget.classList.add('active');
   var gn = document.getElementById('google-name-form');
   if(gn) gn.style.display = 'none';
-  if(window.GOOGLE_CLIENT_ID && typeof google !== 'undefined') {
-    setTimeout(function(){ if(typeof initGoogleButtons==='function') initGoogleButtons(window.GOOGLE_CLIENT_ID); }, 50);
-  }
+  // Google butonları zaten initialize edildi, tekrar render et
   ['login-form','register-form','forgot-form','reset-form'].forEach(function(id){
     var el = document.getElementById(id);
     if(el) el.style.display = 'none';
@@ -272,6 +270,12 @@ function authTab(t) {
   var err = document.getElementById('auth-error');
   if(err) err.style.display = 'none';
 }
+
+// Stub fonksiyonlar — asıl script yüklenene kadar çalışır
+function doLogin(){ if(typeof _doLogin==='function') _doLogin(); else console.warn('doLogin henüz yüklenmedi'); }
+function doRegister(){ if(typeof _doRegister==='function') _doRegister(); else console.warn('doRegister henüz yüklenmedi'); }
+function doForgotPassword(){ if(typeof _doForgotPassword==='function') _doForgotPassword(); }
+function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPassword(); }
 </script>
 </head>
 <body>
@@ -346,6 +350,7 @@ function authTab(t) {
       <div class="nav-item" onclick="goPage('campaigns',this)">📢 Kampanyalar</div>
       <div class="nav-section">ARAÇLAR</div>
       <div class="nav-item" onclick="goPage('qr',this)">⬛ QR Kodlar</div>
+      <div class="nav-item" onclick="goPage('analytics',this)">📊 Analiz</div>
       <div class="nav-item" onclick="goPage('feedback',this)">💬 Geri Bildirimler</div>
       <div class="nav-section">HESAP</div>
       <div class="nav-item" onclick="goPage('subscription',this)">💳 Abonelik</div>
@@ -381,6 +386,42 @@ function authTab(t) {
           <button class="btn-sm" onclick="openMenu()">👁 Aç</button>
         </div>
       </div>
+      <!-- Hızlı Kontroller -->
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-head"><span class="panel-title">⚡ Hızlı Kontroller</span></div>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:0">
+
+          <!-- Garson Çağrı Toggle -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)">
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text)">🔔 Garson Çağrı Sistemi</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px" id="home-waiter-desc">Müşteriler menüden garson çağırabilir</div>
+            </div>
+            <label style="position:relative;display:inline-block;width:48px;height:26px;cursor:pointer;flex-shrink:0">
+              <input type="checkbox" id="home-waiter-toggle" style="opacity:0;width:0;height:0" onchange="toggleWaiterQuick(this.checked)">
+              <span id="home-waiter-slider" style="position:absolute;inset:0;background:#555;border-radius:26px;transition:.3s;display:block">
+                <span id="home-waiter-knob" style="position:absolute;height:20px;width:20px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;display:block"></span>
+              </span>
+            </label>
+          </div>
+
+          <!-- Menü Yayın Durumu -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0">
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text)">🌐 Menü Yayın Durumu</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px" id="home-pub-desc">Menünüz herkese açık</div>
+            </div>
+            <label style="position:relative;display:inline-block;width:48px;height:26px;cursor:pointer;flex-shrink:0">
+              <input type="checkbox" id="home-pub-toggle" style="opacity:0;width:0;height:0" onchange="togglePublishQuick(this.checked)">
+              <span id="home-pub-slider" style="position:absolute;inset:0;background:#555;border-radius:26px;transition:.3s;display:block">
+                <span id="home-pub-knob" style="position:absolute;height:20px;width:20px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;display:block"></span>
+              </span>
+            </label>
+          </div>
+
+        </div>
+      </div>
+
       <div class="panel">
         <div class="panel-head"><span class="panel-title">Son Garson Çağrıları</span></div>
         <div id="home-calls" style="padding:8px"></div>
@@ -547,6 +588,25 @@ function authTab(t) {
           </div>
 
 <div class="panel" style="margin-bottom:14px">
+  <div class="panel-head"><span class="panel-title">🔔 Garson Çağrı Sistemi</span></div>
+  <div style="padding:18px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Garson Çağır Butonu</div>
+        <div style="font-size:12px;color:var(--text2)">Müşterilerin menüden garson çağırmasını aktif/pasif yapın</div>
+      </div>
+      <label style="position:relative;display:inline-block;width:48px;height:26px;flex-shrink:0;cursor:pointer">
+        <input type="checkbox" id="d-waiter-enabled" style="opacity:0;width:0;height:0" onchange="updateWaiterToggle(this.checked)">
+        <span id="d-waiter-slider" style="position:absolute;inset:0;background:#555;border-radius:26px;transition:.3s">
+          <span style="position:absolute;height:20px;width:20px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;display:block" id="d-waiter-knob"></span>
+        </span>
+      </label>
+    </div>
+    <div id="d-waiter-status" style="margin-top:10px;font-size:12px;color:var(--green)">🟢 Garson çağrı sistemi aktif</div>
+  </div>
+</div>
+
+<div class="panel" style="margin-bottom:14px">
   <div class="panel-head"><span class="panel-title">🕐 Çalışma Saatleri</span></div>
   <div style="padding:16px">
     <div id="hours-list" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -594,6 +654,40 @@ function authTab(t) {
     </div>
 
     <!-- FEEDBACK -->
+    <div class="page" id="page-analytics">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div style="font-size:16px;font-weight:600;color:var(--text)">Menü Ziyaret Analizi</div>
+        <select id="analytics-period" onchange="loadAnalytics()" style="background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 12px;font-size:13px">
+          <option value="7">Son 7 gün</option>
+          <option value="30" selected>Son 30 gün</option>
+          <option value="90">Son 90 gün</option>
+        </select>
+      </div>
+
+      <!-- Özet kartlar -->
+      <div class="stats-grid" style="margin-bottom:20px">
+        <div class="stat-card" style="--c:var(--accent)"><div class="stat-val" id="an-today">—</div><div class="stat-label">Bugün</div></div>
+        <div class="stat-card" style="--c:var(--blue)"><div class="stat-val" id="an-week">—</div><div class="stat-label">Bu Hafta</div></div>
+        <div class="stat-card" style="--c:var(--green)"><div class="stat-val" id="an-total">—</div><div class="stat-label">Seçili Dönem</div></div>
+        <div class="stat-card" style="--c:var(--red)"><div class="stat-val" id="an-mobile">—</div><div class="stat-label">Mobil Oranı</div></div>
+      </div>
+
+      <!-- Günlük grafik -->
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-head"><span class="panel-title">Günlük Ziyaret</span></div>
+        <div style="padding:20px">
+          <div id="an-chart" style="display:flex;align-items:flex-end;gap:4px;height:140px;border-bottom:1px solid var(--border);padding-bottom:8px"></div>
+          <div id="an-chart-labels" style="display:flex;gap:4px;margin-top:6px;overflow:hidden"></div>
+        </div>
+      </div>
+
+      <!-- Cihaz dağılımı -->
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Cihaz Dağılımı</span></div>
+        <div id="an-devices" style="padding:20px;display:flex;gap:20px;flex-wrap:wrap"></div>
+      </div>
+    </div>
+
     <div class="page" id="page-feedback">
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap" id="fb-filters">
         <button class="btn-sm btn-accent" onclick="filterFB('all',this)">Tümü</button>
@@ -795,14 +889,18 @@ async function api(method, path, body) {
 // ═══════════════════════════════
 let pendingGoogleCredential = null;
 
+let _googleInitialized = false;
 function initGoogleButtons(clientId) {
   if (!clientId || typeof google === 'undefined') return;
-  google.accounts.id.initialize({
-    client_id: clientId,
-    callback: handleGoogleCredential,
-    auto_select: false,
-    cancel_on_tap_outside: true,
-  });
+  if (!_googleInitialized) {
+    google.accounts.id.initialize({
+      client_id: clientId,
+      callback: handleGoogleCredential,
+      auto_select: false,
+      cancel_on_tap_outside: true,
+    });
+    _googleInitialized = true;
+  }
   // Her iki forma da buton render et
   ['g-login-btn', 'g-register-btn'].forEach(id => {
     const el = document.getElementById(id);
@@ -859,25 +957,12 @@ function showAuthError(msg) {
 function onAuthSuccess(data) {
   TOKEN = data.token;
   localStorage.setItem('qrmenu_token', TOKEN);
-  showApp();
+  loadApp();
 }
 
-function authTab(t) {
-  document.querySelectorAll('.auth-tab').forEach(e => e.classList.remove('active'));
-  if(t === 'login' || t === 'register') event?.currentTarget?.classList.add('active');
-  document.getElementById('google-name-form').style.display = 'none';
-  // Google butonlarını yeniden render et (tab değişince kaybolabilir)
-  if (window.GOOGLE_CLIENT_ID && typeof google !== 'undefined') {
-    setTimeout(() => initGoogleButtons(window.GOOGLE_CLIENT_ID), 50);
-  }
-  document.getElementById('login-form').style.display = t==='login' ? 'block' : 'none';
-  document.getElementById('register-form').style.display = t==='register' ? 'block' : 'none';
-  document.getElementById('forgot-form').style.display = t==='forgot' ? 'block' : 'none';
-  document.getElementById('reset-form').style.display = t==='reset' ? 'block' : 'none';
-  document.getElementById('auth-error').style.display = 'none';
-}
+// authTab head'de tanımlı
 
-async function doForgotPassword() {
+async function _doForgotPassword() {
   const email = document.getElementById('forgot-email').value;
   if(!email) return showAuthError('Email zorunlu');
   try {
@@ -889,7 +974,7 @@ async function doForgotPassword() {
   } catch(e) { showAuthError(e.message); }
 }
 
-async function doResetPassword() {
+async function _doResetPassword() {
   const password = document.getElementById('reset-pass').value;
   const password2 = document.getElementById('reset-pass2').value;
   if(password.length < 8) return showAuthError('Şifre en az 8 karakter olmalı');
@@ -935,7 +1020,7 @@ async function resendFromLogin() {
   } catch(e) { showAuthError(e.message); }
 }
 
-async function doLogin() {
+async function _doLogin() {
   const email = document.getElementById('l-email').value;
   const password = document.getElementById('l-pass').value;
   if (!email || !password) return showAuthError('Email ve şifre zorunlu');
@@ -955,7 +1040,7 @@ async function doLogin() {
   }
 }
 
-async function doRegister() {
+async function _doRegister() {
   const restaurantName = document.getElementById('r-name').value.trim();
   const email = document.getElementById('r-email').value.trim();
   const password = document.getElementById('r-pass').value;
@@ -989,7 +1074,7 @@ async function loadApp() {
   document.getElementById('qr-url').textContent=menuUrl;
   document.getElementById('menu-topbar-url').textContent=menuUrl;
   await Promise.all([loadCategories(),loadProducts(),loadCalls(),loadFeedback(),loadCampaigns()]);
-  updateStats(); loadQR(); loadDesignFields(); connectWS();
+  updateStats(); loadQR(); loadDesignFields(); connectWS(); initHomeToggles();
   // Kayıtlı temayı uygula
   const savedTheme=localStorage.getItem('qrmenu_theme')||'classic';
   const savedCard=localStorage.getItem('qrmenu_cardstyle')||'list';
@@ -1025,15 +1110,87 @@ function updateStats(){
   document.getElementById('stat-calls').textContent=calls.filter(c=>c.status==='pending').length;
 }
 
+// ═══════════════════════════════
+// ANALİZ
+// ═══════════════════════════════
+async function loadAnalytics(){
+  const period = document.getElementById('analytics-period')?.value || '30';
+  try {
+    const data = await api('GET', '/analytics?period=' + period);
+
+    document.getElementById('an-today').textContent = data.today;
+    document.getElementById('an-week').textContent = data.thisWeek;
+    document.getElementById('an-total').textContent = data.total;
+
+    // Mobil oranı
+    const mobile = data.byDevice.find(d => d.device === 'mobile');
+    const mobileCount = mobile ? parseInt(mobile.count) : 0;
+    const mobileRate = data.total > 0 ? Math.round((mobileCount / data.total) * 100) : 0;
+    document.getElementById('an-mobile').textContent = '%' + mobileRate;
+
+    // Günlük grafik
+    renderAnalyticsChart(data.byDay, parseInt(period));
+
+    // Cihaz dağılımı
+    const deviceEl = document.getElementById('an-devices');
+    const icons = { mobile: '📱', desktop: '🖥️', unknown: '❓' };
+    deviceEl.innerHTML = data.byDevice.map(d => `
+      <div style="display:flex;align-items:center;gap:12px;background:var(--bg3);border-radius:10px;padding:14px 18px;flex:1;min-width:140px">
+        <span style="font-size:28px">${icons[d.device] || '❓'}</span>
+        <div>
+          <div style="font-size:20px;font-weight:700;color:var(--text)">${d.count}</div>
+          <div style="font-size:12px;color:var(--text2)">${d.device === 'mobile' ? 'Mobil' : d.device === 'desktop' ? 'Masaüstü' : 'Bilinmiyor'}</div>
+        </div>
+      </div>`).join('') || '<div style="color:var(--text3);font-size:13px">Henüz veri yok</div>';
+
+  } catch(e) { console.error('Analiz yüklenemedi:', e.message); }
+}
+
+function renderAnalyticsChart(byDay, period){
+  const chartEl = document.getElementById('an-chart');
+  const labelsEl = document.getElementById('an-chart-labels');
+  if (!chartEl) return;
+
+  // Seçili dönemdeki tüm günleri doldur
+  const map = {};
+  byDay.forEach(d => { map[d.date.slice(0,10)] = parseInt(d.count); });
+
+  const days = [];
+  for (let i = period - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0,10);
+    days.push({ key, count: map[key] || 0, label: d.toLocaleDateString('tr-TR', { day:'numeric', month:'short' }) });
+  }
+
+  const max = Math.max(...days.map(d => d.count), 1);
+  const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#e8c547';
+
+  // Sadece her N günde bir label göster
+  const labelStep = period <= 7 ? 1 : period <= 30 ? 5 : 15;
+
+  chartEl.innerHTML = days.map((d, i) => `
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;min-width:0" title="${d.label}: ${d.count} ziyaret">
+      <div style="font-size:9px;color:var(--text3)">${d.count > 0 ? d.count : ''}</div>
+      <div style="width:100%;border-radius:4px 4px 0 0;background:${accentColor};opacity:${d.count > 0 ? 0.85 : 0.15};height:${Math.max(d.count / max * 120, d.count > 0 ? 4 : 2)}px;transition:height .3s"></div>
+    </div>`).join('');
+
+  labelsEl.innerHTML = days.map((d, i) => `
+    <div style="flex:1;font-size:9px;color:var(--text3);text-align:center;overflow:hidden;white-space:nowrap;min-width:0">
+      ${i % labelStep === 0 ? d.label : ''}
+    </div>`).join('');
+}
+
 function goPage(id,el){
   document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
   if(el) el.classList.add('active');
   document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  const titles={home:'Genel Bakış',editor:'Menü Editörü',design:'Tasarım',qr:'QR Kodlar',feedback:'Geri Bildirimler',notifications:'Garson Çağrıları',subscription:'Abonelik',campaigns:'Kampanyalar'};
+  const titles={home:'Genel Bakış',editor:'Menü Editörü',design:'Tasarım',qr:'QR Kodlar',feedback:'Geri Bildirimler',notifications:'Garson Çağrıları',subscription:'Abonelik',campaigns:'Kampanyalar',analytics:'Analiz'};
   document.getElementById('topbar-title').textContent=titles[id]||id;
   if(id==='editor') renderCatList();
   if(id==='design') loadDesignFields();
+  if(id==='analytics') loadAnalytics();
 }
 
 // TEMA SEÇİCİ
@@ -1472,12 +1629,112 @@ async function deleteCampaign(id){
   try{await api('DELETE','/campaigns/'+id);campaigns=campaigns.filter(c=>c.id!==id);renderCampaigns();toast('Kampanya silindi','info');}catch(e){toast(e.message,'error');}
 }
 
+// ═══════════════════════════════
+// HIZLI KONTROLLER (Ana Sayfa)
+// ═══════════════════════════════
+function setToggleUI(sliderId, knobId, enabled){
+  const slider = document.getElementById(sliderId);
+  const knob = document.getElementById(knobId);
+  if(slider) slider.style.background = enabled ? 'var(--accent)' : '#555';
+  if(knob) knob.style.transform = enabled ? 'translateX(22px)' : 'translateX(0)';
+}
+
+function initHomeToggles(){
+  if(!RESTAURANT) return;
+  const waiterEnabled = RESTAURANT.waiter_enabled !== false;
+  const pubEnabled = RESTAURANT.is_published !== false;
+
+  const wt = document.getElementById('home-waiter-toggle');
+  if(wt){ wt.checked = waiterEnabled; setToggleUI('home-waiter-slider','home-waiter-knob', waiterEnabled); }
+  const wd = document.getElementById('home-waiter-desc');
+  if(wd) wd.textContent = waiterEnabled ? 'Müşteriler menüden garson çağırabilir' : 'Garson çağrı sistemi kapalı';
+
+  const pt = document.getElementById('home-pub-toggle');
+  if(pt){ pt.checked = pubEnabled; setToggleUI('home-pub-slider','home-pub-knob', pubEnabled); }
+  const pd = document.getElementById('home-pub-desc');
+  if(pd) pd.textContent = pubEnabled ? 'Menünüz herkese açık' : 'Menünüz gizli (yayında değil)';
+}
+
+async function toggleWaiterQuick(enabled){
+  setToggleUI('home-waiter-slider','home-waiter-knob', enabled);
+  // Tasarım sayfasındaki toggle'ı da güncelle
+  const cb = document.getElementById('d-waiter-enabled');
+  if(cb){ cb.checked = enabled; updateWaiterToggle(enabled); }
+  const desc = document.getElementById('home-waiter-desc');
+  if(desc) desc.textContent = enabled ? 'Müşteriler menüden garson çağırabilir' : 'Garson çağrı sistemi kapalı';
+  try{
+    await api('PUT','/restaurant/me',{...RESTAURANT, waiter_enabled: enabled});
+    RESTAURANT.waiter_enabled = enabled;
+    toast(enabled ? '🔔 Garson çağrı sistemi açıldı' : '🔕 Garson çağrı sistemi kapatıldı', 'success');
+    // Admin önizleme menüsündeki garson butonlarını anında güncelle
+    document.querySelectorAll('.waiter-btn, .m-pill').forEach(btn => {
+      if(btn.getAttribute('onclick')?.includes('callWaiter')) {
+        btn.style.display = enabled ? '' : 'none';
+      }
+    });
+  }catch(e){
+    const wt = document.getElementById('home-waiter-toggle');
+    if(wt){ wt.checked = !enabled; setToggleUI('home-waiter-slider','home-waiter-knob', !enabled); }
+    toast('Güncelleme başarısız: '+e.message,'error');
+  }
+}
+
+async function togglePublishQuick(enabled){
+  setToggleUI('home-pub-slider','home-pub-knob', enabled);
+  const desc = document.getElementById('home-pub-desc');
+  if(desc) desc.textContent = enabled ? 'Menünüz herkese açık' : 'Menünüz gizli (yayında değil)';
+  try{
+    await api('PUT','/restaurant/me',{...RESTAURANT, is_published: enabled});
+    RESTAURANT.is_published = enabled;
+    toast(enabled ? '🌐 Menü yayına alındı' : '🔒 Menü gizlendi', 'success');
+  }catch(e){
+    const pt = document.getElementById('home-pub-toggle');
+    if(pt){ pt.checked = !enabled; setToggleUI('home-pub-slider','home-pub-knob', !enabled); }
+    toast('Güncelleme başarısız: '+e.message,'error');
+  }
+}
+
+function updateWaiterToggle(enabled){
+  const slider = document.getElementById('d-waiter-slider');
+  const knob = document.getElementById('d-waiter-knob');
+  const status = document.getElementById('d-waiter-status');
+  if(slider){
+    slider.style.background = enabled ? 'var(--accent)' : '#555';
+    if(knob) knob.style.transform = enabled ? 'translateX(22px)' : 'translateX(0)';
+  }
+  if(status){
+    status.textContent = enabled ? '🟢 Garson çağrı sistemi aktif' : '🔴 Garson çağrı sistemi pasif';
+    status.style.color = enabled ? 'var(--green)' : 'var(--red)';
+  }
+}
+
 function loadDesignFields(){
   if(!RESTAURANT) return;
   document.getElementById('d-color').value=RESTAURANT.brand_color||'#e8c547';
   document.getElementById('d-color-hex').value=RESTAURANT.brand_color||'#e8c547';
   document.getElementById('d-font').value=RESTAURANT.font_family||'DM Serif Display';
+  // DB'deki tema yükle
+  if(RESTAURANT.theme && THEMES[RESTAURANT.theme]) {
+    currentTheme = RESTAURANT.theme;
+    document.querySelectorAll('.theme-opt').forEach(el => {
+      el.classList.toggle('active', el.dataset.theme === currentTheme);
+    });
+    document.getElementById('preview-theme-label').textContent = THEMES[currentTheme].name;
+    updatePreview();
+  }
+  // DB'deki kart stili yükle
+  if(RESTAURANT.card_style) {
+    currentCardStyle = RESTAURANT.card_style;
+    document.querySelectorAll('.card-style-opt').forEach(el => {
+      el.classList.toggle('active', el.dataset.style === currentCardStyle);
+    });
+    updatePreview();
+  }
   document.getElementById('d-wifi').value=RESTAURANT.wifi_name||'';
+  // Garson toggle
+  const waiterEnabled = RESTAURANT.waiter_enabled !== false;
+  const cb = document.getElementById('d-waiter-enabled');
+  if(cb) { cb.checked = waiterEnabled; updateWaiterToggle(waiterEnabled); }
   document.getElementById('d-wpass').value=RESTAURANT.wifi_password||'';
   document.getElementById('d-ig').value=RESTAURANT.instagram_url||'';
   document.getElementById('d-fb').value=RESTAURANT.facebook_url||'';
@@ -1553,7 +1810,8 @@ async function saveWorkingHours(){
 }
 
 async function saveDesign(){
-  const body={name:document.getElementById('d-rest-name').value||RESTAURANT?.name,brand_color:document.getElementById('d-color').value,font_family:document.getElementById('d-font').value,wifi_name:document.getElementById('d-wifi').value,wifi_password:document.getElementById('d-wpass').value,instagram_url:document.getElementById('d-ig').value,facebook_url:document.getElementById('d-fb').value};
+  const waiterCb = document.getElementById('d-waiter-enabled');
+  const body={name:document.getElementById('d-rest-name').value||RESTAURANT?.name,brand_color:document.getElementById('d-color').value,font_family:document.getElementById('d-font').value,theme:currentTheme||'classic',card_style:currentCardStyle||'list',wifi_name:document.getElementById('d-wifi').value,wifi_password:document.getElementById('d-wpass').value,instagram_url:document.getElementById('d-ig').value,facebook_url:document.getElementById('d-fb').value,waiter_enabled:waiterCb?waiterCb.checked:true};
   try{RESTAURANT=await api('PUT','/restaurant/me',body);localStorage.setItem('qrmenu_rest',JSON.stringify(RESTAURANT));toast('Tasarım kaydedildi ✅','success');updatePreview();}catch(e){toast(e.message,'error');}
 }
 
@@ -1640,9 +1898,35 @@ async function openMenu(){
 
 function closeMenu(){document.getElementById('menu-view').style.display='none';document.getElementById('app-view').classList.add('active');document.getElementById('camp-popup').classList.remove('open');document.getElementById('fb-modal').classList.remove('open');}
 
+// Görselleri arka planda yükle — menü açıldıktan sonra çağrılır
+async function loadMenuImages(slug) {
+  try {
+    const images = await fetch(API + '/menu/' + slug + '/images').then(r => r.json());
+    if (!Array.isArray(images)) return;
+    // Cache'e kaydet — showProdDetail kullanır
+    window._menuImages = {};
+    images.forEach(({ id, image_url }) => {
+      if (!image_url) return;
+      window._menuImages[id] = image_url;
+      // DOM'da placeholder'ı bul ve görseli yerleştir
+      document.querySelectorAll('[data-prod-id="' + id + '"]').forEach(el => {
+        const placeholder = el.querySelector('.m-prod-img-placeholder');
+        if (placeholder) {
+          const img = document.createElement('img');
+          img.src = image_url;
+          img.loading = 'lazy';
+          img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:10px;display:block';
+          img.onload = () => placeholder.replaceWith(img);
+        }
+      });
+    });
+  } catch(e) { /* görseller yüklenemedi, emoji kalır */ }
+}
+
 function renderPublicMenu(data){
   const{restaurant,categories:cats,campaign,today_hours,is_open}=data;
-  const t=THEMES[currentTheme]||THEMES.classic;
+  // DB'den gelen tema kullan, yoksa currentTheme, yoksa classic
+  const t=THEMES[restaurant.theme]||THEMES[currentTheme]||THEMES.classic;
   const color=restaurant.brand_color||t.accent;
   const font=restaurant.font_family||'DM Serif Display';
   const el=document.getElementById('menu-public');
@@ -1650,7 +1934,7 @@ function renderPublicMenu(data){
   el.style.color=t.text;
 
   const logoHtml=restaurant.logo_url
-    ?`<img class="m-logo" src="${restaurant.logo_url}" alt="${restaurant.name}">`
+    ?`<img class="m-logo" src="${restaurant.logo_url}" alt="${restaurant.name}" loading="lazy">`
     :`<div class="m-logo-placeholder" style="background:${color};color:#fff">${restaurant.name.charAt(0)}</div>`;
 
   const hero=`<div class="m-hero" style="background:${t.heroBg}">
@@ -1660,25 +1944,33 @@ function renderPublicMenu(data){
     ${today_hours&&!today_hours.is_closed?`<div style="display:inline-flex;align-items:center;gap:6px;background:${is_open?'rgba(71,201,126,.1)':'rgba(232,71,71,.1)'};border:1px solid ${is_open?'rgba(71,201,126,.3)':'rgba(232,71,71,.3)'};border-radius:20px;padding:5px 14px;font-size:12px;font-weight:500;color:${is_open?'#47c97e':'#e84747'};margin-bottom:10px">${is_open?'🟢 Şu an açık':'🔴 Şu an kapalı'} · ${today_hours.opens_at} - ${today_hours.closes_at}</div>`:''}
     <div class="m-pills">
       <button class="m-pill" style="background:${t.pillBg};color:${t.pillColor};border-color:${t.pillBorder}" onclick="document.getElementById('fb-modal').classList.add('open')">💬 Geri Bildirim</button>
-      <button class="m-pill" style="background:${t.pillBg};color:${t.pillColor};border-color:${t.pillBorder}" onclick="callWaiter('${restaurant.id}')">🔔 Garson Çağır</button>
+      ${restaurant.waiter_enabled !== false ? `<button class="m-pill" style="background:${t.pillBg};color:${t.pillColor};border-color:${t.pillBorder}" onclick="callWaiter('${restaurant.id}')">🔔 Garson Çağır</button>` : ''}
     </div>
   </div>`;
 
   const search=`<div class="m-search-wrap" style="background:${t.bg}">
-    <input class="m-search" placeholder="Menüde ara..." style="background:${t.searchBg};border:1px solid ${t.searchBorder};color:${t.searchColor};border-radius:10px" oninput="searchMenu(this.value)">
+    <input class="m-search" id="menu-search-input" placeholder="Menüde ara..." style="background:${t.searchBg};border:1px solid ${t.searchBorder};color:${t.searchColor};border-radius:10px" oninput="searchMenu(this.value)" autocomplete="off" autocorrect="off" spellcheck="false">
   </div>`;
 
   const nav=`<div class="sticky-nav" style="background:${t.navBg};border-color:${t.border}">
     ${cats.map((c,i)=>`<div class="snav-item ${i===0?'active':''}" style="color:${i===0?color:t.text2};${i===0?`border-color:${color}`:''}" onclick="scrollToSec('${c.id}',this,'${color}','${t.text2}')">${c.name}</div>`).join('')}
   </div>`;
 
+  // Card style: DB'den al, yoksa admin panelindeki currentCardStyle
+  const cardStyle = restaurant.card_style || currentCardStyle || 'list';
+
+  // Lazy loading için img helper
+  const lazyImg = (src, alt, style) => src
+    ? `<img src="${src}" alt="${alt}" loading="lazy" style="${style}">`
+    : '';
+
   const sections=cats.map(cat=>{
     if(!cat.products.length) return'';
     let prodsHtml='';
-    if(currentCardStyle==='card'){
+    if(cardStyle==='card'){
       prodsHtml=`<div class="m-products-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        ${cat.products.map(p=>`<div class="m-product" style="background:${t.bg2};border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
-          <div class="m-prod-img" style="background:${t.bg2}">${p.image_url?`<img src="${p.image_url}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;display:block">`:(p.emoji||'🍽️')}</div>
+        ${cat.products.map(p=>`<div class="m-product" data-prod-id="${p.id}" style="background:${t.bg2};border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
+          <div class="m-prod-img" style="background:${t.bg2}"><span class="m-prod-img-placeholder">${p.emoji||'🍽️'}</span></div>
           <div class="m-prod-body">
             <div class="m-prod-name" style="color:${t.text}">${p.name}</div>
             <div class="m-prod-desc" style="color:${t.text2}">${p.description||''}</div>
@@ -1686,7 +1978,7 @@ function renderPublicMenu(data){
           </div>
         </div>`).join('')}
       </div>`;
-    }else if(currentCardStyle==='compact'){
+    }else if(cardStyle==='compact'){
       prodsHtml=cat.products.map(p=>`<div class="m-product style-compact" style="border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
         <div class="m-prod-left">
           <div class="m-prod-name" style="color:${t.text}">${p.name}</div>
@@ -1695,8 +1987,8 @@ function renderPublicMenu(data){
         <div class="m-prod-price" style="color:${color}">₺${parseFloat(p.price).toFixed(2)}</div>
       </div>`).join('');
     }else{
-      prodsHtml=cat.products.map(p=>`<div class="m-product style-list" style="border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
-        <div class="m-prod-img" style="background:${t.bg2};border-radius:10px">${p.image_url?`<img src="${p.image_url}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;display:block">`:(p.emoji||'🍽️')}</div>
+      prodsHtml=cat.products.map(p=>`<div class="m-product style-list" data-prod-id="${p.id}" style="border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
+        <div class="m-prod-img" style="background:${t.bg2};border-radius:10px"><span class="m-prod-img-placeholder">${p.emoji||'🍽️'}</span></div>
         <div style="flex:1">
           <div class="m-prod-name" style="color:${t.text}">${p.name}</div>
           <div class="m-prod-desc" style="color:${t.text2}">${p.description||''}</div>
@@ -1711,7 +2003,7 @@ function renderPublicMenu(data){
   }).join('');
 
   const footer=`<div class="m-footer" style="background:${t.footerBg};border-color:${t.border}">
-    <button class="waiter-btn" style="background:${color}" onclick="callWaiter('${restaurant.id}')">🔔 Garson Çağır</button>
+    ${restaurant.waiter_enabled !== false ? `<button class="waiter-btn" style="background:${color}" onclick="callWaiter('${restaurant.id}')">🔔 Garson Çağır</button>` : ''}
     ${restaurant.wifi_name?`<div class="wifi-card" style="background:${t.wifiBg};border-color:${t.wifiBorder}"><span style="font-size:22px">📡</span><div><div class="wifi-name-text" style="color:${t.text}">${restaurant.wifi_name}</div><div class="wifi-pass-text" style="color:${t.text2}">${restaurant.wifi_password||''}</div></div></div>`:''}
     <div class="social-row">
       ${restaurant.instagram_url?`<button class="social-btn" style="background:${t.socialBg};border-color:${t.socialBorder}" onclick="window.open('https://instagram.com/${restaurant.instagram_url.replace('@','')}','_blank')">📸</button>`:''}
@@ -1720,7 +2012,12 @@ function renderPublicMenu(data){
     <div style="font-size:11px;color:${t.text2};margin-top:8px;opacity:.5">Powered by Cafemenu.com.tr</div>
   </div>`;
 
-  el.innerHTML=hero+search+nav+sections+footer;
+  const noResult = `<div id="search-no-result" style="display:none;text-align:center;padding:48px 24px;color:${t.text2}">
+    <div style="font-size:48px;margin-bottom:12px">🔍</div>
+    <div style="font-size:16px;font-weight:600;margin-bottom:6px">Sonuç bulunamadı</div>
+    <div style="font-size:13px;opacity:.6">Farklı bir kelime deneyin</div>
+  </div>`;
+  el.innerHTML=hero+search+nav+sections+noResult+footer;
   window._menuData=data;
   window._currentRestaurantId=restaurant.id;
   window._currentTheme=t;
@@ -1749,10 +2046,39 @@ function scrollToSec(id,el,color,textColor){
 
 function searchMenu(q){
   if(!window._menuData) return;
-  const query=q.toLowerCase().trim();
-  if(!query){renderPublicMenu(window._menuData);return;}
-  const filtered={...window._menuData,categories:window._menuData.categories.map(cat=>({...cat,products:cat.products.filter(p=>p.name.toLowerCase().includes(query)||p.description?.toLowerCase().includes(query))})).filter(cat=>cat.products.length>0)};
-  renderPublicMenu(filtered);
+  const query = q.toLowerCase().trim();
+
+  // Tüm ürün ve section'ları gizle/göster — re-render YOK
+  document.querySelectorAll('.m-section').forEach(sec => {
+    let sectionVisible = false;
+    sec.querySelectorAll('.m-product').forEach(prod => {
+      if(!query){
+        prod.style.display = '';
+        sectionVisible = true;
+      } else {
+        const name = (prod.querySelector('.m-prod-name')?.textContent || '').toLowerCase();
+        const desc = (prod.querySelector('.m-prod-desc')?.textContent || '').toLowerCase();
+        const match = name.includes(query) || desc.includes(query);
+        prod.style.display = match ? '' : 'none';
+        if(match) sectionVisible = true;
+      }
+    });
+    sec.style.display = sectionVisible ? '' : 'none';
+  });
+
+  // Sticky nav'ı da güncelle — görünür section'lar aktif olsun
+  if(!query){
+    document.querySelectorAll('.snav-item').forEach((item,i) => {
+      const color = window._currentColor || '#c0a020';
+      const t = window._currentTheme || THEMES.classic;
+      item.style.color = i===0 ? color : t.text2;
+    });
+  }
+
+  // Sonuç yok mesajı
+  const noResult = document.getElementById('search-no-result');
+  const allHidden = [...document.querySelectorAll('.m-section')].every(s => s.style.display === 'none');
+  if(noResult) noResult.style.display = (query && allHidden) ? 'block' : 'none';
 }
 
 function showProdDetail(prodId,catId){
@@ -1764,7 +2090,8 @@ function showProdDetail(prodId,catId){
   const box=document.getElementById('prod-detail-box');
   box.style.background=t.bg;
   document.getElementById('prod-detail-img').style.background=t.bg2;
-  document.getElementById('prod-detail-img').innerHTML=p.image_url?`<img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover">`:`<span style="font-size:80px">${p.emoji||'🍽️'}</span>`;
+  const prodImgUrl = (window._menuImages && window._menuImages[p.id]) || p.image_url;
+  document.getElementById('prod-detail-img').innerHTML=prodImgUrl?`<img src="${prodImgUrl}" loading="lazy" style="width:100%;height:100%;object-fit:cover">`:`<span style="font-size:80px">${p.emoji||'🍽️'}</span>`;
   document.getElementById('prod-detail-name').style.color=t.text;
   document.getElementById('prod-detail-name').textContent=p.name;
   document.getElementById('prod-detail-desc').style.color=t.text2;
@@ -1829,39 +2156,75 @@ if (currentPath === '/verify-email') {
     toast('Geçersiz doğrulama linki', 'error');
   }
 }
-if (currentPath.startsWith('/menu/')) {
-  const slug = currentPath.replace('/menu/', '').split('/')[0];
-  document.getElementById('auth-view').style.display = 'none';
-  document.getElementById('app-view').style.display = 'none';
-  document.getElementById('menu-view').style.display = 'flex';
-  document.getElementById('menu-view').style.flexDirection = 'column';
-  const adminBar = document.querySelector('.menu-topbar-admin');
-  if (adminBar) adminBar.style.display = 'none';
-  fetch(API + '/menu/' + slug)
-    .then(r => r.json())
-    .then(data => {
-      if (data.error) {
-        document.getElementById('menu-public').innerHTML = '<div style="padding:60px;text-align:center">Menu bulunamadi</div>';
-      } else {
-        renderPublicMenu(data);
-        if (data.campaign) {
-          document.getElementById('camp-popup-title').textContent = data.campaign.title;
-          document.getElementById('camp-popup-desc').textContent = data.campaign.description || '';
-          const campDisplay2 = document.getElementById('camp-emoji-display');
-          if(data.campaign.image_url){
-            campDisplay2.innerHTML=`<img src="${data.campaign.image_url}" style="width:100%;height:100%;object-fit:cover">`;
-          } else {
-            campDisplay2.textContent = data.campaign.emoji || '🎉';
-          }
-          setTimeout(() => document.getElementById('camp-popup').classList.add('open'), 2000);
+
+// Menü sayfası tespiti — /menu/slug VEYA /slug (kısa format)
+const RESERVED_PATHS = ['', '/', '/admin', '/verify-email', '/reset-password'];
+const isMenuPath = !RESERVED_PATHS.includes(currentPath) &&
+  !currentPath.startsWith('/api/') &&
+  !currentPath.startsWith('/icons/') &&
+  !currentPath.includes('.');
+
+if (isMenuPath) {
+  const pathParts = currentPath.split('/').filter(Boolean);
+  const slug = pathParts[0] === 'menu' ? pathParts[1] : pathParts[0];
+
+  if (slug) {
+    // HEMEN tüm diğer view'ları gizle, loading göster
+    document.getElementById('auth-view').style.display = 'none';
+    document.getElementById('app-view').style.display = 'none';
+    document.getElementById('menu-view').style.display = 'flex';
+    document.getElementById('menu-view').style.flexDirection = 'column';
+    const adminBar = document.querySelector('.menu-topbar-admin');
+    if (adminBar) adminBar.style.display = 'none';
+    // Loading göster
+    const menuPublic = document.getElementById('menu-public');
+    if (menuPublic) menuPublic.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#888;font-size:14px">Menü yükleniyor...</div>';
+
+    fetch(API + '/menu/' + slug)
+      .then(r => r.json())
+      .then(data => {
+        if (data.error || !data.restaurant) {
+          document.getElementById('auth-view').style.display = '';
+          document.getElementById('menu-view').style.display = 'none';
+          return;
         }
-      }
-    })
-    .catch(() => {
-      document.getElementById('menu-public').innerHTML = '<div style="padding:60px;text-align:center">Baglanti hatasi</div>';
-    });
-    
-} else // Google butonlarını başlat
+        try {
+          renderPublicMenu(data);
+        } catch(renderErr) {
+          console.error('renderPublicMenu hatası:', renderErr);
+          if (menuPublic) menuPublic.innerHTML = '<div style="padding:40px;text-align:center;color:#888">Menü yüklenirken hata oluştu.<br><br><button onclick="location.reload()" style="padding:8px 16px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer">Tekrar Dene</button></div>';
+          return;
+        }
+
+        // Ziyareti kaydet
+        fetch(API + '/menu/' + data.restaurant.slug + '/view', { method: 'POST' }).catch(() => {});
+
+        // Görselleri lazy yükle — menü açıldıktan sonra arka planda
+        setTimeout(() => loadMenuImages(slug), 300);
+
+        // Kampanya popup
+        if (data.campaign) {
+          try {
+            document.getElementById('camp-popup-title').textContent = data.campaign.title;
+            document.getElementById('camp-popup-desc').textContent = data.campaign.description || '';
+            const campDisplay2 = document.getElementById('camp-emoji-display');
+            if (data.campaign.image_url) {
+              campDisplay2.innerHTML = '<img src="' + data.campaign.image_url + '" style="width:100%;height:100%;object-fit:cover">';
+            } else {
+              campDisplay2.textContent = data.campaign.emoji || '🎉';
+            }
+            setTimeout(() => document.getElementById('camp-popup').classList.add('open'), 2000);
+          } catch(e) {}
+        }
+      })
+      .catch(err => {
+        console.error('Menü fetch hatası:', err);
+        if (menuPublic) menuPublic.innerHTML = '<div style="padding:40px;text-align:center;color:#888">Bağlantı hatası.<br><br><button onclick="location.reload()" style="padding:8px 16px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer">Tekrar Dene</button></div>';
+      });
+  }
+}
+
+// Google butonlarını başlat
 function tryInitGoogle() {
   fetch('/api/auth/google-client-id').then(r=>r.json()).then(d=>{
     if (!d.clientId) return;
@@ -1949,7 +2312,8 @@ async function fetchGoogleUserInfo(accessToken) {
 
 tryInitGoogle();
 
-if (TOKEN) {
+// Menü sayfasında loadApp çalıştırma
+if (TOKEN && !isMenuPath) {
   loadApp();
 }
 </script>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cafemenu-admin-v1';
+const CACHE_NAME = 'cafemenu-admin-v2';
 const STATIC_ASSETS = [
   '/admin',
   '/admin.html',
@@ -28,7 +28,11 @@ self.addEventListener('activate', event => {
 
 // Fetch — Network first, cache fallback
 self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
+  // Sadece http/https isteklerini işle
+  if (!event.request.url.startsWith('http')) return;
+
+  let url;
+  try { url = new URL(event.request.url); } catch(e) { return; }
 
   // API isteklerini her zaman network'ten al, cache'leme
   if (url.pathname.startsWith('/api/')) {
@@ -43,15 +47,13 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Statik dosyalar — network first, sonra cache
-  // chrome-extension ve data URL'leri cache'leme
-  if (!event.request.url.startsWith('http')) return;
+  // GET istekleri değilse cache'leme
+  if (event.request.method !== 'GET') return;
 
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        // Başarılı yanıtı cache'e de yaz
-        if (response.ok && response.type !== 'opaque') {
+        if (response.ok && response.type === 'basic') {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }

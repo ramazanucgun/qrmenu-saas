@@ -11,11 +11,33 @@ const { v4: uuidv4 } = require('uuid');
 const WebSocket = require('ws');
 const http = require('http');
 const { Resend } = require('resend');
+let sharp;
+try { sharp = require('sharp'); } catch(e) { sharp = null; console.warn('sharp yüklü değil, resimler sıkıştırılmadan kaydedilecek'); }
+let compression;
+try { compression = require('compression'); } catch(e) { compression = null; }
 const { OAuth2Client } = require('google-auth-library');
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 require('dotenv').config();
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+// Resim sıkıştırma helper
+async function resizeImage(buffer, mimeType, options = {}) {
+  if (!sharp) {
+    // sharp yok — orijinal base64 döndür
+    return { buffer, mimeType };
+  }
+  const {
+    width = 800,
+    height = 800,
+    quality = 72,
+  } = options;
+  const resized = await sharp(buffer)
+    .resize(width, height, { fit: 'inside', withoutEnlargement: true })
+    .webp({ quality })
+    .toBuffer();
+  return { buffer: resized, mimeType: 'image/webp' };
+}
+
 // R2 Storage client
 const s3 = new S3Client({
   region: 'auto',
@@ -89,7 +111,21 @@ const pool = new Pool({
 });
 
 app.use(cors());
-app.use(express.json());
+if (compression) app.use(compression());
+
+// Google OAuth popup'ının çalışması için COOP/COEP header'larını ayarla
+app.use((req, res, next) => {
+  // Sadece HTML sayfaları için — API ve statik dosyalara dokunma
+  const isHtml = !req.path.startsWith('/api/') && !req.path.includes('.');
+  if (isHtml) {
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+    res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  }
+  next();
+});
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static('public'));
 
 // JWT doğrulama
@@ -189,6 +225,14 @@ CREATE TABLE IF NOT EXISTS email_verifications (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS menu_views (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  restaurant_id UUID REFERENCES restaurants(id) ON DELETE CASCADE,
+  viewed_at TIMESTAMP DEFAULT NOW(),
+  device VARCHAR(20) DEFAULT 'unknown',
+  country VARCHAR(50)
+);
+
 CREATE TABLE IF NOT EXISTS password_resets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email VARCHAR(255) NOT NULL,
@@ -226,6 +270,9 @@ CREATE TABLE IF NOT EXISTS password_resets (
   await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS image_url TEXT`);
   await pool.query(`ALTER TABLE products ALTER COLUMN image_url TYPE TEXT`).catch(()=>{});
   await pool.query(`ALTER TABLE restaurants ALTER COLUMN logo_url TYPE TEXT`).catch(()=>{});
+  await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS waiter_enabled BOOLEAN DEFAULT true`).catch(()=>{});
+  await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS theme VARCHAR(50) DEFAULT 'classic'`).catch(()=>{});
+  await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS card_style VARCHAR(20) DEFAULT 'list'`).catch(()=>{});
   await pool.query(`ALTER TABLE campaigns ALTER COLUMN image_url TYPE TEXT`).catch(()=>{});
   console.log('✅ Veritabanı tabloları hazır');
 }
@@ -274,12 +321,15 @@ app.post('/api/auth/google', async (req, res) => {
       );
       user = newUser.rows[0];
 
-      const slug = restaurantName
+      const baseSlug = restaurantName
         .toLowerCase()
-        .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
-        .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c')
-        .replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
-        + '-' + Math.random().toString(36).substr(2, 4);
+        .replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s')
+        .replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c')
+        .replace(/[^a-z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+      // Slug kullanılıyor mu kontrol et
+      let slug = baseSlug;
+      const existing = await pool.query('SELECT id FROM restaurants WHERE slug=$1', [slug]);
+      if (existing.rows.length) slug = baseSlug + '-' + Math.random().toString(36).substr(2,4);
 
       const restResult = await pool.query(
         'INSERT INTO restaurants (user_id, slug, name) VALUES ($1,$2,$3) RETURNING id',
@@ -332,11 +382,13 @@ app.post('/api/auth/google-token', async (req, res) => {
         [email, '', googleId, picture]
       );
       user = newUser.rows[0];
-      const slug = (restaurantName).toLowerCase()
+      const baseSlug2 = (restaurantName).toLowerCase()
         .replace(/[ğ]/g,'g').replace(/[ü]/g,'u').replace(/[ş]/g,'s')
         .replace(/[ı]/g,'i').replace(/[ö]/g,'o').replace(/[ç]/g,'c')
-        .replace(/[^a-z0-9]/g,'-').replace(/-+/g,'-')
-        + '-' + Math.random().toString(36).substr(2,4);
+        .replace(/[^a-z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+      let slug = baseSlug2;
+      const existingSlug2 = await pool.query('SELECT id FROM restaurants WHERE slug=$1', [slug]);
+      if (existingSlug2.rows.length) slug = baseSlug2 + '-' + Math.random().toString(36).substr(2,4);
       const rest = await pool.query('INSERT INTO restaurants (user_id, slug, name) VALUES ($1,$2,$3) RETURNING id', [user.id, slug, restaurantName]);
       restaurantId = rest.rows[0].id;
       await pool.query('INSERT INTO subscriptions (user_id) VALUES ($1)', [user.id]);
@@ -375,12 +427,14 @@ app.post('/api/auth/register', async (req, res) => {
     const user = userResult.rows[0];
 
     // Slug oluştur
-    const slug = restaurantName
+    const baseSlug3 = restaurantName
       .toLowerCase()
-      .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
-      .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c')
-      .replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
-      + '-' + Math.random().toString(36).substr(2, 4);
+      .replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s')
+      .replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c')
+      .replace(/[^a-z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+    let slug = baseSlug3;
+    const existingSlug3 = await pool.query('SELECT id FROM restaurants WHERE slug=$1', [slug]);
+    if (existingSlug3.rows.length) slug = baseSlug3 + '-' + Math.random().toString(36).substr(2,4);
 
     // Restoran oluştur
     const restResult = await pool.query(
@@ -426,7 +480,7 @@ await pool.query(
             <div style="background:#f9f9f9;border-radius:10px;padding:16px;margin-bottom:20px">
               <div style="font-size:13px;color:#666;margin-bottom:6px">Menü linkiniz:</div>
               <div style="font-family:monospace;font-size:14px;color:#e8a020;font-weight:600">
-                https://app.cafemenu.com.tr/menu/${restResult.rows[0].slug}
+                https://app.cafemenu.com.tr/${restResult.rows[0].slug}
               </div>
             </div>
             <p style="color:#444;line-height:1.6;margin-bottom:24px">
@@ -501,28 +555,44 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/restaurant/me', authMiddleware, async (req, res) => {
   const result = await pool.query(
-    'SELECT * FROM restaurants WHERE id = $1',
+    `SELECT id, slug, name, logo_url, brand_color, font_family,
+            wifi_name, wifi_password, instagram_url, facebook_url,
+            is_published, waiter_enabled, created_at
+     FROM restaurants WHERE id = $1`,
     [req.user.restaurantId]
   );
   res.json(result.rows[0]);
 });
 
 app.put('/api/restaurant/me', authMiddleware, async (req, res) => {
-  const { name, brand_color, font_family, wifi_name, wifi_password, instagram_url, facebook_url } = req.body;
-  const result = await pool.query(
-    `UPDATE restaurants SET name=$1, brand_color=$2, font_family=$3,
-     wifi_name=$4, wifi_password=$5, instagram_url=$6, facebook_url=$7
-     WHERE id=$8 RETURNING *`,
-    [name, brand_color, font_family, wifi_name, wifi_password, instagram_url, facebook_url, req.user.restaurantId]
-  );
-  res.json(result.rows[0]);
+  const { name, brand_color, font_family, theme, card_style, wifi_name, wifi_password, instagram_url, facebook_url, waiter_enabled, is_published } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE restaurants SET name=$1, brand_color=$2, font_family=$3,
+       wifi_name=$4, wifi_password=$5, instagram_url=$6, facebook_url=$7,
+       waiter_enabled=COALESCE($8, waiter_enabled),
+       is_published=COALESCE($9, is_published),
+       theme=COALESCE($10, theme),
+       card_style=COALESCE($11, card_style)
+       WHERE id=$12 RETURNING *`,
+      [name, brand_color, font_family, wifi_name, wifi_password, instagram_url, facebook_url,
+       waiter_enabled !== undefined ? waiter_enabled : null,
+       is_published !== undefined ? is_published : null,
+       theme || null,
+       card_style || null,
+       req.user.restaurantId]
+    );
+    res.json(result.rows[0]);
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // QR kod üret
 app.get('/api/restaurant/me/qr', authMiddleware, async (req, res) => {
   const result = await pool.query('SELECT slug FROM restaurants WHERE id=$1', [req.user.restaurantId]);
   const slug = result.rows[0].slug;
-  const url = `${process.env.APP_URL}/menu/${slug}`;
+  const url = `${process.env.APP_URL}/${slug}`;
   const qr = await QRCode.toDataURL(url, { width: 400, margin: 2 });
   res.json({ qr, url });
 });
@@ -680,9 +750,9 @@ app.patch('/api/products/bulk-price', authMiddleware, async (req, res) => {
 app.get('/api/menu/:slug', async (req, res) => {
   try {
     const restResult = await pool.query(
-      `SELECT id, slug, name, logo_url, brand_color, font_family,
+      `SELECT id, slug, name, logo_url, brand_color, font_family, theme, card_style,
               wifi_name, wifi_password, instagram_url, facebook_url,
-              is_published, created_at
+              is_published, waiter_enabled, created_at
        FROM restaurants WHERE slug=$1 AND is_published=true`,
       [req.params.slug]
     );
@@ -694,8 +764,11 @@ app.get('/api/menu/:slug', async (req, res) => {
       [restaurant.id]
     );
 
+    // Görselsiz ürünleri hızlıca döndür — görseller ayrı endpoint'ten lazy yüklenir
     const prodResult = await pool.query(
-      'SELECT * FROM products WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order',
+      `SELECT id, category_id, restaurant_id, name, description, price, emoji,
+              sort_order, is_visible
+       FROM products WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order`,
       [restaurant.id]
     );
 const hoursResult = await pool.query(
@@ -705,7 +778,8 @@ const hoursResult = await pool.query(
 
 
     const campResult = await pool.query(
-      `SELECT * FROM campaigns WHERE restaurant_id=$1 AND is_active=true
+      `SELECT id, title, description, emoji, is_active, starts_at, ends_at
+       FROM campaigns WHERE restaurant_id=$1 AND is_active=true
        AND starts_at <= NOW() AND ends_at >= NOW() LIMIT 1`,
       [restaurant.id]
     );
@@ -735,9 +809,90 @@ res.json({
   }
 });
 
+// Ürün görselleri — ayrı endpoint, lazy yükleme için
+app.get('/api/menu/:slug/images', async (req, res) => {
+  try {
+    const restResult = await pool.query(
+      'SELECT id FROM restaurants WHERE slug=$1 AND is_published=true',
+      [req.params.slug]
+    );
+    if (!restResult.rows[0]) return res.status(404).json({ error: 'Bulunamadı' });
+    const result = await pool.query(
+      'SELECT id, image_url FROM products WHERE restaurant_id=$1 AND is_visible=true AND image_url IS NOT NULL',
+      [restResult.rows[0].id]
+    );
+    res.json(result.rows);
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ═══════════════════════════════
 // FEEDBACK
 // ═══════════════════════════════
+
+// Menü ziyareti kaydet
+app.post('/api/menu/:slug/view', async (req, res) => {
+  try {
+    const restResult = await pool.query('SELECT id FROM restaurants WHERE slug=$1', [req.params.slug]);
+    if (!restResult.rows[0]) return res.status(404).json({ error: 'Restoran bulunamadı' });
+    const restaurantId = restResult.rows[0].id;
+    const ua = req.headers['user-agent'] || '';
+    const device = /mobile|android|iphone|ipad/i.test(ua) ? 'mobile' : 'desktop';
+    await pool.query(
+      'INSERT INTO menu_views (restaurant_id, device) VALUES ($1, $2)',
+      [restaurantId, device]
+    );
+    res.json({ ok: true });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Analiz verileri
+app.get('/api/analytics', authMiddleware, async (req, res) => {
+  try {
+    const rId = req.user.restaurantId;
+    const { period = '30' } = req.query;
+    const days = parseInt(period) || 30;
+
+    // days integer olarak doğrulandı, direkt SQL'e gömülebilir
+    const interval = days + " days";
+    const [total, byDevice, byDay, today, thisWeek] = await Promise.all([
+      pool.query(
+        "SELECT COUNT(*) FROM menu_views WHERE restaurant_id=$1 AND viewed_at > NOW() - $2::interval",
+        [rId, interval]
+      ),
+      pool.query(
+        "SELECT device, COUNT(*) FROM menu_views WHERE restaurant_id=$1 AND viewed_at > NOW() - $2::interval GROUP BY device",
+        [rId, interval]
+      ),
+      pool.query(
+        "SELECT DATE(viewed_at) as date, COUNT(*) as count FROM menu_views WHERE restaurant_id=$1 AND viewed_at > NOW() - $2::interval GROUP BY DATE(viewed_at) ORDER BY date ASC",
+        [rId, interval]
+      ),
+      pool.query(
+        "SELECT COUNT(*) FROM menu_views WHERE restaurant_id=$1 AND DATE(viewed_at)=CURRENT_DATE",
+        [rId]
+      ),
+      pool.query(
+        "SELECT COUNT(*) FROM menu_views WHERE restaurant_id=$1 AND viewed_at > NOW() - INTERVAL '7 days'",
+        [rId]
+      ),
+    ]);
+
+    res.json({
+      total: parseInt(total.rows[0].count),
+      today: parseInt(today.rows[0].count),
+      thisWeek: parseInt(thisWeek.rows[0].count),
+      byDevice: byDevice.rows,
+      byDay: byDay.rows,
+      period: days,
+    });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.post('/api/feedback', async (req, res) => {
   const { restaurant_id, type, message, rating } = req.body;
@@ -775,15 +930,20 @@ app.get('/api/feedback', authMiddleware, async (req, res) => {
 
 app.post('/api/waiter-call', async (req, res) => {
   const { restaurant_id, table_no } = req.body;
-  const result = await pool.query(
-    'INSERT INTO waiter_calls (restaurant_id, table_no) VALUES ($1,$2) RETURNING *',
-    [restaurant_id, table_no || 'Belirsiz']
-  );
-  notifyRestaurant(restaurant_id, {
-    type: 'waiter_call',
-    data: result.rows[0]
-  });
-  res.json(result.rows[0]);
+  try {
+    const restCheck = await pool.query('SELECT waiter_enabled FROM restaurants WHERE id=$1', [restaurant_id]);
+    if (restCheck.rows[0] && restCheck.rows[0].waiter_enabled === false) {
+      return res.status(403).json({ error: 'Garson çağrı sistemi şu an aktif değil' });
+    }
+    const result = await pool.query(
+      'INSERT INTO waiter_calls (restaurant_id, table_no) VALUES ($1,$2) RETURNING *',
+      [restaurant_id, table_no || 'Belirsiz']
+    );
+    notifyRestaurant(restaurant_id, { type: 'waiter_call', data: result.rows[0] });
+    res.json(result.rows[0]);
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get('/api/waiter-calls', authMiddleware, async (req, res) => {
@@ -1313,8 +1473,10 @@ app.get('/api/products/import/template', (req, res) => {
 app.post('/api/upload/product-image', authMiddleware, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Dosya seçilmedi' });
   try {
-    const base64 = req.file.buffer.toString('base64');
-    const imageUrl = `data:${req.file.mimetype};base64,${base64}`;
+    const { buffer, mimeType } = await resizeImage(req.file.buffer, req.file.mimetype, {
+      width: 600, height: 600, quality: 72
+    });
+    const imageUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;
     res.json({ imageUrl });
   } catch (err) {
     res.status(500).json({ error: 'Yükleme hatası: ' + err.message });
@@ -1324,8 +1486,10 @@ app.post('/api/upload/product-image', authMiddleware, upload.single('image'), as
 app.post('/api/upload/logo', authMiddleware, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Dosya seçilmedi' });
   try {
-    const base64 = req.file.buffer.toString('base64');
-    const logoUrl = `data:${req.file.mimetype};base64,${base64}`;
+    const { buffer, mimeType } = await resizeImage(req.file.buffer, req.file.mimetype, {
+      width: 200, height: 200, quality: 80
+    });
+    const logoUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;
     await pool.query('UPDATE restaurants SET logo_url=$1 WHERE id=$2', [logoUrl, req.user.restaurantId]);
     res.json({ logoUrl });
   } catch (err) {
@@ -1335,8 +1499,10 @@ app.post('/api/upload/logo', authMiddleware, upload.single('image'), async (req,
 app.post('/api/upload/campaign-image', authMiddleware, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Dosya seçilmedi' });
   try {
-    const base64 = req.file.buffer.toString('base64');
-    const imageUrl = `data:${req.file.mimetype};base64,${base64}`;
+    const { buffer, mimeType } = await resizeImage(req.file.buffer, req.file.mimetype, {
+      width: 800, height: 500, quality: 75
+    });
+    const imageUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;
     res.json({ imageUrl });
   } catch (err) {
     res.status(500).json({ error: 'Yükleme hatası: ' + err.message });
@@ -1396,6 +1562,13 @@ app.get('/reset-password', (req, res) => {
   res.sendFile('index.html', { root: 'public' });
 });
 app.get('/menu/:slug', (req, res) => {
+  res.sendFile('index.html', { root: 'public' });
+});
+
+// Kısa URL — /:slug (restoran adından slug)
+app.get('/:slug', (req, res, next) => {
+  const reserved = ['admin','api','verify-email','reset-password','sw.js','manifest.json','icons','backup.js'];
+  if (reserved.includes(req.params.slug)) return next();
   res.sendFile('index.html', { root: 'public' });
 });
 
