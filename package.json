@@ -23,6 +23,7 @@
     "resend": "^3.2.0",
     "google-auth-library": "^9.0.0",
     "pdfkit": "^0.14.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "compression": "^1.7.4"
   }
 }
