@@ -723,7 +723,7 @@ app.get('/api/menu/:slug', async (req, res) => {
     const restResult = await pool.query(
       `SELECT id, slug, name, logo_url, brand_color, font_family,
               wifi_name, wifi_password, instagram_url, facebook_url,
-              is_published, created_at
+              is_published, waiter_enabled, created_at
        FROM restaurants WHERE slug=$1 AND is_published=true`,
       [req.params.slug]
     );
