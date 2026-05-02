@@ -176,6 +176,11 @@ async function initDB() {
       plan VARCHAR(20) DEFAULT 'trial',
       status VARCHAR(20) DEFAULT 'active',
       trial_ends_at TIMESTAMP DEFAULT NOW() + INTERVAL '14 days',
+      starts_at TIMESTAMP,
+      ends_at TIMESTAMP,
+      payment_method VARCHAR(30),
+      payment_note TEXT,
+      iyzico_subscription_id VARCHAR(100),
       created_at TIMESTAMP DEFAULT NOW()
     );
 
@@ -233,6 +238,23 @@ CREATE TABLE IF NOT EXISTS menu_views (
   country VARCHAR(50)
 );
 
+CREATE TABLE IF NOT EXISTS subscription_notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  type VARCHAR(50) NOT NULL,
+  sent_at TIMESTAMP DEFAULT NOW(),
+  days_remaining INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS system_notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  title VARCHAR(200) NOT NULL,
+  message TEXT,
+  is_read BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS password_resets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email VARCHAR(255) NOT NULL,
@@ -271,6 +293,11 @@ CREATE TABLE IF NOT EXISTS password_resets (
   await pool.query(`ALTER TABLE products ALTER COLUMN image_url TYPE TEXT`).catch(()=>{});
   await pool.query(`ALTER TABLE restaurants ALTER COLUMN logo_url TYPE TEXT`).catch(()=>{});
   await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS waiter_enabled BOOLEAN DEFAULT true`).catch(()=>{});
+  await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS starts_at TIMESTAMP`).catch(()=>{});
+  await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS ends_at TIMESTAMP`).catch(()=>{});
+  await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS payment_method VARCHAR(30)`).catch(()=>{});
+  await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS payment_note TEXT`).catch(()=>{});
+  await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS iyzico_subscription_id VARCHAR(100)`).catch(()=>{});
   await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS theme VARCHAR(50) DEFAULT 'classic'`).catch(()=>{});
   await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS card_style VARCHAR(20) DEFAULT 'list'`).catch(()=>{});
   await pool.query(`ALTER TABLE campaigns ALTER COLUMN image_url TYPE TEXT`).catch(()=>{});
@@ -1066,11 +1093,59 @@ app.put('/api/working-hours', authMiddleware, async (req, res) => {
 // ═══════════════════════════════
 
 app.get('/api/subscription', authMiddleware, async (req, res) => {
-  const result = await pool.query(
-    'SELECT * FROM subscriptions WHERE user_id=$1',
-    [req.user.userId]
-  );
-  res.json(result.rows[0]);
+  try {
+    const result = await pool.query(
+      'SELECT * FROM subscriptions WHERE user_id=$1',
+      [req.user.userId]
+    );
+    const sub = result.rows[0];
+    if (!sub) return res.status(404).json({ error: 'Abonelik bulunamadı' });
+
+    // Sona erme tarihi hesapla
+    const now = new Date();
+    let expiresAt = sub.ends_at || sub.trial_ends_at;
+    let daysLeft = null;
+    if (expiresAt) {
+      daysLeft = Math.ceil((new Date(expiresAt) - now) / (1000 * 60 * 60 * 24));
+    }
+
+    // Süresi dolmuşsa status güncelle
+    if (daysLeft !== null && daysLeft < 0 && sub.status === 'active') {
+      await pool.query("UPDATE subscriptions SET status='expired' WHERE user_id=$1", [req.user.userId]);
+      sub.status = 'expired';
+    }
+
+    res.json({ ...sub, days_left: daysLeft, expires_at: expiresAt });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Bildirimleri getir
+app.get('/api/notifications', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM system_notifications WHERE user_id=$1 ORDER BY created_at DESC LIMIT 20",
+      [req.user.userId]
+    );
+    res.json(result.rows);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// Bildirimi okundu işaretle
+app.patch('/api/notifications/:id/read', authMiddleware, async (req, res) => {
+  try {
+    await pool.query("UPDATE system_notifications SET is_read=true WHERE id=$1 AND user_id=$2",
+      [req.params.id, req.user.userId]);
+    res.json({ ok: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.patch('/api/notifications/read-all', authMiddleware, async (req, res) => {
+  try {
+    await pool.query("UPDATE system_notifications SET is_read=true WHERE user_id=$1", [req.user.userId]);
+    res.json({ ok: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
 });
 // ═══════════════════════════════
 // ŞİFRE SIFIRLAMA
@@ -1238,12 +1313,36 @@ app.delete('/api/admin/users/:id', adminMiddleware, async (req, res) => {
 
 // Abonelik güncelle
 app.put('/api/admin/subscription/:userId', adminMiddleware, async (req, res) => {
-  const { plan, status } = req.body;
+  const { plan, status, starts_at, ends_at, payment_method, payment_note } = req.body;
   try {
     await pool.query(
-      'UPDATE subscriptions SET plan=$1, status=$2 WHERE user_id=$3',
-      [plan, status, req.params.userId]
+      `UPDATE subscriptions SET
+        plan=$1, status=$2,
+        starts_at=COALESCE($3::timestamp, starts_at),
+        ends_at=COALESCE($4::timestamp, ends_at),
+        payment_method=COALESCE($5, payment_method),
+        payment_note=COALESCE($6, payment_note)
+       WHERE user_id=$7`,
+      [plan, status,
+       starts_at || null, ends_at || null,
+       payment_method || null, payment_note || null,
+       req.params.userId]
     );
+
+    // Panelde bildirim oluştur
+    const userResult = await pool.query('SELECT id FROM users WHERE id=$1', [req.params.userId]);
+    if (userResult.rows[0]) {
+      const planNames = { starter:'Starter', pro:'Pro', enterprise:'Enterprise', trial:'Trial' };
+      const planName = planNames[plan] || plan;
+      const endDate = ends_at ? new Date(ends_at).toLocaleDateString('tr-TR') : '-';
+      await pool.query(
+        "INSERT INTO system_notifications (user_id, title, message) VALUES ($1,$2,$3)",
+        [req.params.userId,
+         `Aboneliğiniz güncellendi — ${planName}`,
+         `${planName} planı aktif edildi. Bitiş tarihi: ${endDate}. Ödeme: ${payment_method || 'belirtilmedi'}`]
+      );
+    }
+
     res.json({ success: true });
   } catch(err) {
     res.status(500).json({ error: err.message });
@@ -1287,6 +1386,142 @@ app.post('/api/admin/create', async (req, res) => {
     );
     res.json({ success: true, user: result.rows[0] });
   } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ═══════════════════════════════
+// İYZİCO ÖDEME
+// ═══════════════════════════════
+
+// iyzico ödeme başlat
+app.post('/api/payment/init', authMiddleware, async (req, res) => {
+  const { plan } = req.body;
+  if (!process.env.IYZICO_API_KEY) {
+    return res.status(503).json({ error: 'İyzico henüz yapılandırılmadı' });
+  }
+
+  const prices = { starter: 4990, pro: 7490, enterprise: 9990 };
+  const price = prices[plan];
+  if (!price) return res.status(400).json({ error: 'Geçersiz plan' });
+
+  try {
+    const Iyzipay = require('iyzipay');
+    const iyzipay = new Iyzipay({
+      apiKey: process.env.IYZICO_API_KEY,
+      secretKey: process.env.IYZICO_SECRET_KEY,
+      uri: process.env.IYZICO_ENV === 'prod'
+        ? 'https://api.iyzipay.com'
+        : 'https://sandbox-api.iyzipay.com'
+    });
+
+    const userResult = await pool.query(
+      'SELECT u.*, r.name as restaurant_name FROM users u LEFT JOIN restaurants r ON r.user_id=u.id WHERE u.id=$1',
+      [req.user.userId]
+    );
+    const user = userResult.rows[0];
+
+    const request = {
+      locale: 'tr',
+      conversationId: `sub_${req.user.userId}_${Date.now()}`,
+      price: (price / 100).toFixed(2),
+      paidPrice: (price / 100).toFixed(2),
+      currency: 'TRY',
+      basketId: `plan_${plan}_${req.user.userId}`,
+      paymentGroup: 'SUBSCRIPTION',
+      callbackUrl: `${process.env.APP_URL}/api/payment/callback`,
+      enabledInstallments: [1, 2, 3, 6, 9, 12],
+      buyer: {
+        id: req.user.userId,
+        name: user.restaurant_name || 'Kullanıcı',
+        surname: 'CafeMenu',
+        gsmNumber: '+905000000000',
+        email: user.email,
+        identityNumber: '11111111111',
+        registrationAddress: 'Türkiye',
+        ip: req.ip || '127.0.0.1',
+        city: 'Istanbul',
+        country: 'Turkey',
+      },
+      shippingAddress: {
+        contactName: user.restaurant_name || 'Kullanıcı',
+        city: 'Istanbul', country: 'Turkey', address: 'Türkiye'
+      },
+      billingAddress: {
+        contactName: user.restaurant_name || 'Kullanıcı',
+        city: 'Istanbul', country: 'Turkey', address: 'Türkiye'
+      },
+      basketItems: [{
+        id: `plan_${plan}`,
+        name: `CafeMenu ${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan (1 Yıl)`,
+        category1: 'Yazılım',
+        itemType: 'VIRTUAL',
+        price: (price / 100).toFixed(2)
+      }]
+    };
+
+    iyzipay.checkoutFormInitialize.create(request, (err, result) => {
+      if (err || result.status !== 'success') {
+        return res.status(500).json({ error: result?.errorMessage || 'Ödeme başlatılamadı' });
+      }
+      res.json({
+        checkoutFormContent: result.checkoutFormContent,
+        token: result.token
+      });
+    });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// iyzico ödeme callback
+app.post('/api/payment/callback', async (req, res) => {
+  const { token } = req.body;
+  if (!token) return res.status(400).send('Token eksik');
+
+  try {
+    const Iyzipay = require('iyzipay');
+    const iyzipay = new Iyzipay({
+      apiKey: process.env.IYZICO_API_KEY,
+      secretKey: process.env.IYZICO_SECRET_KEY,
+      uri: process.env.IYZICO_ENV === 'prod'
+        ? 'https://api.iyzipay.com'
+        : 'https://sandbox-api.iyzipay.com'
+    });
+
+    iyzipay.checkoutForm.retrieve({ locale: 'tr', token }, async (err, result) => {
+      if (err || result.status !== 'success' || result.paymentStatus !== 'SUCCESS') {
+        return res.redirect(`${process.env.APP_URL}/?payment=failed`);
+      }
+
+      // conversationId'den userId çıkar
+      const userId = result.conversationId?.split('_')[1];
+      const plan = result.basketId?.split('_')[1];
+      if (!userId || !plan) return res.redirect(`${process.env.APP_URL}/?payment=failed`);
+
+      const startsAt = new Date();
+      const endsAt = new Date();
+      endsAt.setFullYear(endsAt.getFullYear() + 1);
+
+      await pool.query(
+        `UPDATE subscriptions SET plan=$1, status='active',
+         starts_at=$2, ends_at=$3,
+         payment_method='iyzico',
+         iyzico_subscription_id=$4
+         WHERE user_id=$5`,
+        [plan, startsAt, endsAt, result.paymentId, userId]
+      );
+
+      await pool.query(
+        "INSERT INTO system_notifications (user_id, title, message) VALUES ($1,$2,$3)",
+        [userId,
+         '✅ Ödeme başarılı — Abonelik aktif!',
+         `${plan} planınız aktif edildi. Bitiş tarihi: ${endsAt.toLocaleDateString('tr-TR')}`]
+      );
+
+      res.redirect(`${process.env.APP_URL}/?payment=success`);
+    });
+  } catch(err) {
+    res.redirect(`${process.env.APP_URL}/?payment=failed`);
+  }
 });
 
 // ═══════════════════════════════
@@ -1514,8 +1749,129 @@ app.post('/api/upload/campaign-image', authMiddleware, upload.single('image'), a
 });
 
 // ═══════════════════════════════
+// ABONELİK BİLDİRİM SİSTEMİ — Her gün saat 09:00'da
+// ═══════════════════════════════
+async function checkSubscriptionExpiry() {
+  try {
+    console.log('🔔 Abonelik kontrol başladı...');
+
+    // 7, 3, 1 gün kalan ve son gün abonelikleri bul
+    const result = await pool.query(`
+      SELECT s.*, u.email, r.name as restaurant_name
+      FROM subscriptions s
+      JOIN users u ON u.id = s.user_id
+      LEFT JOIN restaurants r ON r.user_id = s.user_id
+      WHERE s.status = 'active'
+        AND s.ends_at IS NOT NULL
+        AND s.ends_at > NOW()
+        AND DATE(s.ends_at) IN (
+          CURRENT_DATE + INTERVAL '7 days',
+          CURRENT_DATE + INTERVAL '3 days',
+          CURRENT_DATE + INTERVAL '1 day',
+          CURRENT_DATE
+        )
+    `);
+
+    for (const sub of result.rows) {
+      const daysLeft = Math.ceil((new Date(sub.ends_at) - new Date()) / (1000 * 60 * 60 * 24));
+      const notifKey = `expiry_${daysLeft}d_${sub.id}`;
+
+      // Aynı gün için daha önce bildirim gönderildi mi?
+      const alreadySent = await pool.query(
+        "SELECT id FROM subscription_notifications WHERE user_id=$1 AND type=$2 AND DATE(sent_at)=CURRENT_DATE",
+        [sub.user_id, notifKey]
+      );
+      if (alreadySent.rows.length) continue;
+
+      const title = daysLeft <= 0
+        ? '⚠️ Aboneliğiniz bugün sona eriyor!'
+        : `⏰ Aboneliğiniz ${daysLeft} gün içinde sona eriyor`;
+
+      const message = daysLeft <= 0
+        ? `${sub.restaurant_name || 'Restoranınız'} için aboneliğiniz bugün sona eriyor. Hizmet kesintisi yaşamamak için yenileyin.`
+        : `${sub.restaurant_name || 'Restoranınız'} için aboneliğiniz ${new Date(sub.ends_at).toLocaleDateString('tr-TR')} tarihinde sona erecek.`;
+
+      // Panel bildirimi
+      await pool.query(
+        "INSERT INTO system_notifications (user_id, title, message) VALUES ($1,$2,$3)",
+        [sub.user_id, title, message]
+      );
+
+      // Email bildirimi
+      try {
+        await resend.emails.send({
+          from: 'CafeMenu <bildirim@cafemenu.com.tr>',
+          to: sub.email,
+          subject: title,
+          html: `
+            <div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:24px">
+              <img src="https://pub-752c2dbea9a347528b807bb139a28366.r2.dev/restaurants/cafemenulogo.jpg"
+                   alt="CafeMenu" style="height:40px;margin-bottom:24px">
+              <h2 style="color:#111">${title}</h2>
+              <p style="color:#555;line-height:1.6">${message}</p>
+              ${daysLeft > 0 ? `
+              <p style="color:#555">Aboneliğinizi yenilemek için panele giriş yapın.</p>
+              <a href="${process.env.APP_URL}" style="display:inline-block;background:#e8c547;color:#111;
+                 padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin-top:16px">
+                Panele Git →
+              </a>` : `
+              <p style="color:#e84747;font-weight:600">Aboneliğiniz sona erdiğinde menünüz yayından kalkacaktır.</p>
+              <a href="${process.env.APP_URL}" style="display:inline-block;background:#e84747;color:#fff;
+                 padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin-top:16px">
+                Hemen Yenile →
+              </a>`}
+              <hr style="margin:32px 0;border:none;border-top:1px solid #eee">
+              <p style="color:#999;font-size:12px">CafeMenu · cafemenu.com.tr</p>
+            </div>
+          `
+        });
+      } catch(emailErr) {
+        console.error('Bildirim emaili gönderilemedi:', emailErr.message);
+      }
+
+      // Bildirim kaydı
+      await pool.query(
+        "INSERT INTO subscription_notifications (user_id, type, days_remaining) VALUES ($1,$2,$3)",
+        [sub.user_id, notifKey, daysLeft]
+      );
+
+      console.log(`📧 Bildirim gönderildi: ${sub.email} (${daysLeft} gün kaldı)`);
+    }
+
+    // Süresi dolmuş abonelikleri expired yap
+    await pool.query(`
+      UPDATE subscriptions SET status='expired'
+      WHERE status='active' AND ends_at IS NOT NULL AND ends_at < NOW()
+    `);
+    await pool.query(`
+      UPDATE subscriptions SET status='expired'
+      WHERE status='active' AND ends_at IS NULL AND trial_ends_at < NOW()
+    `);
+
+  } catch(err) {
+    console.error('Abonelik kontrol hatası:', err.message);
+  }
+}
+
+// ═══════════════════════════════
 // OTOMATİK YEDEKLEME — Her gün saat 03:00'da
 // ═══════════════════════════════
+function scheduleSubscriptionCheck() {
+  const now = new Date();
+  // Sabah 09:00'a kaç ms kaldı?
+  const next9am = new Date();
+  next9am.setHours(9, 0, 0, 0);
+  if (next9am <= now) next9am.setDate(next9am.getDate() + 1);
+  const msUntil9am = next9am - now;
+
+  setTimeout(() => {
+    checkSubscriptionExpiry();
+    setInterval(checkSubscriptionExpiry, 24 * 60 * 60 * 1000);
+  }, msUntil9am);
+
+  console.log(`⏰ Abonelik kontrolü ${next9am.toLocaleString('tr-TR')} saatinde başlayacak`);
+}
+
 function scheduleBackup() {
   const now = new Date();
   const next = new Date();
@@ -1586,6 +1942,7 @@ async function startServer() {
     server.listen(PORT, () => {
       console.log(`🚀 QRMenu API çalışıyor: port ${PORT}`);
       scheduleBackup();
+      scheduleSubscriptionCheck();
     });
   } catch (err) {
     console.error('❌ Sunucu başlatılamadı:', err.message);

@@ -710,11 +710,83 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
 
     <!-- SUBSCRIPTION -->
     <div class="page" id="page-subscription">
-      <p style="font-size:13px;color:var(--text2);margin-bottom:20px">Mevcut: <span style="color:var(--accent);font-weight:600">Trial (14 gün)</span></p>
-      <div class="plans-grid">
-        <div class="plan-card"><div style="font-size:11px;color:var(--text2);font-weight:600;letter-spacing:.08em">STARTER</div><div class="plan-price">₺990</div><div style="font-size:11px;color:var(--text3)">/yıl</div><ul class="plan-features"><li><span class="feat-ok">✓</span>1 Restoran</li><li><span class="feat-ok">✓</span>50 ürüne kadar</li><li><span class="feat-ok">✓</span>QR kod</li><li style="color:var(--text3)">✗ AI görsel</li></ul><button class="plan-btn" onclick="toast('İyzico entegrasyonu yakında','info')">Seç</button></div>
-        <div class="plan-card featured"><div class="plan-badge">EN POPÜLER</div><div style="font-size:11px;color:var(--text2);font-weight:600;letter-spacing:.08em;margin-top:8px">PRO</div><div class="plan-price">₺2.490</div><div style="font-size:11px;color:var(--text3)">/yıl</div><ul class="plan-features"><li><span class="feat-ok">✓</span>3 Restoran</li><li><span class="feat-ok">✓</span>Sınırsız ürün</li><li><span class="feat-ok">✓</span>AI görsel</li><li><span class="feat-ok">✓</span>Garson sistemi</li></ul><button class="plan-btn" onclick="toast('İyzico entegrasyonu yakında','info')">Seç</button></div>
-        <div class="plan-card"><div style="font-size:11px;color:var(--text2);font-weight:600;letter-spacing:.08em">ENTERPRISE</div><div class="plan-price">₺6.990</div><div style="font-size:11px;color:var(--text3)">/yıl</div><ul class="plan-features"><li><span class="feat-ok">✓</span>Sınırsız restoran</li><li><span class="feat-ok">✓</span>Özel domain</li><li><span class="feat-ok">✓</span>API erişimi</li><li><span class="feat-ok">✓</span>Öncelikli destek</li></ul><button class="plan-btn" onclick="toast('İletişime geçin','info')">İletişim</button></div>
+
+      <!-- Mevcut Abonelik Durumu -->
+      <div class="panel" style="margin-bottom:16px" id="sub-status-panel">
+        <div class="panel-head"><span class="panel-title">📋 Mevcut Abonelik</span></div>
+        <div style="padding:20px" id="sub-status-content">
+          <div style="color:var(--text3);font-size:13px">Yükleniyor...</div>
+        </div>
+      </div>
+
+      <!-- İyzico Ödeme -->
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-head"><span class="panel-title">💳 Plan Seç & Öde</span></div>
+        <div style="padding:20px">
+          <div class="plans-grid">
+            <div class="plan-card">
+              <div style="font-size:11px;color:var(--text2);font-weight:600;letter-spacing:.08em">STARTER</div>
+              <div class="plan-price">₺4.990</div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:16px">/yıl</div>
+              <ul class="plan-features">
+                <li><span class="feat-ok">✓</span>1 Restoran</li>
+                <li><span class="feat-ok">✓</span>50 ürüne kadar</li>
+                <li><span class="feat-ok">✓</span>QR kod + kısa URL</li>
+                <li><span class="feat-ok">✓</span>PDF menü</li>
+              </ul>
+              <button class="plan-btn" onclick="startPayment('starter')">Satın Al</button>
+            </div>
+            <div class="plan-card featured">
+              <div class="plan-badge">EN POPÜLER</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.6);font-weight:600;letter-spacing:.08em;margin-top:8px">PRO</div>
+              <div class="plan-price">₺7.490</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:16px">/yıl</div>
+              <ul class="plan-features">
+                <li><span class="feat-ok">✓</span>Sınırsız ürün</li>
+                <li><span class="feat-ok">✓</span>Garson çağrı sistemi</li>
+                <li><span class="feat-ok">✓</span>Kampanya popup</li>
+                <li><span class="feat-ok">✓</span>Mobil uygulama (PWA)</li>
+              </ul>
+              <button class="plan-btn" onclick="startPayment('pro')">Satın Al</button>
+            </div>
+            <div class="plan-card">
+              <div style="font-size:11px;color:var(--text2);font-weight:600;letter-spacing:.08em">ENTERPRISE</div>
+              <div class="plan-price">₺9.990</div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:16px">/yıl</div>
+              <ul class="plan-features">
+                <li><span class="feat-ok">✓</span>3+ Restoran</li>
+                <li><span class="feat-ok">✓</span>Özel domain</li>
+                <li><span class="feat-ok">✓</span>API erişimi</li>
+                <li><span class="feat-ok">✓</span>Öncelikli destek</li>
+              </ul>
+              <button class="plan-btn" onclick="window.location.href='mailto:info@cafemenu.com.tr'">İletişim</button>
+            </div>
+          </div>
+          <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:16px">
+            Nakit veya havale ile ödeme için <a href="mailto:info@cafemenu.com.tr" style="color:var(--accent)">info@cafemenu.com.tr</a> adresine yazın.
+            Admin panelinden süreniz manuel olarak eklenecektir.
+          </p>
+        </div>
+      </div>
+
+      <!-- Bildirimler -->
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">🔔 Bildirimler</span>
+          <button class="btn-sm" onclick="markAllNotifRead()" style="font-size:11px;padding:4px 10px">Tümünü Oku</button>
+        </div>
+        <div id="notif-list" style="padding:8px">
+          <div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">Yükleniyor...</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- iyzico ödeme modal -->
+    <div class="modal" id="payment-modal">
+      <div class="modal-box" style="max-width:520px">
+        <div class="modal-head"><span class="modal-title">Güvenli Ödeme</span><button class="modal-close" onclick="closeModal('payment-modal')">✕</button></div>
+        <div id="iyzico-form-container" style="padding:20px"></div>
       </div>
     </div>
   </main>
@@ -1079,6 +1151,7 @@ async function loadApp() {
   await Promise.all([loadCategories(),loadProducts(),loadCalls(),loadFeedback(),loadCampaigns()]);
   updateStats(); loadQR(); loadDesignFields(); connectWS(); initHomeToggles();
   preloadWaiterSound(); // async, arka planda yükle
+  loadNotifications(); // nav badge için
   // Kayıtlı temayı uygula
   const savedTheme=localStorage.getItem('qrmenu_theme')||'classic';
   const savedCard=localStorage.getItem('qrmenu_cardstyle')||'list';
@@ -1117,7 +1190,154 @@ function updateStats(){
 // ═══════════════════════════════
 // ANALİZ
 // ═══════════════════════════════
-async function loadAnalytics(){
+async // ═══════════════════════════════
+// ABONELİK & BİLDİRİM FONKSİYONLARI
+// ═══════════════════════════════
+async function loadSubscriptionPage() {
+  await Promise.all([loadSubStatus(), loadNotifications()]);
+}
+
+async function loadSubStatus() {
+  try {
+    const sub = await api('GET', '/subscription');
+    const el = document.getElementById('sub-status-content');
+    if (!el) return;
+
+    const planNames = { trial:'Deneme', starter:'Starter', pro:'Pro', enterprise:'Enterprise' };
+    const statusNames = { active:'Aktif', expired:'Süresi Doldu', cancelled:'İptal', trial:'Deneme' };
+    const statusColors = { active:'var(--green)', expired:'var(--red)', cancelled:'var(--text3)', trial:'var(--accent)' };
+
+    const planName = planNames[sub.plan] || sub.plan;
+    const statusName = statusNames[sub.status] || sub.status;
+    const statusColor = statusColors[sub.status] || 'var(--text2)';
+
+    const startDate = sub.starts_at ? new Date(sub.starts_at).toLocaleDateString('tr-TR') : '—';
+    const endDate = sub.expires_at ? new Date(sub.expires_at).toLocaleDateString('tr-TR') : '—';
+    const daysLeft = sub.days_left;
+
+    let daysHtml = '';
+    if (daysLeft !== null) {
+      const color = daysLeft <= 3 ? 'var(--red)' : daysLeft <= 7 ? '#f59e0b' : 'var(--green)';
+      daysHtml = `<div style="margin-top:12px;padding:12px 16px;background:var(--bg3);border-radius:10px;border-left:3px solid ${color}">
+        <span style="color:${color};font-weight:700;font-size:15px">
+          ${daysLeft <= 0 ? '⚠️ Abonelik sona erdi!' : daysLeft === 1 ? '⚠️ Son gün!' : `⏰ ${daysLeft} gün kaldı`}
+        </span>
+      </div>`;
+    }
+
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div style="background:var(--bg3);border-radius:10px;padding:14px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">PLAN</div>
+          <div style="font-size:18px;font-weight:700;color:var(--accent)">${planName}</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:10px;padding:14px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">DURUM</div>
+          <div style="font-size:16px;font-weight:700;color:${statusColor}">${statusName}</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:10px;padding:14px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">BAŞLANGIC</div>
+          <div style="font-size:14px;font-weight:600;color:var(--text)">${startDate}</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:10px;padding:14px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">BİTİŞ</div>
+          <div style="font-size:14px;font-weight:600;color:var(--text)">${endDate}</div>
+        </div>
+      </div>
+      ${sub.payment_method ? `<div style="font-size:12px;color:var(--text3)">Ödeme: ${sub.payment_method === 'iyzico' ? '💳 İyzico' : sub.payment_method === 'cash' ? '💵 Nakit' : sub.payment_method === 'transfer' ? '🏦 Havale' : sub.payment_method}</div>` : ''}
+      ${daysHtml}
+    `;
+  } catch(e) {
+    const el = document.getElementById('sub-status-content');
+    if (el) el.innerHTML = '<div style="color:var(--text3);font-size:13px">Abonelik bilgisi yüklenemedi</div>';
+  }
+}
+
+async function loadNotifications() {
+  try {
+    const notifs = await api('GET', '/notifications');
+    const el = document.getElementById('notif-list');
+    if (!el) return;
+
+    // Nav badge güncelle
+    const unread = notifs.filter(n => !n.is_read).length;
+    updateNotifNavBadge(unread);
+
+    if (!notifs.length) {
+      el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">Bildirim yok</div>';
+      return;
+    }
+
+    el.innerHTML = notifs.map(n => `
+      <div style="display:flex;gap:12px;padding:14px 8px;border-bottom:1px solid var(--border);opacity:${n.is_read ? 0.6 : 1}"
+           onclick="markNotifRead('${n.id}',this)">
+        <div style="width:8px;height:8px;border-radius:50%;background:${n.is_read ? 'transparent' : 'var(--accent)'};flex-shrink:0;margin-top:5px"></div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:${n.is_read ? 400 : 600};color:var(--text);margin-bottom:3px">${n.title}</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:4px">${n.message || ''}</div>
+          <div style="font-size:11px;color:var(--text3)">${new Date(n.created_at).toLocaleString('tr-TR')}</div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {}
+}
+
+function updateNotifNavBadge(count) {
+  let badge = document.getElementById('notif-nav-badge');
+  if (!badge) {
+    // Nav'daki bildirim nav-item'e badge ekle
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+      if (item.textContent.includes('Abonelik')) {
+        badge = document.createElement('span');
+        badge.id = 'notif-nav-badge';
+        badge.style.cssText = 'background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:6px;display:none';
+        item.appendChild(badge);
+      }
+    });
+  }
+  if (badge) {
+    badge.textContent = count;
+    badge.style.display = count > 0 ? 'inline' : 'none';
+  }
+}
+
+async function markNotifRead(id, el) {
+  try {
+    await api('PATCH', '/notifications/' + id + '/read');
+    if (el) { el.style.opacity = '0.6'; const dot = el.querySelector('div'); if(dot) dot.style.background = 'transparent'; }
+  } catch(e) {}
+}
+
+async function markAllNotifRead() {
+  try {
+    await api('PATCH', '/notifications/read-all');
+    loadNotifications();
+    toast('Tüm bildirimler okundu', 'success');
+  } catch(e) {}
+}
+
+async function startPayment(plan) {
+  try {
+    toast('Ödeme formu hazırlanıyor...', 'info');
+    const data = await api('POST', '/payment/init', { plan });
+    if (data.error) return toast(data.error, 'error');
+    document.getElementById('iyzico-form-container').innerHTML = data.checkoutFormContent;
+    // iyzico script'ini çalıştır
+    const scripts = document.getElementById('iyzico-form-container').querySelectorAll('script');
+    scripts.forEach(s => {
+      const ns = document.createElement('script');
+      ns.src = s.src || '';
+      ns.textContent = s.textContent;
+      s.replaceWith(ns);
+    });
+    openModal('payment-modal');
+  } catch(e) {
+    toast('Ödeme başlatılamadı: ' + e.message, 'error');
+  }
+}
+
+function loadAnalytics(){
   const period = document.getElementById('analytics-period')?.value || '30';
   try {
     const data = await api('GET', '/analytics?period=' + period);
@@ -1195,6 +1415,7 @@ function goPage(id,el){
   if(id==='editor') renderCatList();
   if(id==='design') loadDesignFields();
   if(id==='analytics') loadAnalytics();
+  if(id==='subscription') loadSubscriptionPage();
 }
 
 // TEMA SEÇİCİ

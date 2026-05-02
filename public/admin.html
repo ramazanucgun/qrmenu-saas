@@ -154,24 +154,61 @@ select.form-input{cursor:pointer}
 
 <!-- ABONELİK DÜZENLEME MODAL -->
 <div class="modal-overlay" id="sub-modal">
-  <div class="modal">
+  <div class="modal" style="max-width:480px">
     <div class="modal-head"><span class="modal-title">Abonelik Düzenle</span><button class="modal-close" onclick="closeModal()">✕</button></div>
     <input type="hidden" id="edit-user-id">
-    <div class="form-group"><label class="form-label">PLAN</label>
-      <select class="form-input" id="edit-plan">
-        <option value="trial">Trial</option>
-        <option value="starter">Starter</option>
-        <option value="pro">Pro</option>
-        <option value="enterprise">Enterprise</option>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label class="form-label">PLAN</label>
+        <select class="form-input" id="edit-plan">
+          <option value="trial">Trial</option>
+          <option value="starter">Starter</option>
+          <option value="pro">Pro</option>
+          <option value="enterprise">Enterprise</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">DURUM</label>
+        <select class="form-input" id="edit-status">
+          <option value="active">Aktif</option>
+          <option value="cancelled">İptal</option>
+          <option value="expired">Süresi Doldu</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">BAŞLANGIC TARİHİ</label>
+        <input class="form-input" type="date" id="edit-starts-at">
+      </div>
+      <div class="form-group">
+        <label class="form-label">BİTİŞ TARİHİ</label>
+        <input class="form-input" type="date" id="edit-ends-at">
+      </div>
+    </div>
+
+    <div class="form-group"><label class="form-label">ÖDEME YÖNTEMİ</label>
+      <select class="form-input" id="edit-payment-method">
+        <option value="">Seçin</option>
+        <option value="cash">💵 Nakit</option>
+        <option value="transfer">🏦 Havale / EFT</option>
+        <option value="iyzico">💳 İyzico (Online)</option>
+        <option value="other">Diğer</option>
       </select>
     </div>
-    <div class="form-group"><label class="form-label">DURUM</label>
-      <select class="form-input" id="edit-status">
-        <option value="active">Aktif</option>
-        <option value="cancelled">İptal</option>
-        <option value="expired">Süresi Doldu</option>
-      </select>
+
+    <div class="form-group"><label class="form-label">ÖDEME NOTU</label>
+      <input class="form-input" type="text" id="edit-payment-note" placeholder="Açıklama, dekont no, vb.">
     </div>
+
+    <div style="background:rgba(232,197,71,.08);border:1px solid rgba(232,197,71,.2);border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--text2)">
+      💡 Hızlı süre ekle:
+      <button onclick="addMonths(1)" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;margin:0 3px">+1 Ay</button>
+      <button onclick="addMonths(3)" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;margin:0 3px">+3 Ay</button>
+      <button onclick="addMonths(6)" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;margin:0 3px">+6 Ay</button>
+      <button onclick="addMonths(12)" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;margin:0 3px">+1 Yıl</button>
+    </div>
+
     <div class="modal-footer">
       <button class="btn-sm" onclick="closeModal()">İptal</button>
       <button class="btn-sm" style="background:var(--accent);border-color:var(--accent);color:#000;font-weight:700" onclick="saveSubscription()">Kaydet</button>
@@ -279,7 +316,7 @@ function renderUsers() {
       <td><span class="badge ${statusBadge[u.status]||'b-yellow'}">${u.status==='active'?'Aktif':u.status==='cancelled'?'İptal':'Süresi Doldu'}</span></td>
       <td style="font-size:12px;color:var(--text3)">${new Date(u.created_at).toLocaleDateString('tr-TR')}</td>
       <td>
-        <button class="btn-sm" onclick="editSub('${u.id}','${u.plan||'trial'}','${u.status||'active'}')" style="margin-right:4px">✏️ Plan</button>
+        <button class="btn-sm" onclick="editSub('${u.id}','${u.plan||\"trial\"}','${u.status||\"active\"}','','','','')" style="margin-right:4px">✏️ Plan</button>
         <button class="btn-sm btn-danger" onclick="deleteUser('${u.id}','${u.email}')">🗑 Sil</button>
       </td>
     </tr>
@@ -297,26 +334,49 @@ function renderSubs() {
       <td><span class="badge ${planBadge[u.plan]||'b-yellow'}">${(u.plan||'trial').toUpperCase()}</span></td>
       <td><span class="badge ${statusBadge[u.status]||'b-yellow'}">${u.status==='active'?'Aktif':u.status==='cancelled'?'İptal':'Süresi Doldu'}</span></td>
       <td style="font-size:12px;color:var(--text3)">${u.trial_ends_at ? new Date(u.trial_ends_at).toLocaleDateString('tr-TR') : '—'}</td>
-      <td><button class="btn-sm" onclick="editSub('${u.id}','${u.plan||'trial'}','${u.status||'active'}')">✏️ Düzenle</button></td>
+      <td><button class="btn-sm" onclick="editSub('${u.id}','${u.plan||"trial"}','${u.status||"active"}','${u.starts_at||"" }','${u.ends_at||""}','${u.payment_method||""}','${u.payment_note||""}')" >✏️ Düzenle</button></td>
     </tr>
   `).join('');
 }
 
-function editSub(userId, plan, status) {
+function editSub(userId, plan, status, startsAt, endsAt, paymentMethod, paymentNote) {
   document.getElementById('edit-user-id').value = userId;
-  document.getElementById('edit-plan').value = plan;
-  document.getElementById('edit-status').value = status;
+  document.getElementById('edit-plan').value = plan || 'trial';
+  document.getElementById('edit-status').value = status || 'active';
+  document.getElementById('edit-starts-at').value = startsAt ? startsAt.slice(0,10) : '';
+  document.getElementById('edit-ends-at').value = endsAt ? endsAt.slice(0,10) : '';
+  document.getElementById('edit-payment-method').value = paymentMethod || '';
+  document.getElementById('edit-payment-note').value = paymentNote || '';
   document.getElementById('sub-modal').classList.add('open');
+}
+
+function addMonths(months) {
+  const endsEl = document.getElementById('edit-ends-at');
+  const base = endsEl.value ? new Date(endsEl.value) : new Date();
+  base.setMonth(base.getMonth() + months);
+  endsEl.value = base.toISOString().slice(0,10);
+  // starts_at yoksa bugünü koy
+  const startsEl = document.getElementById('edit-starts-at');
+  if (!startsEl.value) startsEl.value = new Date().toISOString().slice(0,10);
+  // Durumu aktife al
+  document.getElementById('edit-status').value = 'active';
 }
 
 async function saveSubscription() {
   const userId = document.getElementById('edit-user-id').value;
-  const plan = document.getElementById('edit-plan').value;
-  const status = document.getElementById('edit-status').value;
+  const body = {
+    plan: document.getElementById('edit-plan').value,
+    status: document.getElementById('edit-status').value,
+    starts_at: document.getElementById('edit-starts-at').value || null,
+    ends_at: document.getElementById('edit-ends-at').value || null,
+    payment_method: document.getElementById('edit-payment-method').value || null,
+    payment_note: document.getElementById('edit-payment-note').value || null,
+  };
   try {
-    await api('PUT', '/admin/subscription/' + userId, { plan, status });
+    await api('PUT', '/admin/subscription/' + userId, body);
     closeModal();
     await loadUsers();
+    await loadSubscriptions();
     toast('Abonelik güncellendi ✅', 'success');
   } catch(e) { toast(e.message, 'error'); }
 }
