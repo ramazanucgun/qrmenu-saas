@@ -692,6 +692,25 @@ app.patch('/api/categories/reorder', authMiddleware, async (req, res) => {
   }
 });
 
+// Ürün sıralama
+app.patch('/api/products/reorder', authMiddleware, async (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || !ids.length) {
+    return res.status(400).json({ error: 'ids dizisi zorunlu' });
+  }
+  try {
+    await pool.query(
+      `UPDATE products SET sort_order = t.ord
+       FROM (SELECT unnest($1::uuid[]) AS id, generate_series(0, $2) AS ord) AS t
+       WHERE products.id = t.id AND products.restaurant_id = $3`,
+      [ids, ids.length - 1, req.user.restaurantId]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ═══════════════════════════════
 // ÜRÜNLER
 // ═══════════════════════════════

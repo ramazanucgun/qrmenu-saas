@@ -2259,16 +2259,13 @@ async function loadMenuImages(slug) {
         const placeholder = el.querySelector('.m-prod-img-placeholder');
         if (!placeholder) return;
         const img = document.createElement('img');
-        img.src = image_url;
         img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:10px;display:block';
-        // onload ve onerror her iki durumda da çalış
         const doReplace = () => { if (placeholder.parentNode) placeholder.replaceWith(img); };
-        if (img.complete) {
-          doReplace();
-        } else {
-          img.onload = doReplace;
-          img.onerror = () => {}; // hata olursa emoji kalsın
-        }
+        img.onload = doReplace;
+        img.onerror = () => {};
+        img.src = image_url; // src en son set et — complete kontrolü güvenilmez
+        // base64 için sync yükleme olabilir, hemen kontrol et
+        if (img.complete && img.naturalWidth > 0) doReplace();
       });
     });
   } catch(e) {}
