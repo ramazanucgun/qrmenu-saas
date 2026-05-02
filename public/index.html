@@ -273,8 +273,8 @@ function authTab(t) {
 }
 
 // Stub fonksiyonlar — asıl script yüklenene kadar çalışır
-function doLogin(){ if(typeof _doLogin==='function') _doLogin(); else console.warn('doLogin henüz yüklenmedi'); }
-function doRegister(){ if(typeof _doRegister==='function') _doRegister(); else console.warn('doRegister henüz yüklenmedi'); }
+function doLogin(){ if(typeof _doLogin==='function') _doLogin(); else { document.getElementById('auth-error').textContent='Sayfa yükleniyor, lütfen bekleyin...'; document.getElementById('auth-error').style.display='block'; setTimeout(()=>{ if(typeof _doLogin==='function') _doLogin(); },500); } }
+function doRegister(){ if(typeof _doRegister==='function') _doRegister(); }
 function doForgotPassword(){ if(typeof _doForgotPassword==='function') _doForgotPassword(); }
 function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPassword(); }
 </script>
@@ -308,7 +308,7 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
   <button class="btn-primary" onclick="doResetPassword()">Şifremi Güncelle</button>
 </div>
     <div id="login-form">
-      <div id="g-login-btn" style="display:flex;justify-content:center;min-height:44px"></div>
+      <div id="g-login-btn" style="display:flex;justify-content:center;min-height:44px"><div style="width:100%;height:44px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--text2)"><span>⏳</span> Google yükleniyor...</div></div>
       <div class="auth-divider">veya</div>
       <div class="form-group"><label class="form-label">E-POSTA</label><input class="form-input" id="l-email" type="email" placeholder="email@ornek.com"></div>
       <div class="form-group"><label class="form-label">ŞİFRE</label><input class="form-input" id="l-pass" type="password" placeholder="••••••••"></div>
@@ -321,7 +321,7 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
 </div>
     </div>
     <div id="register-form" style="display:none">
-      <div id="g-register-btn" style="display:flex;justify-content:center;min-height:44px"></div>
+      <div id="g-register-btn" style="display:flex;justify-content:center;min-height:44px"><div style="width:100%;height:44px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--text2)"><span>⏳</span> Google yükleniyor...</div></div>
       <div class="auth-divider">veya</div>
       <div class="form-group"><label class="form-label">RESTORAN ADI</label><input class="form-input" id="r-name" placeholder="Cafe Riviera"></div>
       <div class="form-group"><label class="form-label">E-POSTA</label><input class="form-input" id="r-email" type="email" placeholder="email@ornek.com"></div>
@@ -1344,7 +1344,7 @@ async function startPayment(plan) {
   }
 }
 
-function loadAnalytics(){
+async function loadAnalytics(){
   const period = document.getElementById('analytics-period')?.value || '30';
   try {
     const data = await api('GET', '/analytics?period=' + period);
@@ -2636,7 +2636,7 @@ function tryInitGoogle() {
         if (typeof google !== 'undefined' && google.accounts) {
           clearInterval(interval);
           doInit();
-        } else if (waited >= 3000) {
+        } else if (waited >= 1500) {
           clearInterval(interval);
           showGoogleFallbackButtons(d.clientId);
         }
@@ -2702,11 +2702,10 @@ tryInitGoogle();
 if (TOKEN && !isMenuPath) {
   loadApp();
 }
-</script>
-<script>
+
 // İlk kullanıcı etkileşiminde ses kilidini aç
 ['click','touchstart','keydown'].forEach(evt =>
-  document.addEventListener(evt, unlockAudio, { once: true, passive: true })
+  document.addEventListener(evt, () => { if(typeof unlockAudio==='function') unlockAudio(); }, { once: true, passive: true })
 );
 </script>
 </body>

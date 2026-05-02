@@ -82,6 +82,10 @@ tr:hover td{background:rgba(255,255,255,.02)}
 select.form-input{cursor:pointer}
 .empty{padding:40px;text-align:center;color:var(--text3);font-size:13px}
 </style>
+<script>
+// Stub — asıl fonksiyonlar body sonunda tanımlanıyor
+function doLogin(){ if(typeof _adminDoLogin==='function') _adminDoLogin(); }
+</script>
 </head>
 <body>
 
@@ -240,7 +244,7 @@ async function api(method, path, body) {
   return data;
 }
 
-async function doLogin() {
+async function _adminDoLogin() {
   const email = document.getElementById('a-email').value;
   const password = document.getElementById('a-pass').value;
   if (!email || !password) return showError('Email ve şifre zorunlu');
@@ -316,11 +320,17 @@ function renderUsers() {
       <td><span class="badge ${statusBadge[u.status]||'b-yellow'}">${u.status==='active'?'Aktif':u.status==='cancelled'?'İptal':'Süresi Doldu'}</span></td>
       <td style="font-size:12px;color:var(--text3)">${new Date(u.created_at).toLocaleDateString('tr-TR')}</td>
       <td>
-        <button class="btn-sm" onclick="editSub('${u.id}','${u.plan||\"trial\"}','${u.status||\"active\"}','','','','')" style="margin-right:4px">✏️ Plan</button>
-        <button class="btn-sm btn-danger" onclick="deleteUser('${u.id}','${u.email}')">🗑 Sil</button>
+        <button class="btn-sm edit-sub-btn" data-id="${u.id}" data-plan="${u.plan||'trial'}" data-status="${u.status||'active'}" data-starts="" data-ends="" data-method="" data-note="" style="margin-right:4px">✏️ Plan</button>
+        <button class="btn-sm btn-danger del-user-btn" data-id="${u.id}" data-email="${u.email}">🗑 Sil</button>
       </td>
     </tr>
   `).join('');
+  tbody.querySelectorAll('.edit-sub-btn').forEach(btn => {
+    btn.addEventListener('click', () => editSub(btn.dataset.id, btn.dataset.plan, btn.dataset.status, btn.dataset.starts||'', btn.dataset.ends||'', btn.dataset.method||'', btn.dataset.note||''));
+  });
+  tbody.querySelectorAll('.del-user-btn').forEach(btn => {
+    btn.addEventListener('click', () => deleteUser(btn.dataset.id, btn.dataset.email));
+  });
 }
 
 function renderSubs() {
@@ -334,9 +344,19 @@ function renderSubs() {
       <td><span class="badge ${planBadge[u.plan]||'b-yellow'}">${(u.plan||'trial').toUpperCase()}</span></td>
       <td><span class="badge ${statusBadge[u.status]||'b-yellow'}">${u.status==='active'?'Aktif':u.status==='cancelled'?'İptal':'Süresi Doldu'}</span></td>
       <td style="font-size:12px;color:var(--text3)">${u.trial_ends_at ? new Date(u.trial_ends_at).toLocaleDateString('tr-TR') : '—'}</td>
-      <td><button class="btn-sm" onclick="editSub('${u.id}','${u.plan||"trial"}','${u.status||"active"}','${u.starts_at||"" }','${u.ends_at||""}','${u.payment_method||""}','${u.payment_note||""}')" >✏️ Düzenle</button></td>
+      <td><button class="btn-sm edit-sub-btn"
+        data-id="${u.id}" data-plan="${u.plan||'trial'}" data-status="${u.status||'active'}"
+        data-starts="${u.starts_at||''}" data-ends="${u.ends_at||''}"
+        data-method="${u.payment_method||''}" data-note="${u.payment_note||''}">✏️ Düzenle</button></td>
     </tr>
   `).join('');
+  // Event listener ile editSub çağır — inline onclick tırnak sorununu önler
+  tbody.querySelectorAll('.edit-sub-btn').forEach(btn => {
+    btn.addEventListener('click', () => editSub(
+      btn.dataset.id, btn.dataset.plan, btn.dataset.status,
+      btn.dataset.starts, btn.dataset.ends, btn.dataset.method, btn.dataset.note
+    ));
+  });
 }
 
 function editSub(userId, plan, status, startsAt, endsAt, paymentMethod, paymentNote) {
