@@ -2352,13 +2352,18 @@ function renderPublicMenu(data){
 
   const footer=`<div class="m-footer" style="background:${t.footerBg};border-color:${t.border}">
     ${restaurant.waiter_enabled !== false ? `<button class="waiter-btn" style="background:${color}" onclick="callWaiter('${restaurant.id}')">🔔 Garson Çağır</button>` : ''}
-    ${restaurant.wifi_name?`<div class="wifi-card" style="background:${t.wifiBg};border-color:${t.wifiBorder}"><span style="font-size:22px">📡</span><div><div class="wifi-name-text" style="color:${t.text}">${restaurant.wifi_name}</div><div class="wifi-pass-text" style="color:${t.text2}">${restaurant.wifi_password||''}</div></div></div>`:''}
-    <div class="social-row">
-      ${restaurant.instagram_url?`<button class="social-btn" style="background:transparent;border-color:${t.socialBorder};padding:0" title="Instagram" onclick="window.open('https://instagram.com/'+encodeURIComponent('${restaurant.instagram_url}'.replace('@','')),'_blank')"><svg width='20' height='20' viewBox='0 0 24 24' fill='none'>  <defs>    <linearGradient id='ig-grad' x1='0%' y1='100%' x2='100%' y2='0%'>      <stop offset='0%' style='stop-color:#f09433'/>      <stop offset='25%' style='stop-color:#e6683c'/>      <stop offset='50%' style='stop-color:#dc2743'/>      <stop offset='75%' style='stop-color:#cc2366'/>      <stop offset='100%' style='stop-color:#bc1888'/>    </linearGradient>  </defs>  <rect x='2' y='2' width='20' height='20' rx='5' ry='5' fill='url(#ig-grad)'/>  <path d='M12 7a5 5 0 1 0 0 10A5 5 0 0 0 12 7zm0 8a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm5.2-8.8a1.2 1.2 0 1 1-2.4 0 1.2 1.2 0 0 1 2.4 0z' fill='white'/></svg></button>`:''}
-      ${restaurant.facebook_url?`<button class="social-btn" style="background:transparent;border-color:${t.socialBorder};padding:0" title="Facebook" onclick="window.open('https://facebook.com/'+encodeURIComponent('${restaurant.facebook_url}'),'_blank')"><svg width='20' height='20' viewBox='0 0 24 24'>  <rect width='24' height='24' rx='5' fill='#1877F2'/>  <path d='M16 8h-2.5C13 8 13 8.5 13 9v2h3l-.4 3H13v8h-3v-8H8v-3h2V8.5C10 6.5 11.3 5 13.5 5H16v3z' fill='white'/></svg></button>`:''}
-      ${restaurant.google_maps_url?`<button class="social-btn" style="background:transparent;border-color:${t.socialBorder};padding:0" title="Google Harita Yorumu Yaz" onclick="window.open('${restaurant.google_maps_url}','_blank')"><svg width='20' height='20' viewBox='0 0 24 24'>  <circle cx='12' cy='12' r='12' fill='#4285F4'/>  <path d='M17.5 8.5c0 3.5-5.5 9-5.5 9s-5.5-5.5-5.5-9a5.5 5.5 0 0 1 11 0z' fill='white'/>  <circle cx='12' cy='8.5' r='2' fill='#4285F4'/></svg></button>`:''}
+    <div class="social-row" style="margin:12px 0 4px">
+      ${restaurant.instagram_url?`<button class="social-btn" style="background:transparent;border-color:${t.socialBorder};padding:0" title="Instagram" onclick="window.open('https://instagram.com/'+encodeURIComponent('${restaurant.instagram_url}'.replace('@','')),'_blank')"><svg width='20' height='20' viewBox='0 0 24 24' fill='none'><defs><linearGradient id='ig-grad' x1='0%' y1='100%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:#f09433'/><stop offset='25%' style='stop-color:#e6683c'/><stop offset='50%' style='stop-color:#dc2743'/><stop offset='75%' style='stop-color:#cc2366'/><stop offset='100%' style='stop-color:#bc1888'/></linearGradient></defs><rect x='2' y='2' width='20' height='20' rx='5' ry='5' fill='url(#ig-grad)'/><path d='M12 7a5 5 0 1 0 0 10A5 5 0 0 0 12 7zm0 8a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm5.2-8.8a1.2 1.2 0 1 1-2.4 0 1.2 1.2 0 0 1 2.4 0z' fill='white'/></svg></button>`:''}
+      ${restaurant.facebook_url?`<button class="social-btn" style="background:transparent;border-color:${t.socialBorder};padding:0" title="Facebook" onclick="window.open('https://facebook.com/'+encodeURIComponent('${restaurant.facebook_url}'),'_blank')"><svg width='20' height='20' viewBox='0 0 24 24'><rect width='24' height='24' rx='5' fill='#1877F2'/><path d='M16 8h-2.5C13 8 13 8.5 13 9v2h3l-.4 3H13v8h-3v-8H8v-3h2V8.5C10 6.5 11.3 5 13.5 5H16v3z' fill='white'/></svg></button>`:''}
+      ${restaurant.google_maps_url?`<button class="social-btn" style="background:transparent;border-color:${t.socialBorder};padding:0" title="Google Harita Yorumu Yaz" onclick="window.open('${restaurant.google_maps_url}','_blank')"><svg width='20' height='20' viewBox='0 0 24 24'><circle cx='12' cy='12' r='12' fill='#4285F4'/><path d='M17.5 8.5c0 3.5-5.5 9-5.5 9s-5.5-5.5-5.5-9a5.5 5.5 0 0 1 11 0z' fill='white'/><circle cx='12' cy='8.5' r='2' fill='#4285F4'/></svg></button>`:''}
+      <button class="social-btn" style="background:transparent;border-color:${t.socialBorder}" title="Geri Bildirim" onclick="document.getElementById('fb-modal').classList.add('open')">
+        <svg width='20' height='20' viewBox='0 0 24 24' fill='none'><path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' fill='${color}' opacity='.9'/><path d='M8 10h8M8 14h5' stroke='white' stroke-width='1.5' stroke-linecap='round'/></svg>
+      </button>
     </div>
-    <div style="font-size:11px;color:${t.text2};margin-top:8px;opacity:.5">Powered by Cafemenu.com.tr</div>
+    ${restaurant.wifi_name?`<div class="wifi-card" style="background:${t.wifiBg};border-color:${t.wifiBorder}"><span style="font-size:22px">📡</span><div><div class="wifi-name-text" style="color:${t.text}">${restaurant.wifi_name}</div><div class="wifi-pass-text" style="color:${t.text2}">${restaurant.wifi_password||''}</div></div></div>`:''}
+    <div style="font-size:11px;color:${t.text2};margin-top:12px;opacity:.6;text-align:center">
+      Powered by <a href="https://cafemenu.com.tr" target="_blank" style="color:${color};text-decoration:none;font-weight:600">CafeMenu.com.tr</a>
+    </div>
   </div>`;
 
   const noResult = `<div id="search-no-result" style="display:none;text-align:center;padding:48px 24px;color:${t.text2}">
@@ -2374,6 +2379,11 @@ function renderPublicMenu(data){
   window._currentFont=font;
   renderStars();
 
+  // Scroll takibi başlat
+  const _color = color;
+  const _text2 = t.text2;
+  setTimeout(() => initMenuScrollSpy(_color, _text2), 300);
+
   if(campaign){
     document.getElementById('camp-popup-title').textContent=campaign.title;
     document.getElementById('camp-popup-desc').textContent=campaign.description||'';
@@ -2385,7 +2395,34 @@ function renderPublicMenu(data){
 function scrollToSec(id,el,color,textColor){
   document.querySelectorAll('.snav-item').forEach(e=>{e.style.color=textColor;e.style.borderBottomColor='transparent';});
   el.style.color=color; el.style.borderBottomColor=color;
+  // Nav'ı aktif iteme kaydır
+  el.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
   document.getElementById('sec-'+id)?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function initMenuScrollSpy(color, textColor) {
+  const sections = document.querySelectorAll('.m-section');
+  const navItems = document.querySelectorAll('.snav-item');
+  if (!sections.length || !navItems.length) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const secId = entry.target.id.replace('sec-', '');
+      navItems.forEach(item => {
+        const isActive = item.getAttribute('onclick')?.includes(secId);
+        item.style.color = isActive ? color : textColor;
+        item.style.borderBottomColor = isActive ? color : 'transparent';
+        if (isActive) item.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+      });
+    });
+  }, {
+    rootMargin: '-20% 0px -70% 0px', // Ekranın üst %30'unda olunca aktif
+    threshold: 0
+  });
+
+  sections.forEach(sec => observer.observe(sec));
+  window._menuScrollObserver = observer;
 }
 
 function searchMenu(q){
