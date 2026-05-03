@@ -795,6 +795,91 @@ app.patch('/api/products/:id/toggle', authMiddleware, async (req, res) => {
   res.json(result.rows[0]);
 });
 
+// Excel ile fiyat güncelleme
+app.post('/api/products/price-update-excel', authMiddleware, uploadExcel.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Dosya seçilmedi' });
+  try {
+    const XLSX = require('xlsx');
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet);
+
+    if (!rows.length) return res.status(400).json({ error: 'Excel dosyası boş' });
+
+    // Beklenen kolonlar: id veya name + price
+    let updated = 0;
+    let errors = [];
+
+    for (const row of rows) {
+      const price = parseFloat(row['Fiyat'] || row['price'] || row['Price'] || row['fiyat']);
+      const name = (row['Ürün Adı'] || row['name'] || row['Name'] || row['urun_adi'] || '').toString().trim();
+      const id = (row['ID'] || row['id'] || '').toString().trim();
+
+      if (isNaN(price) || price < 0) {
+        errors.push(`Geçersiz fiyat: ${name || id}`);
+        continue;
+      }
+
+      let result;
+      if (id && id.length === 36) {
+        // UUID ile güncelle
+        result = await pool.query(
+          'UPDATE products SET price=$1 WHERE id=$2 AND restaurant_id=$3',
+          [price, id, req.user.restaurantId]
+        );
+      } else if (name) {
+        // İsim ile güncelle (büyük/küçük harf duyarsız)
+        result = await pool.query(
+          'UPDATE products SET price=$1 WHERE LOWER(name)=LOWER($2) AND restaurant_id=$3',
+          [price, name, req.user.restaurantId]
+        );
+      } else {
+        errors.push(`Satır atlandı: ID veya Ürün Adı gerekli`);
+        continue;
+      }
+
+      if (result.rowCount > 0) updated++;
+      else errors.push(`Bulunamadı: ${name || id}`);
+    }
+
+    res.json({
+      success: true,
+      updated,
+      total: rows.length,
+      errors: errors.slice(0, 10)
+    });
+  } catch(err) {
+    res.status(500).json({ error: 'Excel okunamadı: ' + err.message });
+  }
+});
+
+// Excel şablonu indir
+app.get('/api/products/price-template', authMiddleware, async (req, res) => {
+  try {
+    const XLSX = require('xlsx');
+    const result = await pool.query(
+      'SELECT id, name, price FROM products WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order',
+      [req.user.restaurantId]
+    );
+    const data = result.rows.map(p => ({
+      'ID': p.id,
+      'Ürün Adı': p.name,
+      'Fiyat': parseFloat(p.price)
+    }));
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(data);
+    // Kolon genişlikleri
+    ws['!cols'] = [{ wch: 38 }, { wch: 30 }, { wch: 10 }];
+    XLSX.utils.book_append_sheet(wb, ws, 'Fiyatlar');
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="fiyat-guncelleme.xlsx"');
+    res.send(buffer);
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.patch('/api/products/bulk-price', authMiddleware, async (req, res) => {
   const { category_id, percent } = req.body;
   let query = 'UPDATE products SET price = ROUND(price * $1, 2) WHERE restaurant_id=$2';

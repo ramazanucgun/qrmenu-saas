@@ -900,15 +900,47 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
 </div>
 
 <div class="modal-overlay" id="bulk-modal">
-  <div class="modal" style="width:360px">
+  <div class="modal" style="width:400px">
     <div class="modal-head"><span class="modal-title">Toplu Fiyat Güncelle</span><button class="modal-close" onclick="closeModal('bulk-modal')">✕</button></div>
-    <div class="form-group"><label class="form-label">KATEGORİ</label><select class="form-input" id="bulk-cat-select"><option value="">Tüm kategoriler</option></select></div>
-    <div class="form-group"><label class="form-label">ORAN — <span id="bulk-pct-lbl">+10%</span></label>
-      <input type="range" min="-50" max="100" value="10" id="bulk-pct" oninput="document.getElementById('bulk-pct-lbl').textContent=(this.value>0?'+':'')+this.value+'%'">
+
+    <!-- Sekmeler -->
+    <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border)">
+      <button id="bulk-tab-pct" onclick="switchBulkTab('pct')" style="flex:1;padding:10px;background:none;border:none;border-bottom:2px solid var(--accent);color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans)">📊 Yüzde Artış</button>
+      <button id="bulk-tab-excel" onclick="switchBulkTab('excel')" style="flex:1;padding:10px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--sans)">📄 Excel ile Güncelle</button>
     </div>
-    <div class="modal-footer">
-      <button class="btn-sm" onclick="closeModal('bulk-modal')">İptal</button>
-      <button class="btn-sm btn-accent" onclick="applyBulkPrice()">Uygula</button>
+
+    <!-- Yüzde Artış -->
+    <div id="bulk-pct-panel">
+      <div class="form-group"><label class="form-label">KATEGORİ</label><select class="form-input" id="bulk-cat-select"><option value="">Tüm kategoriler</option></select></div>
+      <div class="form-group"><label class="form-label">ORAN — <span id="bulk-pct-lbl">+10%</span></label>
+        <input type="range" min="-50" max="100" value="10" id="bulk-pct" oninput="document.getElementById('bulk-pct-lbl').textContent=(this.value>0?'+':'')+this.value+'%'">
+      </div>
+      <div class="modal-footer">
+        <button class="btn-sm" onclick="closeModal('bulk-modal')">İptal</button>
+        <button class="btn-sm btn-accent" onclick="applyBulkPrice()">Uygula</button>
+      </div>
+    </div>
+
+    <!-- Excel Güncelleme -->
+    <div id="bulk-excel-panel" style="display:none">
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;color:var(--text2);line-height:1.6">
+        <div style="font-weight:600;color:var(--text);margin-bottom:6px">Nasıl kullanılır?</div>
+        1. Şablonu indir — mevcut ürün ve fiyatlar gelir<br>
+        2. Fiyat sütununu düzenle<br>
+        3. Kaydet ve yükle
+      </div>
+      <button class="btn-sm" onclick="downloadPriceTemplate()" style="width:100%;margin-bottom:12px;justify-content:center">
+        ⬇️ Excel Şablonunu İndir
+      </button>
+      <div class="form-group">
+        <label class="form-label">GÜNCEL FİYAT EXCEL'İNİ YÜKLE</label>
+        <input type="file" id="price-excel-file" accept=".xlsx,.xls" class="form-input" style="padding:8px">
+      </div>
+      <div id="price-upload-result" style="font-size:12px;margin-bottom:12px;display:none"></div>
+      <div class="modal-footer">
+        <button class="btn-sm" onclick="closeModal('bulk-modal')">İptal</button>
+        <button class="btn-sm btn-accent" onclick="uploadPriceExcel()">Fiyatları Güncelle</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1707,6 +1739,47 @@ async function dropProd(e, targetIndex) {
 }
 
 function openBulkModal(){populateCatSelects();openModal('bulk-modal');}
+
+function switchBulkTab(tab) {
+  const isPct = tab === 'pct';
+  document.getElementById('bulk-pct-panel').style.display = isPct ? '' : 'none';
+  document.getElementById('bulk-excel-panel').style.display = isPct ? 'none' : '';
+  document.getElementById('bulk-tab-pct').style.borderBottomColor = isPct ? 'var(--accent)' : 'transparent';
+  document.getElementById('bulk-tab-pct').style.color = isPct ? 'var(--accent)' : 'var(--text2)';
+  document.getElementById('bulk-tab-excel').style.borderBottomColor = isPct ? 'transparent' : 'var(--accent)';
+  document.getElementById('bulk-tab-excel').style.color = isPct ? 'var(--text2)' : 'var(--accent)';
+}
+
+function downloadPriceTemplate() {
+  window.open(API + '/products/price-template', '_blank');
+}
+
+async function uploadPriceExcel() {
+  const file = document.getElementById('price-excel-file').files[0];
+  if (!file) return toast('Excel dosyası seçin', 'error');
+  const resultEl = document.getElementById('price-upload-result');
+  resultEl.style.display = 'block';
+  resultEl.style.color = 'var(--text2)';
+  resultEl.textContent = '⏳ Yükleniyor...';
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(API + '/products/price-update-excel', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + TOKEN },
+      body: formData
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    resultEl.style.color = 'var(--green)';
+    resultEl.innerHTML = `✅ ${data.updated}/${data.total} ürün güncellendi.${data.errors.length ? '<br>⚠️ ' + data.errors.join('<br>⚠️ ') : ''}`;
+    await loadProducts();
+    toast(`${data.updated} ürün fiyatı güncellendi ✅`, 'success');
+  } catch(e) {
+    resultEl.style.color = 'var(--red)';
+    resultEl.textContent = '❌ ' + e.message;
+  }
+}
 
 async function applyBulkPrice(){
   const category_id=document.getElementById('bulk-cat-select').value;
