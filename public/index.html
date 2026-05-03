@@ -246,8 +246,8 @@ textarea.form-input{resize:vertical;min-height:80px}
 .camp-overlay.open{display:flex}
 .camp-box{background:#fff;border-radius:20px;overflow:hidden;width:100%;max-width:340px;text-align:center;animation:popIn .4s cubic-bezier(.34,1.56,.64,1);box-shadow:0 20px 60px rgba(0,0,0,.3)}
 @keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
-.camp-img{height:180px;display:flex;align-items:center;justify-content:center;font-size:64px;background:linear-gradient(135deg,#fde68a,#f59e0b);overflow:hidden;position:relative}
-.camp-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.camp-img{min-height:120px;max-height:260px;display:flex;align-items:center;justify-content:center;font-size:64px;background:linear-gradient(135deg,#fde68a,#f59e0b);overflow:hidden;position:relative}
+.camp-img img{width:100%;height:auto;max-height:260px;object-fit:contain;display:block;position:relative}
 .camp-img-emoji{position:relative;z-index:1}
 .fb-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:none;align-items:flex-end;justify-content:center}
 .fb-modal.open{display:flex}
@@ -2241,7 +2241,7 @@ function renderCampPopup(campaign) {
   if (campaign.image_url) {
     const img = document.createElement('img');
     img.alt = campaign.title || '';
-    img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover';
+    img.style.cssText = 'width:100%;height:auto;max-height:260px;object-fit:contain;display:block;position:relative';
     img.src = campaign.image_url;
     // Gradient arka planı kaldır, resim göster
     display.style.background = '#000';
