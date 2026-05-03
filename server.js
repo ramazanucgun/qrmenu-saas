@@ -854,7 +854,13 @@ app.post('/api/products/price-update-excel', authMiddleware, uploadExcel.single(
 });
 
 // Excel şablonu indir
-app.get('/api/products/price-template', authMiddleware, async (req, res) => {
+app.get('/api/products/price-template', (req, res, next) => {
+  // Query param token desteği — window.open ile header gönderilemiyor
+  if (req.query.token && !req.headers.authorization) {
+    req.headers.authorization = 'Bearer ' + req.query.token;
+  }
+  next();
+}, authMiddleware, async (req, res) => {
   try {
     const XLSX = require('xlsx');
     const result = await pool.query(

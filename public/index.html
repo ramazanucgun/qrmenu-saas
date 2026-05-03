@@ -1751,7 +1751,7 @@ function switchBulkTab(tab) {
 }
 
 function downloadPriceTemplate() {
-  window.open(API + '/products/price-template', '_blank');
+  window.open(API + '/products/price-template?token=' + encodeURIComponent(TOKEN), '_blank');
 }
 
 async function uploadPriceExcel() {
