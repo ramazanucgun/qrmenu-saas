@@ -2,8 +2,8 @@
   "name": "CafeMenu Yönetim",
   "short_name": "CafeMenu",
   "description": "CafeMenu restoran yönetim paneli",
-  "start_url": "/admin",
-  "scope": "/admin",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0d0d0f",
@@ -59,6 +59,9 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["business", "food"],
+  "categories": [
+    "business",
+    "food"
+  ],
   "screenshots": []
 }

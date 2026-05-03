@@ -2,6 +2,14 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#e8c547">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CafeMenu">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
   <script src="https://accounts.google.com/gsi/client" async></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QRMenu — app.ucgun.com.tr</title>
@@ -356,6 +364,7 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
       <div class="nav-section">HESAP</div>
       <div class="nav-item" onclick="goPage('subscription',this)">💳 Abonelik</div>
       <div class="nav-item" onclick="openMenu()">👁 Menüyü Görüntüle</div>
+      <button id="install-btn" onclick="installApp()" style="display:none;width:100%;background:rgba(232,197,71,.12);border:1px solid rgba(232,197,71,.25);border-radius:8px;color:var(--accent);font-size:13px;padding:9px;font-family:var(--sans);cursor:pointer;margin-bottom:8px;text-align:center">📲 Uygulamayı Yükle</button>
       <div class="nav-item" onclick="doLogout()" style="color:var(--red);margin-top:8px">🚪 Çıkış Yap</div>
     </nav>
     <div class="sidebar-footer">
@@ -2745,6 +2754,39 @@ if (TOKEN && !isMenuPath) {
 ['click','touchstart','keydown'].forEach(evt =>
   document.addEventListener(evt, () => { if(typeof unlockAudio==='function') unlockAudio(); }, { once: true, passive: true })
 );
+
+// ── PWA KURULUM ──
+let _deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredInstallPrompt = e;
+  const btn = document.getElementById('install-btn');
+  if (btn) btn.style.display = 'block';
+});
+
+function installApp() {
+  if (_deferredInstallPrompt) {
+    _deferredInstallPrompt.prompt();
+    _deferredInstallPrompt.userChoice.then(() => { _deferredInstallPrompt = null; });
+  } else {
+    // iOS için yönlendirme
+    toast('Safari'de "Paylaş → Ana Ekrana Ekle" seçin 📲', 'info');
+  }
+}
+
+window.addEventListener('appinstalled', () => {
+  const btn = document.getElementById('install-btn');
+  if (btn) btn.style.display = 'none';
+  toast('Uygulama kuruldu! 🎉', 'success');
+});
+
+// Service Worker kayıt
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
