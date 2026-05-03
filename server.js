@@ -583,6 +583,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/restaurant/me', authMiddleware, async (req, res) => {
   try {
+    if (!req.user.restaurantId) return res.status(404).json({ error: 'Restoran bulunamadı' });
     const result = await pool.query(
       `SELECT id, slug, name, logo_url, brand_color, font_family,
               theme, card_style, wifi_name, wifi_password,
@@ -591,6 +592,7 @@ app.get('/api/restaurant/me', authMiddleware, async (req, res) => {
        FROM restaurants WHERE id = $1`,
       [req.user.restaurantId]
     );
+    if (!result.rows[0]) return res.status(404).json({ error: 'Restoran bulunamadı' });
     res.json(result.rows[0]);
   } catch(err) {
     res.status(500).json({ error: err.message });
@@ -625,11 +627,16 @@ app.put('/api/restaurant/me', authMiddleware, async (req, res) => {
 
 // QR kod üret
 app.get('/api/restaurant/me/qr', authMiddleware, async (req, res) => {
-  const result = await pool.query('SELECT slug FROM restaurants WHERE id=$1', [req.user.restaurantId]);
-  const slug = result.rows[0].slug;
-  const url = `${process.env.APP_URL}/${slug}`;
-  const qr = await QRCode.toDataURL(url, { width: 400, margin: 2 });
-  res.json({ qr, url });
+  try {
+    const result = await pool.query('SELECT slug FROM restaurants WHERE id=$1', [req.user.restaurantId]);
+    if (!result.rows[0]) return res.status(404).json({ error: 'Restoran bulunamadı' });
+    const slug = result.rows[0].slug;
+    const url = `${process.env.APP_URL}/${slug}`;
+    const qr = await QRCode.toDataURL(url, { width: 400, margin: 2 });
+    res.json({ qr, url });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ═══════════════════════════════
