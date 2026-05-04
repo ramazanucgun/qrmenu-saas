@@ -2337,18 +2337,28 @@ async function loadMenuImages(slug) {
     images.forEach(({ id, image_url }) => {
       if (!image_url) return;
       window._menuImages[id] = image_url;
-      document.querySelectorAll('[data-prod-id="' + id + '"]').forEach(el => {
+    });
+
+    // IntersectionObserver ile sadece görünen ürünlerin resmini yükle
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const el = entry.target;
+        const prodId = el.dataset.prodId;
+        const url = window._menuImages[prodId];
+        if (!url) return;
         const placeholder = el.querySelector('.m-prod-img-placeholder');
-        if (!placeholder) return;
-        const img = document.createElement('img');
+        if (!placeholder) { observer.unobserve(el); return; }
+        const img = new Image();
         img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:10px;display:block';
-        const doReplace = () => { if (placeholder.parentNode) placeholder.replaceWith(img); };
-        img.onload = doReplace;
-        img.onerror = () => {};
-        img.src = image_url; // src en son set et — complete kontrolü güvenilmez
-        // base64 için sync yükleme olabilir, hemen kontrol et
-        if (img.complete && img.naturalWidth > 0) doReplace();
+        img.onload = () => { if (placeholder.parentNode) placeholder.replaceWith(img); };
+        img.src = url;
+        observer.unobserve(el);
       });
+    }, { rootMargin: '100px' });
+
+    document.querySelectorAll('[data-prod-id]').forEach(el => {
+      if (window._menuImages[el.dataset.prodId]) observer.observe(el);
     });
   } catch(e) {}
 }
@@ -2547,7 +2557,7 @@ function showProdDetail(prodId,catId){
   const box=document.getElementById('prod-detail-box');
   box.style.background=t.bg;
   document.getElementById('prod-detail-img').style.background=t.bg2;
-  const prodImgUrl = (window._menuImages && window._menuImages[p.id]) || p.image_url;
+  const prodImgUrl = (window._menuImages && window._menuImages[p.id]) || (p.image_url && !p.image_url.startsWith('data:') ? p.image_url : null);
   document.getElementById('prod-detail-img').innerHTML=prodImgUrl?`<img src="${prodImgUrl}" loading="lazy" style="width:100%;height:100%;object-fit:cover">`:`<span style="font-size:80px">${p.emoji||'🍽️'}</span>`;
   document.getElementById('prod-detail-name').style.color=t.text;
   document.getElementById('prod-detail-name').textContent=p.name;

@@ -902,7 +902,11 @@ app.patch('/api/products/bulk-price', authMiddleware, async (req, res) => {
 app.get('/api/menu/:slug', async (req, res) => {
   try {
     const restResult = await pool.query(
-      `SELECT id, slug, name, logo_url, brand_color, font_family, theme, card_style, google_maps_url,
+      `SELECT id, slug, name,
+              CASE WHEN logo_url IS NOT NULL AND logo_url LIKE 'data:%'
+                   THEN '/api/img/logo/' || id
+                   ELSE logo_url END as logo_url,
+              brand_color, font_family, theme, card_style, google_maps_url,
               wifi_name, wifi_password, instagram_url, facebook_url,
               is_published, waiter_enabled, created_at
        FROM restaurants WHERE slug=$1 AND is_published=true`,
@@ -930,7 +934,10 @@ const hoursResult = await pool.query(
 
 
     const campResult = await pool.query(
-      `SELECT id, title, description, emoji, image_url, is_active, starts_at, ends_at
+      `SELECT id, title, description, emoji, is_active, starts_at, ends_at,
+              CASE WHEN image_url IS NOT NULL AND image_url LIKE 'data:%'
+                   THEN '/api/img/campaign/' || id
+                   ELSE image_url END as image_url
        FROM campaigns WHERE restaurant_id=$1 AND is_active=true
        AND starts_at <= NOW() AND ends_at >= NOW() LIMIT 1`,
       [restaurant.id]
@@ -970,10 +977,15 @@ app.get('/api/menu/:slug/images', async (req, res) => {
     );
     if (!restResult.rows[0]) return res.status(404).json({ error: 'Bulunamadı' });
     const result = await pool.query(
-      'SELECT id, image_url FROM products WHERE restaurant_id=$1 AND is_visible=true AND image_url IS NOT NULL',
+      "SELECT id FROM products WHERE restaurant_id=$1 AND is_visible=true AND image_url IS NOT NULL AND image_url != ''",
       [restResult.rows[0].id]
     );
-    res.json(result.rows);
+    // base64 yerine URL döndür — tarayıcı cache'ler
+    const rows = result.rows.map(p => ({
+      id: p.id,
+      image_url: '/api/img/product/' + p.id
+    }));
+    res.json(rows);
   } catch(err) {
     res.status(500).json({ error: err.message });
   }
@@ -1507,6 +1519,115 @@ app.post('/api/admin/create', async (req, res) => {
     );
     res.json({ success: true, user: result.rows[0] });
   } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ═══════════════════════════════
+// RESİM SERVİNG — Cache'li URL endpoint'leri
+// ═══════════════════════════════
+
+// Ürün resmi — tarayıcı cache'ler (1 gün)
+app.get('/api/img/product/:id', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT image_url FROM products WHERE id=$1',
+      [req.params.id]
+    );
+    const row = result.rows[0];
+    if (!row || !row.image_url) return res.status(404).send('');
+
+    const dataUrl = row.image_url;
+    if (!dataUrl.startsWith('data:')) return res.status(404).send('');
+
+    const [header, base64] = dataUrl.split(',');
+    const mimeType = header.match(/data:([^;]+)/)?.[1] || 'image/webp';
+    const buffer = Buffer.from(base64, 'base64');
+
+    res.set({
+      'Content-Type': mimeType,
+      'Content-Length': buffer.length,
+      'Cache-Control': 'public, max-age=86400', // 1 gün cache
+      'ETag': `"${req.params.id}"`,
+    });
+
+    // ETag ile 304 Not Modified desteği
+    if (req.headers['if-none-match'] === `"${req.params.id}"`) {
+      return res.status(304).end();
+    }
+
+    res.send(buffer);
+  } catch(err) {
+    res.status(500).send('');
+  }
+});
+
+// Restoran logosu
+app.get('/api/img/logo/:id', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT logo_url FROM restaurants WHERE id=$1',
+      [req.params.id]
+    );
+    const row = result.rows[0];
+    if (!row || !row.logo_url) return res.status(404).send('');
+
+    const dataUrl = row.logo_url;
+    if (!dataUrl.startsWith('data:')) {
+      return res.redirect(dataUrl); // harici URL ise redirect
+    }
+
+    const [header, base64] = dataUrl.split(',');
+    const mimeType = header.match(/data:([^;]+)/)?.[1] || 'image/webp';
+    const buffer = Buffer.from(base64, 'base64');
+
+    res.set({
+      'Content-Type': mimeType,
+      'Content-Length': buffer.length,
+      'Cache-Control': 'public, max-age=86400',
+      'ETag': `"logo-${req.params.id}"`,
+    });
+
+    if (req.headers['if-none-match'] === `"logo-${req.params.id}"`) {
+      return res.status(304).end();
+    }
+
+    res.send(buffer);
+  } catch(err) {
+    res.status(500).send('');
+  }
+});
+
+// Kampanya resmi
+app.get('/api/img/campaign/:id', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT image_url FROM campaigns WHERE id=$1',
+      [req.params.id]
+    );
+    const row = result.rows[0];
+    if (!row || !row.image_url) return res.status(404).send('');
+
+    const dataUrl = row.image_url;
+    if (!dataUrl.startsWith('data:')) return res.redirect(dataUrl);
+
+    const [header, base64] = dataUrl.split(',');
+    const mimeType = header.match(/data:([^;]+)/)?.[1] || 'image/webp';
+    const buffer = Buffer.from(base64, 'base64');
+
+    res.set({
+      'Content-Type': mimeType,
+      'Content-Length': buffer.length,
+      'Cache-Control': 'public, max-age=86400',
+      'ETag': `"camp-${req.params.id}"`,
+    });
+
+    if (req.headers['if-none-match'] === `"camp-${req.params.id}"`) {
+      return res.status(304).end();
+    }
+
+    res.send(buffer);
+  } catch(err) {
+    res.status(500).send('');
+  }
 });
 
 // ═══════════════════════════════
