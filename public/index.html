@@ -1366,23 +1366,68 @@ async function markAllNotifRead() {
   } catch(e) {}
 }
 
-async function startPayment(plan) {
+function startPayment(plan) {
+  const planNames = { starter:'Starter — ₺4.990/yıl', pro:'Pro — ₺7.490/yıl', enterprise:'Enterprise — ₺9.990/yıl' };
+  // Ödeme formu öncesi bilgi formu
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'payment-info-overlay';
+  overlay.style.zIndex = '9999';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:400px">
+      <div class="modal-head"><span class="modal-title">Ödeme Bilgileri</span><button class="modal-close" onclick="document.getElementById('payment-info-overlay').remove()">✕</button></div>
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:14px;color:var(--text)">Seçilen Plan</span>
+        <span style="font-weight:700;color:var(--accent)">${planNames[plan]||plan}</span>
+      </div>
+      <div class="form-group"><label class="form-label">AD <span style="color:var(--red)">*</span></label><input class="form-input" id="pay-name" placeholder="Adınız"></div>
+      <div class="form-group"><label class="form-label">SOYAD <span style="color:var(--red)">*</span></label><input class="form-input" id="pay-surname" placeholder="Soyadınız"></div>
+      <div class="form-group"><label class="form-label">TELEFON <span style="color:var(--red)">*</span></label><input class="form-input" id="pay-gsm" placeholder="05XX XXX XX XX" type="tel"></div>
+      <div class="form-group"><label class="form-label">TC KİMLİK NO <span style="color:var(--text3);font-weight:400">(opsiyonel)</span></label><input class="form-input" id="pay-tc" placeholder="11 haneli TC no" maxlength="11" type="number"></div>
+      <div id="pay-error" style="color:var(--red);font-size:12px;margin-bottom:12px;display:none"></div>
+      <div class="modal-footer">
+        <button class="btn-sm" onclick="document.getElementById('payment-info-overlay').remove()">İptal</button>
+        <button class="btn-sm btn-accent" onclick="submitPayment('${plan}')">Ödemeye Geç →</button>
+      </div>
+    </div>`;
+  overlay.classList.add('open');
+  document.body.appendChild(overlay);
+  setTimeout(() => document.getElementById('pay-name')?.focus(), 100);
+}
+
+async function submitPayment(plan) {
+  const name = document.getElementById('pay-name')?.value.trim();
+  const surname = document.getElementById('pay-surname')?.value.trim();
+  const gsm = document.getElementById('pay-gsm')?.value.trim();
+  const tc = document.getElementById('pay-tc')?.value.trim();
+  const errEl = document.getElementById('pay-error');
+
+  if (!name || !surname || !gsm) {
+    errEl.textContent = 'Ad, soyad ve telefon zorunludur';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  const btn = document.querySelector('#payment-info-overlay .btn-accent');
+  if (btn) { btn.textContent = '⏳ Yükleniyor...'; btn.disabled = true; }
+
   try {
-    toast('Ödeme formu hazırlanıyor...', 'info');
-    const data = await api('POST', '/payment/init', { plan });
-    if (data.error) return toast(data.error, 'error');
-    document.getElementById('iyzico-form-container').innerHTML = data.checkoutFormContent;
-    // iyzico script'ini çalıştır
-    const scripts = document.getElementById('iyzico-form-container').querySelectorAll('script');
-    scripts.forEach(s => {
+    const data = await api('POST', '/payment/init', { plan, name, surname, gsm, tc });
+    document.getElementById('payment-info-overlay')?.remove();
+    // iyzico formunu modal içine yükle
+    const container = document.getElementById('iyzico-form-container');
+    container.innerHTML = data.checkoutFormContent;
+    container.querySelectorAll('script').forEach(s => {
       const ns = document.createElement('script');
-      ns.src = s.src || '';
-      ns.textContent = s.textContent;
+      if (s.src) ns.src = s.src; else ns.textContent = s.textContent;
       s.replaceWith(ns);
     });
     openModal('payment-modal');
   } catch(e) {
-    toast('Ödeme başlatılamadı: ' + e.message, 'error');
+    if (btn) { btn.textContent = 'Ödemeye Geç →'; btn.disabled = false; }
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
   }
 }
 
@@ -2818,6 +2863,17 @@ async function fetchGoogleUserInfo(accessToken) {
   } catch(e) {
     showAuthError('Google girişi başarısız: ' + e.message);
   }
+}
+
+// Ödeme callback mesajı
+const paymentResult = new URLSearchParams(window.location.search).get('payment');
+if (paymentResult === 'success') {
+  // URL'den temizle
+  history.replaceState({}, '', window.location.pathname);
+  setTimeout(() => toast('✅ Ödeme başarılı! Aboneliğiniz aktif edildi.', 'success'), 500);
+} else if (paymentResult === 'failed') {
+  history.replaceState({}, '', window.location.pathname);
+  setTimeout(() => toast('❌ Ödeme başarısız. Lütfen tekrar deneyin.', 'error'), 500);
 }
 
 tryInitGoogle();

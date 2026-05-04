@@ -11,6 +11,19 @@ const { v4: uuidv4 } = require('uuid');
 const WebSocket = require('ws');
 const http = require('http');
 const { Resend } = require('resend');
+let Iyzipay;
+try { Iyzipay = require('iyzipay'); } catch(e) { console.warn('iyzipay yüklü değil'); }
+
+function getIyzipay() {
+  if (!Iyzipay) throw new Error('iyzipay paketi yüklü değil');
+  return new Iyzipay({
+    apiKey: process.env.IYZICO_API_KEY,
+    secretKey: process.env.IYZICO_SECRET_KEY,
+    uri: process.env.IYZICO_ENV === 'prod'
+      ? 'https://api.iyzipay.com'
+      : 'https://sandbox-api.iyzipay.com'
+  });
+}
 let sharp;
 try { sharp = require('sharp'); } catch(e) { sharp = null; console.warn('sharp yüklü değil, resimler sıkıştırılmadan kaydedilecek'); }
 let compression;
@@ -1646,70 +1659,70 @@ app.post('/api/payment/init', authMiddleware, async (req, res) => {
   if (!price) return res.status(400).json({ error: 'Geçersiz plan' });
 
   try {
-    const Iyzipay = require('iyzipay');
-    const iyzipay = new Iyzipay({
-      apiKey: process.env.IYZICO_API_KEY,
-      secretKey: process.env.IYZICO_SECRET_KEY,
-      uri: process.env.IYZICO_ENV === 'prod'
-        ? 'https://api.iyzipay.com'
-        : 'https://sandbox-api.iyzipay.com'
-    });
-
+    const iyzipay = getIyzipay();
     const userResult = await pool.query(
-      'SELECT u.*, r.name as restaurant_name FROM users u LEFT JOIN restaurants r ON r.user_id=u.id WHERE u.id=$1',
+      'SELECT u.email, u.full_name, r.name as restaurant_name FROM users u LEFT JOIN restaurants r ON r.user_id=u.id WHERE u.id=$1',
       [req.user.userId]
     );
     const user = userResult.rows[0];
+    const { name = '', surname = '', gsm = '+905000000000', tc = '11111111111' } = req.body;
+
+    // İsim ayrıştır
+    const firstName = name || (user.restaurant_name ? user.restaurant_name.split(' ')[0] : 'Kullanici');
+    const lastName = surname || (user.restaurant_name ? user.restaurant_name.split(' ').slice(1).join(' ') || 'CafeMenu' : 'CafeMenu');
+    const gsmFormatted = gsm.startsWith('+') ? gsm : '+90' + gsm.replace(/^0/, '');
+
+    const convId = `sub_${req.user.userId}_${Date.now()}`;
 
     const request = {
       locale: 'tr',
-      conversationId: `sub_${req.user.userId}_${Date.now()}`,
+      conversationId: convId,
       price: (price / 100).toFixed(2),
       paidPrice: (price / 100).toFixed(2),
       currency: 'TRY',
       basketId: `plan_${plan}_${req.user.userId}`,
-      paymentGroup: 'SUBSCRIPTION',
+      paymentGroup: 'PRODUCT',
       callbackUrl: `${process.env.APP_URL}/api/payment/callback`,
       enabledInstallments: [1, 2, 3, 6, 9, 12],
       buyer: {
         id: req.user.userId,
-        name: user.restaurant_name || 'Kullanıcı',
-        surname: 'CafeMenu',
-        gsmNumber: '+905000000000',
+        name: firstName,
+        surname: lastName,
+        gsmNumber: gsmFormatted,
         email: user.email,
-        identityNumber: '11111111111',
+        identityNumber: tc || '11111111111',
         registrationAddress: 'Türkiye',
-        ip: req.ip || '127.0.0.1',
+        ip: (req.headers['x-forwarded-for'] || req.ip || '127.0.0.1').split(',')[0].trim(),
         city: 'Istanbul',
         country: 'Turkey',
       },
       shippingAddress: {
-        contactName: user.restaurant_name || 'Kullanıcı',
+        contactName: `${firstName} ${lastName}`,
         city: 'Istanbul', country: 'Turkey', address: 'Türkiye'
       },
       billingAddress: {
-        contactName: user.restaurant_name || 'Kullanıcı',
+        contactName: `${firstName} ${lastName}`,
         city: 'Istanbul', country: 'Turkey', address: 'Türkiye'
       },
       basketItems: [{
         id: `plan_${plan}`,
-        name: `CafeMenu ${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan (1 Yıl)`,
-        category1: 'Yazılım',
+        name: `CafeMenu ${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan (1 Yil)`,
+        category1: 'Yazilim',
         itemType: 'VIRTUAL',
         price: (price / 100).toFixed(2)
       }]
     };
 
     iyzipay.checkoutFormInitialize.create(request, (err, result) => {
-      if (err || result.status !== 'success') {
-        return res.status(500).json({ error: result?.errorMessage || 'Ödeme başlatılamadı' });
+      if (err) return res.status(500).json({ error: err.message || 'İyzico bağlantı hatası' });
+      if (result.status !== 'success') {
+        console.error('iyzico hata:', result);
+        return res.status(500).json({ error: result.errorMessage || 'Ödeme başlatılamadı' });
       }
-      res.json({
-        checkoutFormContent: result.checkoutFormContent,
-        token: result.token
-      });
+      res.json({ checkoutFormContent: result.checkoutFormContent, token: result.token });
     });
   } catch(err) {
+    console.error('iyzico init error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -1720,15 +1733,7 @@ app.post('/api/payment/callback', async (req, res) => {
   if (!token) return res.status(400).send('Token eksik');
 
   try {
-    const Iyzipay = require('iyzipay');
-    const iyzipay = new Iyzipay({
-      apiKey: process.env.IYZICO_API_KEY,
-      secretKey: process.env.IYZICO_SECRET_KEY,
-      uri: process.env.IYZICO_ENV === 'prod'
-        ? 'https://api.iyzipay.com'
-        : 'https://sandbox-api.iyzipay.com'
-    });
-
+    const iyzipay = getIyzipay();
     iyzipay.checkoutForm.retrieve({ locale: 'tr', token }, async (err, result) => {
       if (err || result.status !== 'success' || result.paymentStatus !== 'SUCCESS') {
         return res.redirect(`${process.env.APP_URL}/?payment=failed`);
