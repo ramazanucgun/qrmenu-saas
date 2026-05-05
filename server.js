@@ -11,6 +11,8 @@ const { v4: uuidv4 } = require('uuid');
 const WebSocket = require('ws');
 const http = require('http');
 const { Resend } = require('resend');
+let rateLimit;
+try { rateLimit = require('express-rate-limit'); } catch(e) { console.warn('⚠️  express-rate-limit yüklü değil, rate limiting devre dışı'); }
 let Iyzipay;
 try { Iyzipay = require('iyzipay'); } catch(e) { console.warn('iyzipay yüklü değil'); }
 
@@ -123,7 +125,27 @@ const pool = new Pool({
   max: 10,
 });
 
-app.use(cors());
+// ═══════════════════════════════
+// CORS — sadece izin verilen originler
+// ═══════════════════════════════
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || process.env.APP_URL || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Sunucu-sunucu (curl, Postman, mobil) istekleri: origin yok
+    if (!origin) return callback(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: izin verilmeyen origin — ${origin}`));
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  maxAge: 86400, // preflight 24 saat cache
+}));
+
 if (compression) app.use(compression());
 
 // Google OAuth popup'ının çalışması için COOP/COEP header'larını ayarla
@@ -319,11 +341,54 @@ CREATE TABLE IF NOT EXISTS password_resets (
 }
 
 // ═══════════════════════════════
+// RATE LIMITING
+// ═══════════════════════════════
+function makeLimit(options) {
+  if (!rateLimit) return (req, res, next) => next(); // paket yoksa geç
+  return rateLimit({
+    windowMs: options.windowMs,
+    max: options.max,
+    standardHeaders: true,  // RateLimit-* headerları döndür
+    legacyHeaders: false,
+    keyGenerator: (req) => {
+      // Proxy arkasındaysa gerçek IP'yi al
+      return (req.headers['x-forwarded-for'] || req.ip || '').split(',')[0].trim();
+    },
+    handler: (req, res) => {
+      res.status(429).json({ error: options.message || 'Çok fazla istek. Lütfen bekleyin.' });
+    },
+  });
+}
+
+// Giriş & kayıt: 15 dakikada 10 deneme
+const authLimiter = makeLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Çok fazla giriş denemesi. 15 dakika sonra tekrar deneyin.',
+});
+
+// Şifre sıfırlama: 1 saatte 5 istek
+const passwordLimiter = makeLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: 'Çok fazla şifre sıfırlama isteği. 1 saat sonra tekrar deneyin.',
+});
+
+// Genel API: 1 dakikada 100 istek (DDoS önlemi)
+const generalLimiter = makeLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  message: 'Çok fazla istek gönderdiniz. Lütfen bekleyin.',
+});
+
+app.use('/api/', generalLimiter);
+
+// ═══════════════════════════════
 // AUTH — KAYIT & GİRİŞ
 // ═══════════════════════════════
 
 // Kayıt ol
-app.post('/api/auth/google', async (req, res) => {
+app.post('/api/auth/google', authLimiter, async (req, res) => {
   const { credential, restaurantName } = req.body;
   if (!credential) return res.status(400).json({ error: 'Google token zorunlu' });
   try {
@@ -394,7 +459,7 @@ app.post('/api/auth/google', async (req, res) => {
 });
 
 // Google access_token ile giriş (GSI yüklenemediğinde fallback)
-app.post('/api/auth/google-token', async (req, res) => {
+app.post('/api/auth/google-token', authLimiter, async (req, res) => {
   const { accessToken, email, name, picture, googleId, restaurantName } = req.body;
   if (!accessToken || !email) return res.status(400).json({ error: 'Eksik bilgi' });
   try {
@@ -445,7 +510,7 @@ app.get('/api/auth/google-client-id', (req, res) => {
   res.json({ clientId: process.env.GOOGLE_CLIENT_ID || '' });
 });
 
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', authLimiter, async (req, res) => {
   const { email, password, restaurantName } = req.body;
   if (!email || !password || !restaurantName) {
     return res.status(400).json({ error: 'Tüm alanlar zorunlu' });
@@ -560,7 +625,7 @@ await pool.query(
 });
 
 // Giriş yap
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
   const { email, password } = req.body;
   try {
     const result = await pool.query(
@@ -1322,7 +1387,7 @@ app.get('/api/auth/verify-email', async (req, res) => {
 });
   
 
-app.post('/api/auth/forgot-password', async (req, res) => {
+app.post('/api/auth/forgot-password', passwordLimiter, async (req, res) => {
   const { email } = req.body;
   try {
     const result = await pool.query('SELECT * FROM users WHERE email=$1', [email]);
@@ -1362,7 +1427,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   }
 });
 
-app.post('/api/auth/reset-password', async (req, res) => {
+app.post('/api/auth/reset-password', passwordLimiter, async (req, res) => {
   const { token, password } = req.body;
   if (!token || !password) return res.status(400).json({ error: 'token ve password zorunlu' });
   try {
@@ -1732,41 +1797,86 @@ app.post('/api/payment/callback', async (req, res) => {
   const { token } = req.body;
   if (!token) return res.status(400).send('Token eksik');
 
+  // Geçerli plan listesi — dışarıdan gelecek değeri whitelist ile doğrula
+  const VALID_PLANS = ['starter', 'pro', 'enterprise'];
+
   try {
     const iyzipay = getIyzipay();
     iyzipay.checkoutForm.retrieve({ locale: 'tr', token }, async (err, result) => {
-      if (err || result.status !== 'success' || result.paymentStatus !== 'SUCCESS') {
-        return res.redirect(`${process.env.APP_URL}/?payment=failed`);
+      try {
+        // 1. İyzico'nun kendi doğrulaması
+        if (err || result.status !== 'success' || result.paymentStatus !== 'SUCCESS') {
+          console.error('İyzico ödeme başarısız:', err || result);
+          return res.redirect(`${process.env.APP_URL}/?payment=failed`);
+        }
+
+        // 2. conversationId formatını doğrula: "sub_<uuid>_<timestamp>"
+        const convParts = result.conversationId?.split('_');
+        if (!convParts || convParts.length < 3 || convParts[0] !== 'sub') {
+          console.error('Geçersiz conversationId formatı:', result.conversationId);
+          return res.redirect(`${process.env.APP_URL}/?payment=failed`);
+        }
+        const userId = convParts[1];
+
+        // 3. Plan değerini whitelist ile doğrula
+        const planRaw = result.basketId?.split('_')[1];
+        if (!VALID_PLANS.includes(planRaw)) {
+          console.error('Geçersiz plan değeri:', planRaw);
+          return res.redirect(`${process.env.APP_URL}/?payment=failed`);
+        }
+        const plan = planRaw;
+
+        // 4. userId'nin DB'de gerçekten var olduğunu doğrula
+        const userCheck = await pool.query(
+          'SELECT id FROM users WHERE id=$1',
+          [userId]
+        );
+        if (!userCheck.rows[0]) {
+          console.error('Callback: kullanıcı bulunamadı:', userId);
+          return res.redirect(`${process.env.APP_URL}/?payment=failed`);
+        }
+
+        // 5. paymentId daha önce işlenmiş mi? (tekrar saldırı önlemi)
+        const dupCheck = await pool.query(
+          'SELECT id FROM subscriptions WHERE iyzico_subscription_id=$1',
+          [result.paymentId]
+        );
+        if (dupCheck.rows[0]) {
+          console.warn('Tekrar eden paymentId, işlem atlandı:', result.paymentId);
+          return res.redirect(`${process.env.APP_URL}/?payment=success`);
+        }
+
+        // 6. Aboneliği güncelle
+        const startsAt = new Date();
+        const endsAt = new Date();
+        endsAt.setFullYear(endsAt.getFullYear() + 1);
+
+        await pool.query(
+          `UPDATE subscriptions SET plan=$1, status='active',
+           starts_at=$2, ends_at=$3,
+           payment_method='iyzico',
+           iyzico_subscription_id=$4
+           WHERE user_id=$5`,
+          [plan, startsAt, endsAt, result.paymentId, userId]
+        );
+
+        await pool.query(
+          'INSERT INTO system_notifications (user_id, title, message) VALUES ($1,$2,$3)',
+          [userId,
+           '✅ Ödeme başarılı — Abonelik aktif!',
+           `${plan} planınız aktif edildi. Bitiş tarihi: ${endsAt.toLocaleDateString('tr-TR')}`]
+        );
+
+        console.log(`✅ Ödeme işlendi: userId=${userId} plan=${plan} paymentId=${result.paymentId}`);
+        res.redirect(`${process.env.APP_URL}/?payment=success`);
+
+      } catch(innerErr) {
+        console.error('Callback işleme hatası:', innerErr.message);
+        res.redirect(`${process.env.APP_URL}/?payment=failed`);
       }
-
-      // conversationId'den userId çıkar
-      const userId = result.conversationId?.split('_')[1];
-      const plan = result.basketId?.split('_')[1];
-      if (!userId || !plan) return res.redirect(`${process.env.APP_URL}/?payment=failed`);
-
-      const startsAt = new Date();
-      const endsAt = new Date();
-      endsAt.setFullYear(endsAt.getFullYear() + 1);
-
-      await pool.query(
-        `UPDATE subscriptions SET plan=$1, status='active',
-         starts_at=$2, ends_at=$3,
-         payment_method='iyzico',
-         iyzico_subscription_id=$4
-         WHERE user_id=$5`,
-        [plan, startsAt, endsAt, result.paymentId, userId]
-      );
-
-      await pool.query(
-        "INSERT INTO system_notifications (user_id, title, message) VALUES ($1,$2,$3)",
-        [userId,
-         '✅ Ödeme başarılı — Abonelik aktif!',
-         `${plan} planınız aktif edildi. Bitiş tarihi: ${endsAt.toLocaleDateString('tr-TR')}`]
-      );
-
-      res.redirect(`${process.env.APP_URL}/?payment=success`);
     });
   } catch(err) {
+    console.error('İyzico callback başlatma hatası:', err.message);
     res.redirect(`${process.env.APP_URL}/?payment=failed`);
   }
 });
