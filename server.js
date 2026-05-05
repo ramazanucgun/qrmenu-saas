@@ -612,7 +612,7 @@ await pool.query(
     // Hoşgeldin emaili gönder
     try {
       await resend.emails.send({
-        from: 'CafeMenu <noreply@ucgun.com.tr>',
+        from: 'CafeMenu <noreply@cafemenu.com.tr>',
         to: email,
         subject: 'CafeMenu\'ya Hoş Geldiniz! 🎉',
         html: `
@@ -1450,15 +1450,25 @@ app.post('/api/auth/forgot-password', passwordLimiter, async (req, res) => {
     const resetUrl = `${process.env.APP_URL}/reset-password?token=${token}`;
 
     await resend.emails.send({
-      from: 'QRMenu <noreply@ucgun.com.tr>',
+      from: 'CafeMenu <noreply@cafemenu.com.tr>',
       to: email,
-      subject: 'Şifre Sıfırlama — QRMenu',
+      subject: 'Şifre Sıfırlama — CafeMenu',
       html: `
-        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#fff">
+          <div style="text-align:center;margin-bottom:28px">
+            <div style="font-size:2rem;font-weight:700;color:#111">◈ CafeMenu</div>
+            <div style="font-size:13px;color:#888;margin-top:4px">Dijital Menü Platformu</div>
+          </div>
           <h2 style="color:#111;margin-bottom:8px">Şifrenizi sıfırlayın</h2>
           <p style="color:#666;margin-bottom:24px">Aşağıdaki butona tıklayarak şifrenizi sıfırlayabilirsiniz. Bu link 1 saat geçerlidir.</p>
-          <a href="${resetUrl}" style="background:#e8c547;color:#111;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block">Şifremi Sıfırla</a>
+          <div style="text-align:center;margin-bottom:24px">
+            <a href="${resetUrl}" style="background:#e8c547;color:#111;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block">Şifremi Sıfırla</a>
+          </div>
           <p style="color:#999;font-size:12px;margin-top:24px">Bu emaili siz talep etmediyseniz görmezden gelebilirsiniz.</p>
+          <div style="border-top:1px solid #eee;margin-top:28px;padding-top:16px;text-align:center;font-size:12px;color:#aaa">
+            CafeMenu · cafemenu.com.tr
+          </div>
         </div>
       `
     });
@@ -2340,7 +2350,7 @@ async function startServer() {
   try {
     await initDB();
     server.listen(PORT, () => {
-      console.log(`🚀 QRMenu API çalışıyor: port ${PORT}`);
+      console.log(`🚀 CafeMenu API çalışıyor: port ${PORT}`);
       scheduleBackup();
       scheduleSubscriptionCheck();
     });
