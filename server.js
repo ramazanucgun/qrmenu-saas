@@ -337,7 +337,50 @@ CREATE TABLE IF NOT EXISTS password_resets (
   await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS theme VARCHAR(50) DEFAULT 'classic'`).catch(()=>{});
   await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS card_style VARCHAR(20) DEFAULT 'list'`).catch(()=>{});
   await pool.query(`ALTER TABLE campaigns ALTER COLUMN image_url TYPE TEXT`).catch(()=>{});
-  console.log('✅ Veritabanı tabloları hazır');
+
+  // ═══════════════════════════════
+  // VERİTABANI İNDEKSLERİ
+  // CREATE INDEX IF NOT EXISTS — mevcut indexleri bozmaz, güvenle çalışır
+  // ═══════════════════════════════
+  const indexes = [
+    // restaurants.slug — menü görüntüleme ve QR yönlendirme her sorguda bunu kullanır
+    `CREATE INDEX IF NOT EXISTS idx_restaurants_slug ON restaurants(slug)`,
+    // restaurants.user_id — kullanıcının restoranını çekmek için
+    `CREATE INDEX IF NOT EXISTS idx_restaurants_user_id ON restaurants(user_id)`,
+    // products.restaurant_id — menü sayfası tüm ürünleri bu kolondan çeker
+    `CREATE INDEX IF NOT EXISTS idx_products_restaurant_id ON products(restaurant_id)`,
+    // products.category_id — kategori bazlı ürün listeleme
+    `CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id)`,
+    // categories.restaurant_id — menü sayfası tüm kategorileri buradan çeker
+    `CREATE INDEX IF NOT EXISTS idx_categories_restaurant_id ON categories(restaurant_id)`,
+    // subscriptions.user_id — abonelik kontrolü her auth'da çalışır
+    `CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id)`,
+    // subscriptions.iyzico_subscription_id — callback'te tekrar ödeme kontrolü
+    `CREATE INDEX IF NOT EXISTS idx_subscriptions_iyzico_id ON subscriptions(iyzico_subscription_id)`,
+    // menu_views — analytics sorgularının hepsi (restaurant_id + viewed_at) filtreler
+    // Bileşik index tek kolonlu iki indexten çok daha hızlı
+    `CREATE INDEX IF NOT EXISTS idx_menu_views_restaurant_viewed ON menu_views(restaurant_id, viewed_at DESC)`,
+    // waiter_calls.restaurant_id — garson çağrı listesi
+    `CREATE INDEX IF NOT EXISTS idx_waiter_calls_restaurant_id ON waiter_calls(restaurant_id)`,
+    // feedbacks.restaurant_id — geri bildirim listesi
+    `CREATE INDEX IF NOT EXISTS idx_feedbacks_restaurant_id ON feedbacks(restaurant_id)`,
+    // campaigns.restaurant_id — aktif kampanya sorgusu
+    `CREATE INDEX IF NOT EXISTS idx_campaigns_restaurant_id ON campaigns(restaurant_id)`,
+    // users.email — login, register, şifre sıfırlama her sorguda bunu kullanır
+    `CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`,
+    // system_notifications.user_id — bildirim listesi
+    `CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON system_notifications(user_id)`,
+    // subscriptions.ends_at — aktif, bitiş tarihi olan aboneliklerde günlük cron sorgusu
+    `CREATE INDEX IF NOT EXISTS idx_subscriptions_ends_at ON subscriptions(ends_at) WHERE status = 'active' AND ends_at IS NOT NULL`,
+  ];
+
+  for (const sql of indexes) {
+    await pool.query(sql).catch(err =>
+      console.warn('Index oluşturulamadı (önemsiz):', err.message)
+    );
+  }
+
+  console.log('✅ Veritabanı tabloları ve indexler hazır');
 }
 
 // ═══════════════════════════════
