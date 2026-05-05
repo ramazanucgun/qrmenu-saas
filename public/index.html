@@ -332,10 +332,37 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
     <div id="register-form" style="display:none">
       <div id="g-register-btn" style="display:flex;justify-content:center;min-height:44px"><div style="width:100%;height:44px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--text2)"><span>⏳</span> Google yükleniyor...</div></div>
       <div class="auth-divider">veya</div>
-      <div class="form-group"><label class="form-label">RESTORAN ADI</label><input class="form-input" id="r-name" placeholder="Cafe Riviera"></div>
-      <div class="form-group"><label class="form-label">E-POSTA</label><input class="form-input" id="r-email" type="email" placeholder="email@ornek.com"></div>
-      <div class="form-group"><label class="form-label">ŞİFRE</label><input class="form-input" id="r-pass" type="password" placeholder="En az 8 karakter"></div>
-      <button class="btn-primary" onclick="doRegister()">14 Gün Ücretsiz Başla</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group" style="margin-bottom:0"><label class="form-label">AD <span style="color:var(--red)">*</span></label><input class="form-input" id="r-firstname" placeholder="Adınız"></div>
+        <div class="form-group" style="margin-bottom:0"><label class="form-label">SOYAD <span style="color:var(--red)">*</span></label><input class="form-input" id="r-lastname" placeholder="Soyadınız"></div>
+      </div>
+      <div class="form-group"><label class="form-label">CEP TELEFONU <span style="color:var(--red)">*</span></label><input class="form-input" id="r-phone" type="tel" placeholder="05XX XXX XX XX"></div>
+      <div class="form-group"><label class="form-label">İŞLETME ADI <span style="color:var(--red)">*</span></label><input class="form-input" id="r-name" placeholder="Cafe Riviera"></div>
+      <div class="form-group">
+        <label class="form-label">MENÜ LİNKİ <span style="color:var(--text3);font-weight:400">(opsiyonel)</span></label>
+        <div style="display:flex;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+          <span style="padding:0 8px;font-size:11px;color:var(--text3);white-space:nowrap;border-right:1px solid var(--border)">app.cafemenu.com.tr/</span>
+          <input style="background:transparent;border:none;outline:none;color:var(--text);font-family:var(--sans);font-size:13px;padding:10px 10px;flex:1;min-width:0" id="r-slug" placeholder="cafe-riviera" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9-]/g,'')">
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Boş bırakırsanız işletme adından otomatik oluşturulur</div>
+      </div>
+      <div class="form-group"><label class="form-label">E-POSTA <span style="color:var(--red)">*</span></label><input class="form-input" id="r-email" type="email" placeholder="email@ornek.com"></div>
+      <div class="form-group"><label class="form-label">ŞİFRE <span style="color:var(--red)">*</span></label><input class="form-input" id="r-pass" type="password" placeholder="En az 8 karakter"></div>
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:12px">
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:10px">
+          <input type="checkbox" id="r-terms" style="margin-top:2px;flex-shrink:0;accent-color:var(--accent)">
+          <span style="font-size:12px;color:var(--text2);line-height:1.5"><a href="https://cafemenu.com.tr/kullanim-sartlari" target="_blank" style="color:var(--accent)">Kullanım Şartları</a>'nı ve <a href="https://cafemenu.com.tr/gizlilik" target="_blank" style="color:var(--accent)">Gizlilik Politikası</a>'nı okudum, kabul ediyorum. <span style="color:var(--red)">*</span></span>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:10px">
+          <input type="checkbox" id="r-kvkk" style="margin-top:2px;flex-shrink:0;accent-color:var(--accent)">
+          <span style="font-size:12px;color:var(--text2);line-height:1.5"><a href="https://cafemenu.com.tr/kvkk" target="_blank" style="color:var(--accent)">KVKK Aydınlatma Metni</a>'ni okudum ve kişisel verilerimin işlenmesine onay veriyorum. <span style="color:var(--red)">*</span></span>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+          <input type="checkbox" id="r-marketing" style="margin-top:2px;flex-shrink:0;accent-color:var(--accent)">
+          <span style="font-size:12px;color:var(--text2);line-height:1.5">CafeMenu'nun kampanya, duyuru ve güncellemelerine ilişkin ticari elektronik ileti (e-posta/SMS) almak istiyorum. <span style="color:var(--text3)">(opsiyonel)</span></span>
+        </label>
+      </div>
+      <button class="btn-primary" onclick="doRegister()">14 Gün Ücretsiz Başla →</button>
     </div>
     <!-- Google - Restoran adı modal -->
     <div id="google-name-form" style="display:none">
@@ -1166,24 +1193,47 @@ async function _doLogin() {
 }
 
 async function _doRegister() {
+  const firstName     = document.getElementById('r-firstname').value.trim();
+  const lastName      = document.getElementById('r-lastname').value.trim();
+  const phone         = document.getElementById('r-phone').value.trim();
   const restaurantName = document.getElementById('r-name').value.trim();
-  const email = document.getElementById('r-email').value.trim();
-  const password = document.getElementById('r-pass').value;
-  if (!restaurantName || !email || !password) return showAuthError('Tüm alanlar zorunlu');
+  const menuSlug      = document.getElementById('r-slug').value.trim();
+  const email         = document.getElementById('r-email').value.trim();
+  const password      = document.getElementById('r-pass').value;
+  const termsAccepted    = document.getElementById('r-terms').checked;
+  const kvkkAccepted     = document.getElementById('r-kvkk').checked;
+  const marketingAccepted = document.getElementById('r-marketing').checked;
+
+  if (!firstName || !lastName) return showAuthError('Ad ve soyad zorunludur');
+  if (!phone) return showAuthError('Cep telefonu zorunludur');
+  if (!restaurantName) return showAuthError('İşletme adı zorunludur');
+  if (!email) return showAuthError('E-posta adresi zorunludur');
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) return showAuthError('Geçerli bir email adresi girin');
   if (password.length < 8) return showAuthError('Şifre en az 8 karakter olmalı');
+  if (!termsAccepted) return showAuthError('Kullanım Şartları ve Gizlilik Politikası\'nı onaylamanız zorunludur');
+  if (!kvkkAccepted) return showAuthError('KVKK Aydınlatma Metni\'ni onaylamanız zorunludur');
+
   try {
-    await api('POST', '/auth/register', { email, password, restaurantName });
+    const resp = await api('POST', '/auth/register', {
+      email, password, restaurantName, firstName, lastName, phone,
+      menuSlug, kvkkAccepted, termsAccepted, marketingAccepted
+    });
     const errEl = document.getElementById('auth-error');
-    errEl.textContent = '✅ Kayıt başarılı! Email adresinize doğrulama linki gönderdik.';
+    const slug = resp.slug || '';
+    errEl.innerHTML = '✅ Kayıt başarılı! Email adresinize doğrulama linki gönderdik.'
+      + (slug ? `<br><span style="font-size:12px;color:var(--text2)">Menü linkiniz: app.cafemenu.com.tr/${slug}</span>` : '');
     errEl.style.display = 'block';
     errEl.style.background = 'rgba(71,201,126,.1)';
     errEl.style.borderColor = 'rgba(71,201,126,.3)';
     errEl.style.color = 'var(--green)';
-    document.getElementById('r-name').value = '';
-    document.getElementById('r-email').value = '';
-    document.getElementById('r-pass').value = '';
+    // Formu temizle
+    ['r-firstname','r-lastname','r-phone','r-name','r-slug','r-email','r-pass'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.value = '';
+    });
+    ['r-terms','r-kvkk','r-marketing'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.checked = false;
+    });
   } catch(e) { showAuthError(e.message); }
 }
 
@@ -1381,10 +1431,21 @@ function startPayment(plan) {
         <span style="font-size:14px;color:var(--text)">Seçilen Plan</span>
         <span style="font-weight:700;color:var(--accent)">${planNames[plan]||plan}</span>
       </div>
-      <div class="form-group"><label class="form-label">AD <span style="color:var(--red)">*</span></label><input class="form-input" id="pay-name" placeholder="Adınız"></div>
-      <div class="form-group"><label class="form-label">SOYAD <span style="color:var(--red)">*</span></label><input class="form-input" id="pay-surname" placeholder="Soyadınız"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group" style="margin-bottom:0"><label class="form-label">AD <span style="color:var(--red)">*</span></label><input class="form-input" id="pay-name" placeholder="Adınız"></div>
+        <div class="form-group" style="margin-bottom:0"><label class="form-label">SOYAD <span style="color:var(--red)">*</span></label><input class="form-input" id="pay-surname" placeholder="Soyadınız"></div>
+      </div>
       <div class="form-group"><label class="form-label">TELEFON <span style="color:var(--red)">*</span></label><input class="form-input" id="pay-gsm" placeholder="05XX XXX XX XX" type="tel"></div>
-      <div class="form-group"><label class="form-label">TC KİMLİK NO <span style="color:var(--text3);font-weight:400">(opsiyonel)</span></label><input class="form-input" id="pay-tc" placeholder="11 haneli TC no" maxlength="11" type="number"></div>
+      <div class="form-group"><label class="form-label">TC KİMLİK NO <span style="color:var(--text3);font-weight:400">(bireysel)</span></label><input class="form-input" id="pay-tc" placeholder="11 haneli TC kimlik no" maxlength="11"></div>
+      <div style="background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:12px">
+        <div style="font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.06em;margin-bottom:10px">KURUMSAL FATURA BİLGİLERİ <span style="color:var(--text3);font-weight:400">(opsiyonel)</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="form-group" style="margin-bottom:0"><label class="form-label">VERGİ NO</label><input class="form-input" id="pay-taxno" placeholder="Vergi numarası" maxlength="11"></div>
+          <div class="form-group" style="margin-bottom:0"><label class="form-label">VERGİ DAİRESİ</label><input class="form-input" id="pay-taxoffice" placeholder="Vergi dairesi"></div>
+        </div>
+        <div class="form-group" style="margin-top:10px;margin-bottom:0"><label class="form-label">FATURA ADRESİ</label><input class="form-input" id="pay-address" placeholder="Mahalle, Sokak, No, İlçe"></div>
+        <div class="form-group" style="margin-top:10px;margin-bottom:0"><label class="form-label">ŞEHİR</label><input class="form-input" id="pay-city" placeholder="İstanbul"></div>
+      </div>
       <div id="pay-error" style="color:var(--red);font-size:12px;margin-bottom:12px;display:none"></div>
       <div class="modal-footer">
         <button class="btn-sm" onclick="document.getElementById('payment-info-overlay').remove()">İptal</button>
@@ -1397,10 +1458,14 @@ function startPayment(plan) {
 }
 
 async function submitPayment(plan) {
-  const name = document.getElementById('pay-name')?.value.trim();
+  const name    = document.getElementById('pay-name')?.value.trim();
   const surname = document.getElementById('pay-surname')?.value.trim();
-  const gsm = document.getElementById('pay-gsm')?.value.trim();
-  const tc = document.getElementById('pay-tc')?.value.trim();
+  const gsm     = document.getElementById('pay-gsm')?.value.trim();
+  const tc      = document.getElementById('pay-tc')?.value.trim();
+  const taxNumber    = document.getElementById('pay-taxno')?.value.trim();
+  const taxOffice    = document.getElementById('pay-taxoffice')?.value.trim();
+  const billingAddress = document.getElementById('pay-address')?.value.trim();
+  const city         = document.getElementById('pay-city')?.value.trim();
   const errEl = document.getElementById('pay-error');
 
   if (!name || !surname || !gsm) {
@@ -1414,7 +1479,7 @@ async function submitPayment(plan) {
   if (btn) { btn.textContent = '⏳ Yükleniyor...'; btn.disabled = true; }
 
   try {
-    const data = await api('POST', '/payment/init', { plan, name, surname, gsm, tc });
+    const data = await api('POST', '/payment/init', { plan, name, surname, gsm, tc, taxNumber, taxOffice, billingAddress, city });
     document.getElementById('payment-info-overlay')?.remove();
     // iyzico formunu modal içine yükle
     const container = document.getElementById('iyzico-form-container');

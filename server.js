@@ -322,6 +322,18 @@ CREATE TABLE IF NOT EXISTS password_resets (
 
   // Mevcut tablolara eksik kolonları ekle
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name VARCHAR(100)`).catch(()=>{});
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name VARCHAR(100)`).catch(()=>{});
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20)`).catch(()=>{});
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS tax_number VARCHAR(20)`).catch(()=>{});
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS tax_office VARCHAR(100)`).catch(()=>{});
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS billing_address TEXT`).catch(()=>{});
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS city VARCHAR(100)`).catch(()=>{});
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS kvkk_accepted BOOLEAN DEFAULT false`).catch(()=>{});
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_accepted BOOLEAN DEFAULT false`).catch(()=>{});
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS marketing_accepted BOOLEAN DEFAULT false`).catch(()=>{});
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS kvkk_accepted_at TIMESTAMP`).catch(()=>{});
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMP`).catch(()=>{});
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(255)`).catch(()=>{});
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT`).catch(()=>{});
   await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS image_url TEXT`);
@@ -554,9 +566,20 @@ app.get('/api/auth/google-client-id', (req, res) => {
 });
 
 app.post('/api/auth/register', authLimiter, async (req, res) => {
-  const { email, password, restaurantName } = req.body;
-  if (!email || !password || !restaurantName) {
-    return res.status(400).json({ error: 'Tüm alanlar zorunlu' });
+  const { email, password, restaurantName, firstName, lastName, phone, menuSlug,
+          kvkkAccepted, termsAccepted, marketingAccepted } = req.body;
+
+  if (!email || !password || !restaurantName || !firstName || !lastName || !phone) {
+    return res.status(400).json({ error: 'Ad, soyad, telefon, restoran adı ve email zorunludur' });
+  }
+  if (!kvkkAccepted || !termsAccepted) {
+    return res.status(400).json({ error: 'Kullanım şartları ve KVKK metnini onaylamanız zorunludur' });
+  }
+  // Telefon format kontrolü
+  const phoneClean = phone.replace(/\s/g,'');
+  const phoneRegex = /^(\+90|0)?5\d{9}$/;
+  if (!phoneRegex.test(phoneClean)) {
+    return res.status(400).json({ error: 'Geçerli bir Türkiye cep telefonu numarası girin (05XX XXX XX XX)' });
   }
   // Email format kontrolü
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -569,21 +592,36 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
   }
   try {
     const hash = await bcrypt.hash(password, 10);
+    const now = new Date();
     const userResult = await pool.query(
-      'INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email',
-      [email, hash]
+      `INSERT INTO users (email, password_hash, first_name, last_name, phone,
+        kvkk_accepted, terms_accepted, marketing_accepted, kvkk_accepted_at, terms_accepted_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id, email`,
+      [email, hash, firstName.trim(), lastName.trim(), phoneClean,
+       !!kvkkAccepted, !!termsAccepted, !!marketingAccepted, now, now]
     );
     const user = userResult.rows[0];
 
-    // Slug oluştur
-    const baseSlug3 = restaurantName
-      .toLowerCase()
-      .replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s')
-      .replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c')
-      .replace(/[^a-z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
-    let slug = baseSlug3;
+    // Slug oluştur — önce kullanıcının istediği slug'ı dene
+    function toSlug(str) {
+      return str.toLowerCase()
+        .replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s')
+        .replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c')
+        .replace(/[^a-z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+    }
+    const desiredSlug = menuSlug ? toSlug(menuSlug) : '';
+    const baseSlug3 = toSlug(restaurantName);
+    let slug = desiredSlug || baseSlug3;
+    if (!slug) slug = baseSlug3;
+    // Slug minimum 3 karakter olmalı
+    if (slug.length < 3) slug = baseSlug3;
     const existingSlug3 = await pool.query('SELECT id FROM restaurants WHERE slug=$1', [slug]);
-    if (existingSlug3.rows.length) slug = baseSlug3 + '-' + Math.random().toString(36).substr(2,4);
+    if (existingSlug3.rows.length) {
+      if (desiredSlug && existingSlug3.rows.length) {
+        return res.status(400).json({ error: 'Bu menü linki zaten kullanımda, farklı bir link deneyin' });
+      }
+      slug = baseSlug3 + '-' + Math.random().toString(36).substr(2,4);
+    }
 
     // Restoran oluştur
     const restResult = await pool.query(
@@ -655,11 +693,12 @@ await pool.query(
       console.log('Hoşgeldin emaili gönderilemedi:', emailErr.message);
     }
 
-    res.json({ 
-  success: true, 
-  message: 'Kayıt başarılı! Email adresinizi doğrulayın.',
-  email: email
-});
+    res.json({
+      success: true,
+      message: 'Kayıt başarılı! Email adresinizi doğrulayın.',
+      email: email,
+      slug: restResult.rows[0].slug
+    });
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ error: 'Bu email zaten kayıtlı' });
     res.status(500).json({ error: 'Sunucu hatası: ' + err.message });
@@ -700,6 +739,45 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 // ═══════════════════════════════
 // RESTORAN
 // ═══════════════════════════════
+
+// Kullanıcı profil bilgilerini getir
+app.get('/api/user/profile', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, email, first_name, last_name, phone, tax_number, tax_office,
+              billing_address, city, kvkk_accepted, terms_accepted, marketing_accepted,
+              kvkk_accepted_at, terms_accepted_at, created_at
+       FROM users WHERE id=$1`,
+      [req.user.userId]
+    );
+    if (!result.rows[0]) return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
+    res.json(result.rows[0]);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// Kullanıcı profil bilgilerini güncelle
+app.put('/api/user/profile', authMiddleware, async (req, res) => {
+  const { firstName, lastName, phone, taxNumber, taxOffice, billingAddress, city, marketingAccepted } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE users SET
+        first_name = COALESCE($1, first_name),
+        last_name  = COALESCE($2, last_name),
+        phone      = COALESCE($3, phone),
+        tax_number = COALESCE($4, tax_number),
+        tax_office = COALESCE($5, tax_office),
+        billing_address = COALESCE($6, billing_address),
+        city       = COALESCE($7, city),
+        marketing_accepted = COALESCE($8, marketing_accepted)
+       WHERE id=$9 RETURNING id, email, first_name, last_name, phone, tax_number, tax_office, billing_address, city, marketing_accepted`,
+      [firstName||null, lastName||null, phone||null, taxNumber||null,
+       taxOffice||null, billingAddress||null, city||null,
+       marketingAccepted !== undefined ? marketingAccepted : null,
+       req.user.userId]
+    );
+    res.json(result.rows[0]);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
 
 app.get('/api/restaurant/me', authMiddleware, async (req, res) => {
   try {
@@ -1780,16 +1858,25 @@ app.post('/api/payment/init', authMiddleware, async (req, res) => {
   try {
     const iyzipay = getIyzipay();
     const userResult = await pool.query(
-      'SELECT u.email, u.full_name, r.name as restaurant_name FROM users u LEFT JOIN restaurants r ON r.user_id=u.id WHERE u.id=$1',
+      `SELECT u.email, u.first_name, u.last_name, u.phone, u.tax_number, u.tax_office, u.billing_address, u.city, r.name as restaurant_name FROM users u LEFT JOIN restaurants r ON r.user_id=u.id WHERE u.id=$1`,
       [req.user.userId]
     );
     const user = userResult.rows[0];
-    const { name = '', surname = '', gsm = '+905000000000', tc = '11111111111' } = req.body;
+    const {
+      name = '', surname = '', gsm = '',
+      tc = '', taxNumber = '', taxOffice = '', billingAddress = '', city = ''
+    } = req.body;
 
-    // İsim ayrıştır
-    const firstName = name || (user.restaurant_name ? user.restaurant_name.split(' ')[0] : 'Kullanici');
-    const lastName = surname || (user.restaurant_name ? user.restaurant_name.split(' ').slice(1).join(' ') || 'CafeMenu' : 'CafeMenu');
-    const gsmFormatted = gsm.startsWith('+') ? gsm : '+90' + gsm.replace(/^0/, '');
+    // Önce DB'deki kayıtlı bilgileri kullan, form alanları override edebilir
+    const firstName    = name    || user.first_name  || (user.restaurant_name ? user.restaurant_name.split(' ')[0] : 'Kullanici');
+    const lastName     = surname || user.last_name   || (user.restaurant_name ? user.restaurant_name.split(' ').slice(1).join(' ') || 'CafeMenu' : 'CafeMenu');
+    const gsmRaw       = gsm     || user.phone       || '+905000000000';
+    const gsmFormatted = gsmRaw.startsWith('+') ? gsmRaw : '+90' + gsmRaw.replace(/^0/, '');
+    const identityNo   = tc || '11111111111';
+    const buyerCity    = city || user.city || 'Istanbul';
+    const buyerAddress = billingAddress || user.billing_address || 'Türkiye';
+    const buyerTaxNo   = taxNumber || user.tax_number || '';
+    const buyerTaxOff  = taxOffice || user.tax_office || '';
 
     const convId = `sub_${req.user.userId}_${Date.now()}`;
 
@@ -1812,19 +1899,19 @@ app.post('/api/payment/init', authMiddleware, async (req, res) => {
         surname: lastName,
         gsmNumber: gsmFormatted,
         email: user.email,
-        identityNumber: tc || '11111111111',
-        registrationAddress: 'Türkiye',
+        identityNumber: identityNo,
+        registrationAddress: buyerAddress,
         ip: (req.headers['x-forwarded-for'] || req.ip || '127.0.0.1').split(',')[0].trim(),
-        city: 'Istanbul',
+        city: buyerCity,
         country: 'Turkey',
       },
       shippingAddress: {
         contactName: `${firstName} ${lastName}`,
-        city: 'Istanbul', country: 'Turkey', address: 'Türkiye'
+        city: buyerCity, country: 'Turkey', address: buyerAddress
       },
       billingAddress: {
         contactName: `${firstName} ${lastName}`,
-        city: 'Istanbul', country: 'Turkey', address: 'Türkiye'
+        city: buyerCity, country: 'Turkey', address: buyerAddress
       },
       basketItems: [{
         id: `plan_${plan}`,
