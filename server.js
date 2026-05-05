@@ -1769,7 +1769,11 @@ app.post('/api/payment/init', authMiddleware, async (req, res) => {
     return res.status(503).json({ error: 'İyzico henüz yapılandırılmadı' });
   }
 
-  const prices = { starter: 4990, pro: 7490, enterprise: 9990 };
+  // KDV dahil fiyatlar (TRY) — KDV oranı %20
+  // starter: 9360 TL (KDV hariç: 7800 TL), pro: 11995 TL (KDV hariç: 9996 TL)
+  const pricesWithKdv  = { starter: 9360.00, pro: 11995.00, enterprise: 11995.00 };
+  const pricesWithoutKdv = { starter: 7800.00, pro: 9996.00, enterprise: 9996.00 }; // KDV hariç (÷1.20)
+  const prices = pricesWithKdv; // ödeme tutarı KDV dahil
   const price = prices[plan];
   if (!price) return res.status(400).json({ error: 'Geçersiz plan' });
 
@@ -1789,11 +1793,14 @@ app.post('/api/payment/init', authMiddleware, async (req, res) => {
 
     const convId = `sub_${req.user.userId}_${Date.now()}`;
 
+    const priceKdvDahil    = pricesWithKdv[plan];      // toplam ödenen tutar (KDV dahil)
+    const priceKdvHaric    = pricesWithoutKdv[plan];   // sepet kalemi tutarı (KDV hariç, iyzico kuralı)
+
     const request = {
       locale: 'tr',
       conversationId: convId,
-      price: (price / 100).toFixed(2),
-      paidPrice: (price / 100).toFixed(2),
+      price: priceKdvHaric.toFixed(2),        // sepet kalemleri toplamı (KDV hariç)
+      paidPrice: priceKdvDahil.toFixed(2),    // müşterinin ödediği tutar (KDV dahil)
       currency: 'TRY',
       basketId: `plan_${plan}_${req.user.userId}`,
       paymentGroup: 'PRODUCT',
@@ -1824,7 +1831,7 @@ app.post('/api/payment/init', authMiddleware, async (req, res) => {
         name: `CafeMenu ${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan (1 Yil)`,
         category1: 'Yazilim',
         itemType: 'VIRTUAL',
-        price: (price / 100).toFixed(2)
+        price: priceKdvHaric.toFixed(2)  // iyzico: sepet kalemi KDV hariç olmalı
       }]
     };
 

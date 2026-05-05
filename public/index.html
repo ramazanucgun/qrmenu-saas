@@ -737,8 +737,8 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
           <div class="plans-grid">
             <div class="plan-card">
               <div style="font-size:11px;color:var(--text2);font-weight:600;letter-spacing:.08em">STARTER</div>
-              <div class="plan-price">₺4.990</div>
-              <div style="font-size:11px;color:var(--text3);margin-bottom:16px">/yıl</div>
+              <div class="plan-price">₺9.360</div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:16px">KDV dahil / yıl</div>
               <ul class="plan-features">
                 <li><span class="feat-ok">✓</span>1 Restoran</li>
                 <li><span class="feat-ok">✓</span>50 ürüne kadar</li>
@@ -750,8 +750,8 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
             <div class="plan-card featured">
               <div class="plan-badge">EN POPÜLER</div>
               <div style="font-size:11px;color:rgba(255,255,255,.6);font-weight:600;letter-spacing:.08em;margin-top:8px">PRO</div>
-              <div class="plan-price">₺7.490</div>
-              <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:16px">/yıl</div>
+              <div class="plan-price">₺11.995</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:16px">KDV dahil / yıl</div>
               <ul class="plan-features">
                 <li><span class="feat-ok">✓</span>Sınırsız ürün</li>
                 <li><span class="feat-ok">✓</span>Garson çağrı sistemi</li>
@@ -762,8 +762,8 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
             </div>
             <div class="plan-card">
               <div style="font-size:11px;color:var(--text2);font-weight:600;letter-spacing:.08em">ENTERPRISE</div>
-              <div class="plan-price">₺9.990</div>
-              <div style="font-size:11px;color:var(--text3);margin-bottom:16px">/yıl</div>
+              <div class="plan-price">₺11.995</div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:16px">KDV dahil / yıl</div>
               <ul class="plan-features">
                 <li><span class="feat-ok">✓</span>3+ Restoran</li>
                 <li><span class="feat-ok">✓</span>Özel domain</li>
@@ -1368,7 +1368,7 @@ async function markAllNotifRead() {
 }
 
 function startPayment(plan) {
-  const planNames = { starter:'Starter — ₺4.990/yıl', pro:'Pro — ₺7.490/yıl', enterprise:'Enterprise — ₺9.990/yıl' };
+  const planNames = { starter:'Starter — ₺9.360/yıl (KDV dahil)', pro:'Pro — ₺11.995/yıl (KDV dahil)', enterprise:'Enterprise — ₺11.995/yıl (KDV dahil)' };
   // Ödeme formu öncesi bilgi formu
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
