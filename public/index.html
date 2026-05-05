@@ -10,9 +10,10 @@
 <meta name="apple-mobile-web-app-title" content="CafeMenu">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" href="/icons/cafemenu-icon.png">
   <script src="https://accounts.google.com/gsi/client" async></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QRMenu — app.ucgun.com.tr</title>
+<title>CafeMenu — Dijital Menü Platformu</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@400;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{--accent:#e8c547;--bg:#0d0d0f;--bg2:#141416;--bg3:#1c1c20;--border:rgba(255,255,255,0.08);--text:#f0f0ee;--text2:#a8a8a4;--text3:#555;--green:#47c97e;--red:#e84747;--blue:#4799e8;--r:10px;--serif:'DM Serif Display',serif;--sans:'DM Sans',sans-serif}
@@ -291,7 +292,7 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
 
 <!-- AUTH -->
 <div id="auth-view" class="view active">
-  <div class="auth-logo"><img src="https://pub-752c2dbea9a347528b807bb139a28366.r2.dev/restaurants/cafemenulogo.jpg" style="height:80px;object-fit:contain"></div>
+  <div class="auth-logo"><img src="/icons/cafemenu-logo.png" style="height:80px;object-fit:contain"></div>
   <div class="auth-box">
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="typeof authTab==='function'&&authTab('login')">Giriş Yap</button>
@@ -348,7 +349,7 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
 <!-- APP -->
 <div id="app-view" class="view">
   <aside class="sidebar">
-    <div class="sidebar-logo"><img src="https://pub-752c2dbea9a347528b807bb139a28366.r2.dev/restaurants/cafemenulogo.jpg" style="height:40px;object-fit:contain"></div>
+    <div class="sidebar-logo"><img src="/icons/cafemenu-logo.png" style="height:40px;object-fit:contain"></div>
     <nav class="sidebar-nav">
       <div class="nav-section">DASHBOARD</div>
       <div class="nav-item active" onclick="goPage('home',this)">🏠 Genel Bakış</div>

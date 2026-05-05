@@ -618,8 +618,7 @@ await pool.query(
         html: `
           <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px;background:#fff">
             <div style="text-align:center;margin-bottom:28px">
-              <div style="font-size:2rem;font-weight:700;color:#111">◈ CafeMenu</div>
-              <div style="font-size:13px;color:#888;margin-top:4px">Dijital Menü Platformu</div>
+              <img src="https://app.cafemenu.com.tr/icons/cafemenu-logo.png" alt="CafeMenu" style="height:56px;object-fit:contain">
             </div>
             <h2 style="color:#111;margin-bottom:12px">Hoş Geldiniz! 👋</h2>
             <p style="color:#444;line-height:1.6;margin-bottom:16px">
@@ -1454,11 +1453,9 @@ app.post('/api/auth/forgot-password', passwordLimiter, async (req, res) => {
       to: email,
       subject: 'Şifre Sıfırlama — CafeMenu',
       html: `
-      html: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#fff">
           <div style="text-align:center;margin-bottom:28px">
-            <div style="font-size:2rem;font-weight:700;color:#111">◈ CafeMenu</div>
-            <div style="font-size:13px;color:#888;margin-top:4px">Dijital Menü Platformu</div>
+            <img src="https://app.cafemenu.com.tr/icons/cafemenu-logo.png" alt="CafeMenu" style="height:56px;object-fit:contain">
           </div>
           <h2 style="color:#111;margin-bottom:8px">Şifrenizi sıfırlayın</h2>
           <p style="color:#666;margin-bottom:24px">Aşağıdaki butona tıklayarak şifrenizi sıfırlayabilirsiniz. Bu link 1 saat geçerlidir.</p>
@@ -2215,7 +2212,7 @@ async function checkSubscriptionExpiry() {
           subject: title,
           html: `
             <div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:24px">
-              <img src="https://pub-752c2dbea9a347528b807bb139a28366.r2.dev/restaurants/cafemenulogo.jpg"
+              <img src="https://app.cafemenu.com.tr/icons/cafemenu-logo.png"
                    alt="CafeMenu" style="height:40px;margin-bottom:24px">
               <h2 style="color:#111">${title}</h2>
               <p style="color:#555;line-height:1.6">${message}</p>
