@@ -364,11 +364,46 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
       </div>
       <button class="btn-primary" onclick="doRegister()">14 Gün Ücretsiz Başla →</button>
     </div>
-    <!-- Google - Restoran adı modal -->
+    <!-- Google - Kayıt tamamlama formu -->
     <div id="google-name-form" style="display:none">
-      <p style="font-size:13px;color:var(--text2);margin-bottom:20px">Google hesabınız doğrulandı. Restoranınızın adını girin:</p>
-      <div class="form-group"><label class="form-label">RESTORAN ADI</label><input class="form-input" id="g-restaurant-name" placeholder="Cafe Riviera"></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <div style="width:36px;height:36px;border-radius:50%;background:rgba(71,201,126,.15);display:flex;align-items:center;justify-content:center;font-size:16px">✅</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">Google hesabınız doğrulandı</div>
+          <div style="font-size:12px;color:var(--text3)" id="g-email-display"></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group" style="margin-bottom:0"><label class="form-label">AD <span style="color:var(--red)">*</span></label><input class="form-input" id="g-firstname" placeholder="Adınız"></div>
+        <div class="form-group" style="margin-bottom:0"><label class="form-label">SOYAD <span style="color:var(--red)">*</span></label><input class="form-input" id="g-lastname" placeholder="Soyadınız"></div>
+      </div>
+      <div class="form-group"><label class="form-label">CEP TELEFONU <span style="color:var(--red)">*</span></label><input class="form-input" id="g-phone" type="tel" placeholder="05XX XXX XX XX"></div>
+      <div class="form-group"><label class="form-label">İŞLETME ADI <span style="color:var(--red)">*</span></label><input class="form-input" id="g-restaurant-name" placeholder="Cafe Riviera"></div>
+      <div class="form-group">
+        <label class="form-label">MENÜ LİNKİ <span style="color:var(--text3);font-weight:400">(opsiyonel)</span></label>
+        <div style="display:flex;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+          <span style="padding:0 8px;font-size:11px;color:var(--text3);white-space:nowrap;border-right:1px solid var(--border)">app.cafemenu.com.tr/</span>
+          <input style="background:transparent;border:none;outline:none;color:var(--text);font-family:var(--sans);font-size:13px;padding:10px;flex:1;min-width:0" id="g-slug" placeholder="cafe-riviera" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9-]/g,'')">
+        </div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:12px">
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:10px">
+          <input type="checkbox" id="g-terms" style="margin-top:2px;flex-shrink:0;accent-color:var(--accent)">
+          <span style="font-size:12px;color:var(--text2);line-height:1.5"><a href="https://cafemenu.com.tr/kullanim-sartlari" target="_blank" style="color:var(--accent)">Kullanım Şartları</a>'nı ve <a href="https://cafemenu.com.tr/gizlilik" target="_blank" style="color:var(--accent)">Gizlilik Politikası</a>'nı okudum, kabul ediyorum. <span style="color:var(--red)">*</span></span>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:10px">
+          <input type="checkbox" id="g-kvkk" style="margin-top:2px;flex-shrink:0;accent-color:var(--accent)">
+          <span style="font-size:12px;color:var(--text2);line-height:1.5"><a href="https://cafemenu.com.tr/kvkk" target="_blank" style="color:var(--accent)">KVKK Aydınlatma Metni</a>'ni okudum ve kişisel verilerimin işlenmesine onay veriyorum. <span style="color:var(--red)">*</span></span>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+          <input type="checkbox" id="g-marketing" style="margin-top:2px;flex-shrink:0;accent-color:var(--accent)">
+          <span style="font-size:12px;color:var(--text2);line-height:1.5">Kampanya ve güncellemelere ilişkin ticari elektronik ileti almak istiyorum. <span style="color:var(--text3)">(opsiyonel)</span></span>
+        </label>
+      </div>
       <button class="btn-primary" onclick="completeGoogleRegister()">Hesabı Oluştur →</button>
+      <div style="text-align:center;margin-top:12px">
+        <button onclick="authTab('login')" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer">← Geri dön</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1071,8 +1106,19 @@ function initGoogleButtons(clientId) {
 async function handleGoogleCredential(response) {
   pendingGoogleCredential = response.credential;
   try {
+    // JWT payload'dan email'i al (gösterim için)
+    try {
+      const parts = pendingGoogleCredential.split('.');
+      const p = JSON.parse(atob(parts[1]));
+      const emailDisp = document.getElementById('g-email-display');
+      if (emailDisp && p.email) emailDisp.textContent = p.email;
+      // Google'dan gelen ismi otomatik doldur
+      if (p.given_name) { const fn = document.getElementById('g-firstname'); if(fn) fn.value = p.given_name; }
+      if (p.family_name) { const ln = document.getElementById('g-lastname'); if(ln) ln.value = p.family_name; }
+    } catch(_) {}
+
     const data = await api('POST', '/auth/google', { credential: pendingGoogleCredential });
-    if (data.needsRestaurantName) {
+    if (data.needsRestaurantName || data.needsInfo) {
       authTab('google-name');
       return;
     }
@@ -1083,16 +1129,31 @@ async function handleGoogleCredential(response) {
 }
 
 async function completeGoogleRegister() {
+  const firstName      = document.getElementById('g-firstname')?.value.trim();
+  const lastName       = document.getElementById('g-lastname')?.value.trim();
+  const phone          = document.getElementById('g-phone')?.value.trim();
   const restaurantName = document.getElementById('g-restaurant-name').value.trim();
-  if (!restaurantName) return showAuthError('Restoran adı zorunlu');
+  const menuSlug       = document.getElementById('g-slug')?.value.trim();
+  const termsAccepted     = document.getElementById('g-terms')?.checked;
+  const kvkkAccepted      = document.getElementById('g-kvkk')?.checked;
+  const marketingAccepted = document.getElementById('g-marketing')?.checked;
+
+  if (!firstName || !lastName) return showAuthError('Ad ve soyad zorunludur');
+  if (!phone) return showAuthError('Cep telefonu zorunludur');
+  if (!restaurantName) return showAuthError('İşletme adı zorunludur');
+  if (!termsAccepted) return showAuthError("Kullanım Şartları ve Gizlilik Politikası'nı onaylamanız zorunludur");
+  if (!kvkkAccepted) return showAuthError("KVKK Aydınlatma Metni'ni onaylamanız zorunludur");
+
+  const extraFields = { restaurantName, firstName, lastName, phone, menuSlug, kvkkAccepted, termsAccepted, marketingAccepted };
+
   try {
     let data;
     if (pendingGoogleCredential && typeof pendingGoogleCredential === 'string' && pendingGoogleCredential.split('.').length === 3) {
-      // ID token (GSI yöntemi)
-      data = await api('POST', '/auth/google', { credential: pendingGoogleCredential, restaurantName });
+      data = await api('POST', '/auth/google', { credential: pendingGoogleCredential, ...extraFields });
     } else if (window._pendingGoogleToken) {
-      // Access token (popup yöntemi)
-      data = await api('POST', '/auth/google-token', { ...window._pendingGoogleToken, restaurantName });
+      data = await api('POST', '/auth/google-token', { ...window._pendingGoogleToken, ...extraFields });
+    } else {
+      return showAuthError('Google oturumu zaman aşımına uğradı, lütfen tekrar deneyin');
     }
     onAuthSuccess(data);
   } catch(e) {
@@ -2923,8 +2984,13 @@ async function fetchGoogleUserInfo(accessToken) {
     const user = await res.json();
     const payload = { accessToken, email: user.email, name: user.name, picture: user.picture, googleId: user.sub };
     window._pendingGoogleToken = payload;
+    // Google'dan gelen ismi otomatik doldur
+    const emailDisp2 = document.getElementById('g-email-display');
+    if (emailDisp2 && user.email) emailDisp2.textContent = user.email;
+    if (user.given_name) { const fn2 = document.getElementById('g-firstname'); if(fn2) fn2.value = user.given_name; }
+    if (user.family_name) { const ln2 = document.getElementById('g-lastname'); if(ln2) ln2.value = user.family_name; }
     const data = await api('POST', '/auth/google-token', payload);
-    if (data.needsRestaurantName) { authTab('google-name'); return; }
+    if (data.needsRestaurantName || data.needsInfo) { authTab('google-name'); return; }
     onAuthSuccess(data);
   } catch(e) {
     showAuthError('Google girişi başarısız: ' + e.message);

@@ -476,29 +476,82 @@ app.post('/api/auth/google', authLimiter, async (req, res) => {
       if (!restaurantName) {
         return res.status(200).json({ needsRestaurantName: true, email, googleId, picture });
       }
+      const { firstName: gFirstName='', lastName: gLastName='', phone: gPhone='',
+              menuSlug: gMenuSlug='', kvkkAccepted: gKvkk=false,
+              termsAccepted: gTerms=false, marketingAccepted: gMarketing=false } = req.body;
+
+      if (!gKvkk || !gTerms) {
+        return res.status(400).json({ needsRestaurantName: true, needsConsent: true, email, googleId, picture, needsInfo: true });
+      }
+
+      const now = new Date();
       const newUser = await pool.query(
-        'INSERT INTO users (email, password_hash, google_id, avatar_url, is_verified) VALUES ($1,$2,$3,$4,true) RETURNING id',
-        [email, '', googleId, picture]
+        `INSERT INTO users (email, password_hash, google_id, avatar_url, is_verified,
+          first_name, last_name, phone, kvkk_accepted, terms_accepted, marketing_accepted,
+          kvkk_accepted_at, terms_accepted_at)
+         VALUES ($1,$2,$3,$4,true,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id`,
+        [email, '', googleId, picture,
+         gFirstName.trim()||null, gLastName.trim()||null, gPhone||null,
+         !!gKvkk, !!gTerms, !!gMarketing, now, now]
       );
       user = newUser.rows[0];
 
-      const baseSlug = restaurantName
-        .toLowerCase()
-        .replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s')
-        .replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c')
-        .replace(/[^a-z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
-      // Slug kullanılıyor mu kontrol et
-      let slug = baseSlug;
+      function toSlugG(str) {
+        return str.toLowerCase()
+          .replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s')
+          .replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c')
+          .replace(/[^a-z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+      }
+      const desiredSlugG = gMenuSlug ? toSlugG(gMenuSlug) : '';
+      const baseSlug = toSlugG(restaurantName);
+      let slug = desiredSlugG || baseSlug;
+      if (slug.length < 3) slug = baseSlug;
       const existing = await pool.query('SELECT id FROM restaurants WHERE slug=$1', [slug]);
-      if (existing.rows.length) slug = baseSlug + '-' + Math.random().toString(36).substr(2,4);
+      if (existing.rows.length) {
+        if (desiredSlugG) return res.status(400).json({ error: 'Bu menü linki zaten kullanımda' });
+        slug = baseSlug + '-' + Math.random().toString(36).substr(2,4);
+      }
 
       const restResult = await pool.query(
-        'INSERT INTO restaurants (user_id, slug, name) VALUES ($1,$2,$3) RETURNING id',
+        'INSERT INTO restaurants (user_id, slug, name) VALUES ($1,$2,$3) RETURNING id, slug',
         [user.id, slug, restaurantName]
       );
       restaurantId = restResult.rows[0].id;
-
       await pool.query('INSERT INTO subscriptions (user_id) VALUES ($1)', [user.id]);
+
+      // Hoşgeldin emaili (Google kayıt)
+      try {
+        await resend.emails.send({
+          from: 'CafeMenu <noreply@cafemenu.com.tr>',
+          to: email,
+          subject: "CafeMenu'ya Hoş Geldiniz! 🎉",
+          html: `
+            <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px;background:#fff">
+              <div style="text-align:center;margin-bottom:28px">
+                <img src="https://app.cafemenu.com.tr/icons/cafemenu-logo.png" alt="CafeMenu" style="height:56px;object-fit:contain">
+              </div>
+              <h2 style="color:#111;margin-bottom:12px">Hoş Geldiniz! 👋</h2>
+              <p style="color:#444;line-height:1.6;margin-bottom:16px">
+                <strong>${restaurantName}</strong> için dijital menünüz oluşturuldu.
+                14 günlük ücretsiz trial süreniz başladı.
+              </p>
+              <div style="background:#f9f9f9;border-radius:10px;padding:16px;margin-bottom:20px">
+                <div style="font-size:13px;color:#666;margin-bottom:6px">Menü linkiniz:</div>
+                <div style="font-family:monospace;font-size:14px;color:#e8a020;font-weight:600">
+                  https://app.cafemenu.com.tr/${restResult.rows[0].slug}
+                </div>
+              </div>
+              <div style="text-align:center">
+                <a href="https://app.cafemenu.com.tr" style="background:#e8c547;color:#111;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block">Dashboard'a Git →</a>
+              </div>
+              <div style="border-top:1px solid #eee;margin-top:28px;padding-top:16px;text-align:center;font-size:12px;color:#aaa">
+                CafeMenu · cafemenu.com.tr
+              </div>
+            </div>`
+        });
+      } catch(emailErr) {
+        console.error('❌ Google kayıt emaili gönderilemedi:', emailErr?.message || emailErr);
+      }
     }
 
     const token = jwt.sign(
@@ -537,22 +590,70 @@ app.post('/api/auth/google-token', authLimiter, async (req, res) => {
       await pool.query('UPDATE users SET google_id=$1, avatar_url=$2, is_verified=true WHERE id=$3', [googleId, picture, user.id]);
       restaurantId = user.restaurant_id;
     } else {
-      if (!restaurantName) return res.status(200).json({ needsRestaurantName: true });
+      const { firstName: tFirstName='', lastName: tLastName='', phone: tPhone='',
+              menuSlug: tMenuSlug='', kvkkAccepted: tKvkk=false,
+              termsAccepted: tTerms=false, marketingAccepted: tMarketing=false } = req.body;
+
+      if (!restaurantName) return res.status(200).json({ needsRestaurantName: true, needsInfo: true });
+      if (!tKvkk || !tTerms) {
+        return res.status(400).json({ needsRestaurantName: true, needsConsent: true, needsInfo: true });
+      }
+
+      const nowT = new Date();
       const newUser = await pool.query(
-        'INSERT INTO users (email, password_hash, google_id, avatar_url, is_verified) VALUES ($1,$2,$3,$4,true) RETURNING id',
-        [email, '', googleId, picture]
+        `INSERT INTO users (email, password_hash, google_id, avatar_url, is_verified,
+          first_name, last_name, phone, kvkk_accepted, terms_accepted, marketing_accepted,
+          kvkk_accepted_at, terms_accepted_at)
+         VALUES ($1,$2,$3,$4,true,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id`,
+        [email, '', googleId||gUser.sub, picture||gUser.picture,
+         tFirstName.trim()||null, tLastName.trim()||null, tPhone||null,
+         !!tKvkk, !!tTerms, !!tMarketing, nowT, nowT]
       );
       user = newUser.rows[0];
-      const baseSlug2 = (restaurantName).toLowerCase()
-        .replace(/[ğ]/g,'g').replace(/[ü]/g,'u').replace(/[ş]/g,'s')
-        .replace(/[ı]/g,'i').replace(/[ö]/g,'o').replace(/[ç]/g,'c')
-        .replace(/[^a-z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
-      let slug = baseSlug2;
+      function toSlugT(str) {
+        return str.toLowerCase()
+          .replace(/[ğ]/g,'g').replace(/[ü]/g,'u').replace(/[ş]/g,'s')
+          .replace(/[ı]/g,'i').replace(/[ö]/g,'o').replace(/[ç]/g,'c')
+          .replace(/[^a-z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+      }
+      const desiredSlugT = tMenuSlug ? toSlugT(tMenuSlug) : '';
+      const baseSlug2 = toSlugT(restaurantName);
+      let slug = desiredSlugT || baseSlug2;
+      if (slug.length < 3) slug = baseSlug2;
       const existingSlug2 = await pool.query('SELECT id FROM restaurants WHERE slug=$1', [slug]);
-      if (existingSlug2.rows.length) slug = baseSlug2 + '-' + Math.random().toString(36).substr(2,4);
-      const rest = await pool.query('INSERT INTO restaurants (user_id, slug, name) VALUES ($1,$2,$3) RETURNING id', [user.id, slug, restaurantName]);
+      if (existingSlug2.rows.length) {
+        if (desiredSlugT) return res.status(400).json({ error: 'Bu menü linki zaten kullanımda' });
+        slug = baseSlug2 + '-' + Math.random().toString(36).substr(2,4);
+      }
+      const rest = await pool.query('INSERT INTO restaurants (user_id, slug, name) VALUES ($1,$2,$3) RETURNING id, slug', [user.id, slug, restaurantName]);
       restaurantId = rest.rows[0].id;
       await pool.query('INSERT INTO subscriptions (user_id) VALUES ($1)', [user.id]);
+
+      // Hoşgeldin emaili (Google token kayıt)
+      try {
+        await resend.emails.send({
+          from: 'CafeMenu <noreply@cafemenu.com.tr>',
+          to: email,
+          subject: "CafeMenu'ya Hoş Geldiniz! 🎉",
+          html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px;background:#fff">
+            <div style="text-align:center;margin-bottom:28px">
+              <img src="https://app.cafemenu.com.tr/icons/cafemenu-logo.png" alt="CafeMenu" style="height:56px;object-fit:contain">
+            </div>
+            <h2 style="color:#111;margin-bottom:12px">Hoş Geldiniz! 👋</h2>
+            <p style="color:#444;line-height:1.6;margin-bottom:16px"><strong>${restaurantName}</strong> için dijital menünüz oluşturuldu. 14 günlük ücretsiz trial süreniz başladı.</p>
+            <div style="background:#f9f9f9;border-radius:10px;padding:16px;margin-bottom:20px">
+              <div style="font-size:13px;color:#666;margin-bottom:6px">Menü linkiniz:</div>
+              <div style="font-family:monospace;font-size:14px;color:#e8a020;font-weight:600">https://app.cafemenu.com.tr/${rest.rows[0].slug}</div>
+            </div>
+            <div style="text-align:center">
+              <a href="https://app.cafemenu.com.tr" style="background:#e8c547;color:#111;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block">Dashboard'a Git →</a>
+            </div>
+            <div style="border-top:1px solid #eee;margin-top:28px;padding-top:16px;text-align:center;font-size:12px;color:#aaa">CafeMenu · cafemenu.com.tr</div>
+          </div>`
+        });
+      } catch(emailErr) {
+        console.error('❌ Google token kayıt emaili gönderilemedi:', emailErr?.message || emailErr);
+      }
     }
     const token = jwt.sign({ userId: user.id, restaurantId }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, restaurantId });
@@ -672,7 +773,6 @@ await pool.query(
             <p style="color:#444;line-height:1.6;margin-bottom:24px">
               Hemen giriş yapıp menünüzü oluşturmaya başlayabilirsiniz.
             </p>
-            <div style="text-align:center">
             <div style="background:#fff8e1;border:1px solid #e8c547;border-radius:10px;padding:16px;margin-bottom:20px;text-align:center">
               <div style="font-size:13px;color:#666;margin-bottom:10px">Email adresinizi doğrulamak için aşağıdaki butona tıklayın:</div>
               <a href="${process.env.APP_URL}/verify-email?token=${verifyToken}" style="background:#e8c547;color:#111;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block">✅ Email Adresimi Doğrula</a>
@@ -680,8 +780,6 @@ await pool.query(
             </div>
             <div style="text-align:center">
               <a href="https://app.cafemenu.com.tr" style="background:#f5f5f5;color:#111;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block">Dashboard'a Git →</a>
-            </div> 
-            <a href="https://app.cafemenu.com.tr" style="background:#e8c547;color:#111;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block">Dashboard'a Git →</a>
             </div>
             <div style="border-top:1px solid #eee;margin-top:28px;padding-top:16px;text-align:center;font-size:12px;color:#aaa">
               CafeMenu · cafemenu.com.tr
@@ -690,7 +788,7 @@ await pool.query(
         `
       });
     } catch(emailErr) {
-      console.log('Hoşgeldin emaili gönderilemedi:', emailErr.message);
+      console.error('❌ Hoşgeldin emaili gönderilemedi:', emailErr?.message || emailErr);
     }
 
     res.json({
