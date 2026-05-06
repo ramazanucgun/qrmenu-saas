@@ -646,18 +646,24 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
               </div>
               <div><div class="form-label" style="margin-bottom:6px">RESTORAN ADI</div><input class="form-input" id="d-rest-name" placeholder="Cafe Riviera" oninput="updatePreview()"></div>
               <div><div class="form-label" style="margin-bottom:6px">KISA AÇIKLAMA</div><input class="form-input" id="d-tagline" placeholder="Geleneksel lezzetler · İstanbul" oninput="updatePreview()"></div>
+              <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:2px">
+                <div class="form-label" style="margin-bottom:10px">📱 SOSYAL MEDYA</div>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px;width:24px;text-align:center">📸</span><input class="form-input" id="d-ig" placeholder="Instagram kullanıcı adı (@siz)" style="flex:1"></div>
+                  <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px;width:24px;text-align:center">👍</span><input class="form-input" id="d-fb" placeholder="Facebook sayfa adı" style="flex:1"></div>
+                  <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px;width:24px;text-align:center">📍</span><input class="form-input" id="d-maps" placeholder="Google Harita yorum linki" style="flex:1"></div>
+                  <div style="font-size:11px;color:var(--text3);padding-left:32px">💡 Google Maps → işletmeniz → Yorum yaz → linki kopyalayın</div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- WiFi & Sosyal -->
+          <!-- WiFi -->
           <div class="panel" style="margin-bottom:14px">
-            <div class="panel-head"><span class="panel-title">📡 Wi-Fi & Sosyal Medya</span></div>
+            <div class="panel-head"><span class="panel-title">📡 Wi-Fi Bilgileri</span></div>
             <div style="padding:18px;display:flex;flex-direction:column;gap:12px">
               <div><div class="form-label" style="margin-bottom:6px">WİFİ ADI</div><input class="form-input" id="d-wifi" placeholder="WiFi adı" oninput="updatePreview()"></div>
               <div><div class="form-label" style="margin-bottom:6px">WİFİ ŞİFRESİ</div><input class="form-input" id="d-wpass" placeholder="WiFi şifresi" oninput="updatePreview()"></div>
-              <div><div class="form-label" style="margin-bottom:6px">INSTAGRAM</div><input class="form-input" id="d-ig" placeholder="@kullaniciadiniz"></div>
-              <div><div class="form-label" style="margin-bottom:6px">FACEBOOK</div><input class="form-input" id="d-fb" placeholder="sayfanizin-adi"></div>
-              <div style="grid-column:1/-1"><div class="form-label" style="margin-bottom:6px">GOOGLE HARİTA YORUM LİNKİ</div><input class="form-input" id="d-maps" placeholder="https://maps.app.goo.gl/..."><div style="font-size:11px;color:var(--text3);margin-top:4px">💡 Google Maps → işletmeniz → Yorum yaz → linki kopyalayın</div></div>
             </div>
           </div>
 
@@ -2445,7 +2451,7 @@ async function saveWorkingHours(){
 
 async function saveDesign(){
   const waiterCb = document.getElementById('d-waiter-enabled');
-  const body={name:document.getElementById('d-rest-name').value||RESTAURANT?.name,brand_color:document.getElementById('d-color').value,font_family:document.getElementById('d-font').value,theme:currentTheme||'classic',card_style:currentCardStyle||'list',wifi_name:document.getElementById('d-wifi').value,wifi_password:document.getElementById('d-wpass').value,instagram_url:document.getElementById('d-ig').value,facebook_url:document.getElementById('d-fb').value,google_maps_url:document.getElementById('d-maps')?.value||'',waiter_enabled:waiterCb?waiterCb.checked:true};
+  const body={name:document.getElementById('d-rest-name').value||RESTAURANT?.name,tagline:document.getElementById('d-tagline')?.value||'',brand_color:document.getElementById('d-color').value,font_family:document.getElementById('d-font').value,theme:currentTheme||'classic',card_style:currentCardStyle||'list',wifi_name:document.getElementById('d-wifi').value,wifi_password:document.getElementById('d-wpass').value,instagram_url:document.getElementById('d-ig').value,facebook_url:document.getElementById('d-fb').value,google_maps_url:document.getElementById('d-maps')?.value||'',waiter_enabled:waiterCb?waiterCb.checked:true};
   try{RESTAURANT=await api('PUT','/restaurant/me',body);localStorage.setItem('qrmenu_rest',JSON.stringify(RESTAURANT));toast('Tasarım kaydedildi ✅','success');updatePreview();}catch(e){toast(e.message,'error');}
 }
 
@@ -2610,7 +2616,7 @@ function renderPublicMenu(data){
   const hero=`<div class="m-hero" style="background:${t.heroBg}">
     ${logoHtml}
     <div class="m-rest-name" style="color:${t.text};font-family:'${font}',serif">${restaurant.name}</div>
-    <div class="m-tag" style="color:${t.text2}">Dijital Menü</div>
+    <div class="m-tag" style="color:${t.text2}">${restaurant.tagline||'Dijital Menü'}</div>
     ${today_hours&&!today_hours.is_closed?`<div style="display:inline-flex;align-items:center;gap:6px;background:${is_open?'rgba(71,201,126,.1)':'rgba(232,71,71,.1)'};border:1px solid ${is_open?'rgba(71,201,126,.3)':'rgba(232,71,71,.3)'};border-radius:20px;padding:5px 14px;font-size:12px;font-weight:500;color:${is_open?'#47c97e':'#e84747'};margin-bottom:10px">${is_open?'🟢 Şu an açık':'🔴 Şu an kapalı'} · ${today_hours.opens_at} - ${today_hours.closes_at}</div>`:''}
     <div class="m-pills">
       <button class="m-pill" style="background:${t.pillBg};color:${t.pillColor};border-color:${t.pillBorder}" onclick="document.getElementById('fb-modal').classList.add('open')">💬 Geri Bildirim</button>

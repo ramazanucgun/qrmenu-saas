@@ -884,7 +884,7 @@ app.get('/api/restaurant/me', authMiddleware, async (req, res) => {
       `SELECT id, slug, name, logo_url, brand_color, font_family,
               theme, card_style, wifi_name, wifi_password,
               instagram_url, facebook_url, google_maps_url,
-              is_published, waiter_enabled, created_at
+              is_published, waiter_enabled, tagline, created_at
        FROM restaurants WHERE id = $1`,
       [req.user.restaurantId]
     );
@@ -896,7 +896,7 @@ app.get('/api/restaurant/me', authMiddleware, async (req, res) => {
 });
 
 app.put('/api/restaurant/me', authMiddleware, async (req, res) => {
-  const { name, brand_color, font_family, theme, card_style, wifi_name, wifi_password, instagram_url, facebook_url, google_maps_url, waiter_enabled, is_published } = req.body;
+  const { name, brand_color, font_family, theme, card_style, wifi_name, wifi_password, instagram_url, facebook_url, google_maps_url, waiter_enabled, is_published, tagline } = req.body;
   try {
     const result = await pool.query(
       `UPDATE restaurants SET name=$1, brand_color=$2, font_family=$3,
@@ -905,14 +905,16 @@ app.put('/api/restaurant/me', authMiddleware, async (req, res) => {
        is_published=COALESCE($9, is_published),
        theme=COALESCE($10, theme),
        card_style=COALESCE($11, card_style),
-       google_maps_url=COALESCE($12, google_maps_url)
-       WHERE id=$13 RETURNING *`,
+       google_maps_url=COALESCE($12, google_maps_url),
+       tagline=COALESCE($13, tagline)
+       WHERE id=$14 RETURNING *`,
       [name, brand_color, font_family, wifi_name, wifi_password, instagram_url, facebook_url,
        waiter_enabled !== undefined ? waiter_enabled : null,
        is_published !== undefined ? is_published : null,
        theme || null,
        card_style || null,
        google_maps_url || null,
+       tagline !== undefined ? tagline : null,
        req.user.restaurantId]
     );
     res.json(result.rows[0]);
@@ -1204,7 +1206,7 @@ app.get('/api/menu/:slug', async (req, res) => {
                    ELSE logo_url END as logo_url,
               brand_color, font_family, theme, card_style, google_maps_url,
               wifi_name, wifi_password, instagram_url, facebook_url,
-              is_published, waiter_enabled, created_at
+              is_published, waiter_enabled, tagline, created_at
        FROM restaurants WHERE slug=$1 AND is_published=true`,
       [req.params.slug]
     );
