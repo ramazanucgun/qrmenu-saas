@@ -81,7 +81,7 @@ input,textarea,select{font-family:var(--sans)}
 .prod-thumb{width:60px;height:60px;border-radius:8px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;overflow:hidden}
 .prod-thumb img{width:100%;height:100%;object-fit:cover;border-radius:8px}
 .prod-name{font-size:14px;font-weight:600;margin-bottom:3px}
-.prod-desc{font-size:12px;color:var(--text2);margin-bottom:6px;line-height:1.4}
+.prod-desc{font-size:12px;color:var(--text2);margin-bottom:6px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
 .prod-price{font-size:14px;color:var(--accent);font-weight:600;font-family:monospace}
 .prod-actions{margin-left:auto;display:flex;gap:6px;flex-shrink:0}
 .icon-btn{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 9px;font-size:12px;color:var(--text2);transition:all .15s}
@@ -199,7 +199,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 .style-list .m-prod-img img{width:76px;height:76px;object-fit:cover;border-radius:10px;display:block;flex-shrink:0}
 .style-list .m-prod-img img{width:100%;height:100%;object-fit:cover;border-radius:10px;display:block}
 .style-list .m-prod-name{font-size:14px;font-weight:600;margin-bottom:3px}
-.style-list .m-prod-desc{font-size:12px;line-height:1.4;margin-bottom:6px;opacity:.7}
+.style-list .m-prod-desc{font-size:12px;line-height:1.4;margin-bottom:6px;opacity:.7;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
 .style-list .m-prod-price{font-size:15px;font-weight:700}
 
 /* KART STİLİ 2: Kart */
@@ -210,7 +210,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 .style-card .m-prod-img img{width:100%;height:100%;object-fit:cover}
 .style-card .m-prod-body{padding:12px}
 .style-card .m-prod-name{font-size:13px;font-weight:600;margin-bottom:3px}
-.style-card .m-prod-desc{font-size:11px;line-height:1.4;margin-bottom:6px;opacity:.7}
+.style-card .m-prod-desc{font-size:11px;line-height:1.4;margin-bottom:6px;opacity:.7;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
 .style-card .m-prod-price{font-size:14px;font-weight:700}
 
 /* KART STİLİ 3: Kompakt */
@@ -218,7 +218,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 .style-compact .m-product:last-child{border-bottom:none}
 .style-compact .m-prod-left{flex:1}
 .style-compact .m-prod-name{font-size:13px;font-weight:600;margin-bottom:2px}
-.style-compact .m-prod-desc{font-size:11px;opacity:.6}
+.style-compact .m-prod-desc{font-size:11px;opacity:.6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;white-space:normal}
 .style-compact .m-prod-price{font-size:14px;font-weight:700;margin-left:12px;flex-shrink:0}
 .style-compact .m-prod-img{display:none}
 
@@ -2658,7 +2658,7 @@ function renderPublicMenu(data){
       prodsHtml=cat.products.map(p=>`<div class="m-product style-compact" data-prod-id="${p.id}" style="border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
         <div class="m-prod-left">
           <div class="m-prod-name" style="color:${t.text}">${p.name}</div>
-          <div class="m-prod-desc" style="color:${t.text2}">${(p.description||'').slice(0,50)}</div>
+          <div class="m-prod-desc" style="color:${t.text2}">${p.description||''}</div>
         </div>
         <div class="m-prod-price" style="color:${color}">₺${parseFloat(p.price).toFixed(2)}</div>
       </div>`).join('');
