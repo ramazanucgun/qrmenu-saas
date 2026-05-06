@@ -349,6 +349,7 @@ CREATE TABLE IF NOT EXISTS password_resets (
   await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS theme VARCHAR(50) DEFAULT 'classic'`).catch(()=>{});
   await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS card_style VARCHAR(20) DEFAULT 'list'`).catch(()=>{});
   await pool.query(`ALTER TABLE campaigns ALTER COLUMN image_url TYPE TEXT`).catch(()=>{});
+  await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS tagline VARCHAR(255)`).catch(()=>{});
 
   // ═══════════════════════════════
   // VERİTABANI İNDEKSLERİ
@@ -884,7 +885,8 @@ app.get('/api/restaurant/me', authMiddleware, async (req, res) => {
       `SELECT id, slug, name, logo_url, brand_color, font_family,
               theme, card_style, wifi_name, wifi_password,
               instagram_url, facebook_url, google_maps_url,
-              is_published, waiter_enabled, tagline, created_at
+              is_published, waiter_enabled,
+              COALESCE(tagline, '') as tagline, created_at
        FROM restaurants WHERE id = $1`,
       [req.user.restaurantId]
     );
@@ -1206,7 +1208,8 @@ app.get('/api/menu/:slug', async (req, res) => {
                    ELSE logo_url END as logo_url,
               brand_color, font_family, theme, card_style, google_maps_url,
               wifi_name, wifi_password, instagram_url, facebook_url,
-              is_published, waiter_enabled, tagline, created_at
+              is_published, waiter_enabled,
+              COALESCE(tagline, '') as tagline, created_at
        FROM restaurants WHERE slug=$1 AND is_published=true`,
       [req.params.slug]
     );
