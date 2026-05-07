@@ -350,6 +350,10 @@ CREATE TABLE IF NOT EXISTS password_resets (
   await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS card_style VARCHAR(20) DEFAULT 'list'`).catch(()=>{});
   await pool.query(`ALTER TABLE campaigns ALTER COLUMN image_url TYPE TEXT`).catch(()=>{});
   await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS tagline VARCHAR(255)`).catch(()=>{});
+  await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS link_type VARCHAR(20) DEFAULT 'none'`).catch(()=>{}); -- none | product | category | url
+  await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS link_product_id UUID`).catch(()=>{});
+  await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS link_category_id UUID`).catch(()=>{});
+  await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS link_url TEXT`).catch(()=>{});
 
   // ═══════════════════════════════
   // VERİTABANI İNDEKSLERİ
@@ -1236,6 +1240,7 @@ const hoursResult = await pool.query(
 
     const campResult = await pool.query(
       `SELECT id, title, description, emoji, is_active, starts_at, ends_at,
+              link_type, link_product_id, link_category_id, link_url,
               CASE WHEN image_url IS NOT NULL AND image_url LIKE 'data:%'
                    THEN '/api/img/campaign/' || id
                    ELSE image_url END as image_url
@@ -1449,16 +1454,22 @@ app.post('/api/campaigns', authMiddleware, async (req, res) => {
 });
 
 app.patch('/api/campaigns/:id', authMiddleware, async (req, res) => {
-  const { title, description, emoji, image_url } = req.body;
+  const { title, description, emoji, image_url, link_type, link_product_id, link_category_id, link_url } = req.body;
   try {
     const result = await pool.query(
       `UPDATE campaigns SET
         title = COALESCE($1, title),
         description = COALESCE($2, description),
         emoji = COALESCE($3, emoji),
-        image_url = COALESCE($4, image_url)
-       WHERE id=$5 AND restaurant_id=$6 RETURNING *`,
-      [title || null, description || null, emoji || null, image_url || null, req.params.id, req.user.restaurantId]
+        image_url = COALESCE($4, image_url),
+        link_type = COALESCE($5, link_type),
+        link_product_id = COALESCE($6, link_product_id),
+        link_category_id = COALESCE($7, link_category_id),
+        link_url = COALESCE($8, link_url)
+       WHERE id=$9 AND restaurant_id=$10 RETURNING *`,
+      [title || null, description || null, emoji || null, image_url || null,
+       link_type || null, link_product_id || null, link_category_id || null, link_url || null,
+       req.params.id, req.user.restaurantId]
     );
     if (!result.rows[0]) return res.status(404).json({ error: 'Kampanya bulunamadı' });
     res.json(result.rows[0]);

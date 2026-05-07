@@ -243,12 +243,13 @@ textarea.form-input{resize:vertical;min-height:80px}
 .prod-detail-desc{font-size:14px;line-height:1.6;opacity:.7;margin-bottom:16px}
 .prod-detail-price{font-size:1.5rem;font-weight:700}
 
-.camp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:none;align-items:center;justify-content:center;padding:20px}
+.camp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:400;display:none;align-items:center;justify-content:center;padding:0}
 .camp-overlay.open{display:flex}
-.camp-box{background:#fff;border-radius:20px;overflow:hidden;width:100%;max-width:340px;text-align:center;animation:popIn .4s cubic-bezier(.34,1.56,.64,1);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.camp-box{position:relative;background:#111;overflow:hidden;width:100%;max-width:420px;height:100svh;max-height:100svh;text-align:center;animation:popIn .35s cubic-bezier(.34,1.56,.64,1);box-shadow:0 0 60px rgba(0,0,0,.6);display:flex;flex-direction:column}
+@media(min-width:480px){.camp-box{max-width:390px;height:calc(390px * 16/9);max-height:95svh;border-radius:20px}}
 @keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
-.camp-img{min-height:120px;max-height:260px;display:flex;align-items:center;justify-content:center;font-size:64px;background:linear-gradient(135deg,#fde68a,#f59e0b);overflow:hidden;position:relative}
-.camp-img img{width:100%;height:auto;max-height:260px;object-fit:contain;display:block;position:relative}
+.camp-img{flex:1;display:flex;align-items:center;justify-content:center;font-size:80px;background:linear-gradient(135deg,#fde68a,#f59e0b);overflow:hidden;position:relative;min-height:0}
+.camp-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .camp-img-emoji{position:relative;z-index:1}
 .fb-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:none;align-items:flex-end;justify-content:center}
 .fb-modal.open{display:flex}
@@ -896,15 +897,23 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
 </div>
 
 <!-- KAMPANYA POPUP -->
-<div class="camp-overlay" id="camp-popup">
+<div class="camp-overlay" id="camp-popup" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="camp-box">
+    <!-- Kapat butonu — sağ üst -->
+    <button onclick="document.getElementById('camp-popup').classList.remove('open')"
+      style="position:absolute;top:14px;right:14px;z-index:10;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.45);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)">✕</button>
+    <!-- Görsel alanı — tüm alanı kaplar -->
     <div class="camp-img" id="camp-emoji-display" style="background:linear-gradient(135deg,#fde68a,#f59e0b)">
       <span class="camp-img-emoji" id="camp-popup-emoji">🎉</span>
     </div>
-    <div class="camp-body">
-      <div class="camp-title" id="camp-popup-title"></div>
-      <div class="camp-sub" id="camp-popup-desc"></div>
-      <button class="camp-close-btn" onclick="document.getElementById('camp-popup').classList.remove('open')">Hemen İncele →</button>
+    <!-- Alt bilgi şeridi -->
+    <div class="camp-body" id="camp-popup-body" style="padding:20px 20px 28px;background:#111;flex-shrink:0">
+      <div class="camp-title" id="camp-popup-title" style="color:#fff;font-size:1.1rem;font-weight:700;margin-bottom:6px"></div>
+      <div class="camp-sub" id="camp-popup-desc" style="color:rgba(255,255,255,.65);font-size:13px;margin-bottom:16px"></div>
+      <button id="camp-action-btn" onclick="handleCampAction()"
+        style="width:100%;padding:13px;border-radius:12px;border:none;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans);background:#e8c547;color:#111">
+        Hemen İncele →
+      </button>
     </div>
   </div>
 </div>
@@ -1020,6 +1029,31 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
     <div class="form-group"><label class="form-label">BAŞLIK</label><input class="form-input" id="camp-title" placeholder="Hafta sonu %20 indirim!"></div>
     <div class="form-group"><label class="form-label">AÇIKLAMA</label><input class="form-input" id="camp-desc-input" placeholder="Kısa açıklama"></div>
     <div class="form-group"><label class="form-label">EMOJİ</label><input class="form-input" id="camp-emoji-input" placeholder="🎉" maxlength="4"></div>
+    <div class="form-group">
+      <label class="form-label">TIKLANINCA NE OLSUN?</label>
+      <select class="form-input" id="camp-link-type" onchange="updateCampLinkFields()">
+        <option value="none">Sadece kapat</option>
+        <option value="product">Ürüne git</option>
+        <option value="category">Kategoriye git</option>
+        <option value="url">Dış link aç</option>
+      </select>
+    </div>
+    <div id="camp-link-product-wrap" class="form-group" style="display:none">
+      <label class="form-label">ÜRÜN SEÇ</label>
+      <select class="form-input" id="camp-link-product">
+        <option value="">Ürün seçin...</option>
+      </select>
+    </div>
+    <div id="camp-link-category-wrap" class="form-group" style="display:none">
+      <label class="form-label">KATEGORİ SEÇ</label>
+      <select class="form-input" id="camp-link-category">
+        <option value="">Kategori seçin...</option>
+      </select>
+    </div>
+    <div id="camp-link-url-wrap" class="form-group" style="display:none">
+      <label class="form-label">LINK</label>
+      <input class="form-input" id="camp-link-url" placeholder="https://...">
+    </div>
     <div class="form-group">
   <label class="form-label">KAMPANYA GÖRSELİ (opsiyonel)</label>
   <div class="img-upload-area">
@@ -1807,7 +1841,20 @@ function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){
   document.getElementById(id).classList.remove('open');
   if(id==='prod-modal'){editingProductId=null;document.getElementById('prod-modal-title').textContent='Ürün Ekle';document.getElementById('prod-name').value='';document.getElementById('prod-desc').value='';document.getElementById('prod-price').value='';document.getElementById('prod-emoji').value='';document.getElementById('prod-image').value='';document.getElementById('img-preview').innerHTML='📷';document.getElementById('img-status').textContent='';}
-  if(id==='camp-modal'){editingCampaignId=null;document.getElementById('camp-modal-title').textContent='Kampanya Ekle';document.getElementById('camp-save-btn').textContent='Yayınla';document.getElementById('camp-title').value='';document.getElementById('camp-desc-input').value='';document.getElementById('camp-emoji-input').value='';document.getElementById('camp-image').value='';document.getElementById('camp-img-preview').innerHTML='🎉';document.getElementById('camp-img-status').textContent='';}
+  if(id==='camp-modal'){
+    editingCampaignId=null;
+    document.getElementById('camp-modal-title').textContent='Kampanya Ekle';
+    document.getElementById('camp-save-btn').textContent='Yayınla';
+    document.getElementById('camp-title').value='';
+    document.getElementById('camp-desc-input').value='';
+    document.getElementById('camp-emoji-input').value='';
+    document.getElementById('camp-image').value='';
+    document.getElementById('camp-img-preview').innerHTML='🎉';
+    document.getElementById('camp-img-status').textContent='';
+    const lt = document.getElementById('camp-link-type');
+    if (lt) { lt.value = 'none'; updateCampLinkFields(); }
+    const lu = document.getElementById('camp-link-url'); if (lu) lu.value='';
+  }
 }
 
 function previewCampImage(input){
@@ -2089,7 +2136,40 @@ function editCampaign(id){
     preview.innerHTML = c.emoji || '🎉';
   }
   document.getElementById('camp-save-btn').textContent = 'Güncelle';
+  // Link alanlarını doldur
+  const lt = document.getElementById('camp-link-type');
+  if (lt) {
+    lt.value = c.link_type || 'none';
+    updateCampLinkFields();
+    if (c.link_type === 'product' && c.link_product_id) {
+      document.getElementById('camp-link-product').value = c.link_product_id;
+    }
+    if (c.link_type === 'category' && c.link_category_id) {
+      document.getElementById('camp-link-category').value = c.link_category_id;
+    }
+    if (c.link_type === 'url' && c.link_url) {
+      document.getElementById('camp-link-url').value = c.link_url;
+    }
+  }
   openModal('camp-modal');
+}
+
+function updateCampLinkFields() {
+  const type = document.getElementById('camp-link-type')?.value || 'none';
+  document.getElementById('camp-link-product-wrap').style.display = type === 'product' ? '' : 'none';
+  document.getElementById('camp-link-category-wrap').style.display = type === 'category' ? '' : 'none';
+  document.getElementById('camp-link-url-wrap').style.display = type === 'url' ? '' : 'none';
+  // Ürün ve kategori select'lerini doldur
+  if (type === 'product') {
+    const sel = document.getElementById('camp-link-product');
+    sel.innerHTML = '<option value="">Ürün seçin...</option>' +
+      products.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  }
+  if (type === 'category') {
+    const sel = document.getElementById('camp-link-category');
+    sel.innerHTML = '<option value="">Kategori seçin...</option>' +
+      categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  }
 }
 
 async function saveCampaign(){
@@ -2097,6 +2177,10 @@ async function saveCampaign(){
   const description = document.getElementById('camp-desc-input').value.trim();
   const emoji = document.getElementById('camp-emoji-input').value.trim() || '🎉';
   const imageFile = document.getElementById('camp-image').files[0];
+  const link_type = document.getElementById('camp-link-type')?.value || 'none';
+  const link_product_id = document.getElementById('camp-link-product')?.value || null;
+  const link_category_id = document.getElementById('camp-link-category')?.value || null;
+  const link_url = document.getElementById('camp-link-url')?.value.trim() || null;
   if(!title) return toast('Başlık zorunlu', 'error');
   let image_url = null;
   if(imageFile){
@@ -2125,11 +2209,12 @@ async function saveCampaign(){
     }
   }
   try{
+    const linkBody = { link_type, link_product_id, link_category_id, link_url };
     let camp;
     if(editingCampaignId){
       const body = { title, description, emoji };
       if(image_url) body.image_url = image_url;
-      camp = await api('PATCH', '/campaigns/'+editingCampaignId, body);
+      camp = await api('PATCH', '/campaigns/'+editingCampaignId, { ...body, ...linkBody });
       const idx = campaigns.findIndex(x => x.id === editingCampaignId);
       if(idx > -1) campaigns[idx] = camp;
       toast('Kampanya güncellendi ✅', 'success');
@@ -2536,8 +2621,13 @@ async function openMenu(){
   try{const data=await fetch(API+'/menu/'+slug).then(r=>r.json());renderPublicMenu(data);}catch{}
 }
 
+// Aktif kampanya verisini sakla (tıklama yönlendirmesi için)
+window._activeCampaign = null;
+
 function renderCampPopup(campaign) {
   if (!campaign) return;
+  window._activeCampaign = campaign;
+
   const display = document.getElementById('camp-emoji-display');
   const emojiEl = document.getElementById('camp-popup-emoji');
   if (!display) return;
@@ -2550,15 +2640,70 @@ function renderCampPopup(campaign) {
   if (campaign.image_url) {
     const img = document.createElement('img');
     img.alt = campaign.title || '';
-    img.style.cssText = 'width:100%;height:auto;max-height:260px;object-fit:contain;display:block;position:relative';
     img.src = campaign.image_url;
-    // Gradient arka planı kaldır, resim göster
     display.style.background = '#000';
     if (emojiEl) emojiEl.style.display = 'none';
     display.appendChild(img);
   } else {
     display.style.background = 'linear-gradient(135deg,#fde68a,#f59e0b)';
     if (emojiEl) emojiEl.style.display = '';
+  }
+
+  // Aksiyon butonu yazısını ve görünürlüğünü ayarla
+  const btn = document.getElementById('camp-action-btn');
+  const body = document.getElementById('camp-popup-body');
+  const title = document.getElementById('camp-popup-title');
+  const desc = document.getElementById('camp-popup-desc');
+  if (title) title.textContent = campaign.title || '';
+  if (desc) desc.textContent = campaign.description || '';
+
+  if (!campaign.title && !campaign.description && (!campaign.link_type || campaign.link_type === 'none')) {
+    // Sadece görsel — alt şeridi gizle
+    if (body) body.style.display = 'none';
+  } else {
+    if (body) body.style.display = '';
+    if (btn) {
+      if (!campaign.link_type || campaign.link_type === 'none') {
+        btn.textContent = 'Kapat';
+        btn.onclick = () => document.getElementById('camp-popup').classList.remove('open');
+      } else if (campaign.link_type === 'url') {
+        btn.textContent = 'İncele →';
+      } else if (campaign.link_type === 'product') {
+        btn.textContent = 'Ürünü Gör →';
+      } else if (campaign.link_type === 'category') {
+        btn.textContent = 'Kategoriye Git →';
+      }
+    }
+  }
+}
+
+function handleCampAction() {
+  const camp = window._activeCampaign;
+  if (!camp) { document.getElementById('camp-popup').classList.remove('open'); return; }
+
+  if (camp.link_type === 'url' && camp.link_url) {
+    window.open(camp.link_url, '_blank');
+    return;
+  }
+
+  document.getElementById('camp-popup').classList.remove('open');
+
+  if (camp.link_type === 'product' && camp.link_product_id) {
+    // Ürünü bul ve detay modalını aç
+    const data = window._menuData;
+    if (!data) return;
+    for (const cat of data.categories) {
+      const prod = cat.products.find(p => p.id === camp.link_product_id);
+      if (prod) { setTimeout(() => showProdDetail(prod.id, cat.id), 300); return; }
+    }
+  }
+
+  if (camp.link_type === 'category' && camp.link_category_id) {
+    // Kategoriye scroll et
+    setTimeout(() => {
+      const sec = document.getElementById('sec-' + camp.link_category_id);
+      if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
   }
 }
 
@@ -2614,11 +2759,43 @@ function renderPublicMenu(data){
     :`<div class="m-logo-placeholder" style="background:${color};color:#fff">${restaurant.name.charAt(0)}</div>`;
 
   // Sosyal medya ikonları — hero içinde tagline'ın hemen altında
+  // Instagram: gradient arka plan, detaylı resmi ikon
+  const igSvg = `<svg width='22' height='22' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+    <defs>
+      <radialGradient id='ig-rg' cx='30%' cy='107%' r='150%'>
+        <stop offset='0%' stop-color='#fdf497'/>
+        <stop offset='5%' stop-color='#fdf497'/>
+        <stop offset='45%' stop-color='#fd5949'/>
+        <stop offset='60%' stop-color='#d6249f'/>
+        <stop offset='90%' stop-color='#285AEB'/>
+      </radialGradient>
+    </defs>
+    <rect width='24' height='24' rx='5.5' fill='url(#ig-rg)'/>
+    <rect x='6.5' y='6.5' width='11' height='11' rx='3.2' stroke='white' stroke-width='1.5' fill='none'/>
+    <circle cx='12' cy='12' r='3' stroke='white' stroke-width='1.5' fill='none'/>
+    <circle cx='16' cy='8' r='0.9' fill='white'/>
+  </svg>`;
+
+  // Facebook: resmi mavi + beyaz f harfi
+  const fbSvg = `<svg width='22' height='22' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+    <rect width='24' height='24' rx='5.5' fill='#1877F2'/>
+    <path d='M15.5 7H13.5C12.95 7 12.5 7.45 12.5 8V10H15.5L15 13H12.5V20H9.5V13H7.5V10H9.5V8C9.5 5.79 11.29 4 13.5 4H15.5V7Z' fill='white'/>
+  </svg>`;
+
+  // Google Maps: resmi G harfi + pin şekli
+  const mapsSvg = `<svg width='22' height='22' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+    <rect width='24' height='24' rx='5.5' fill='white'/>
+    <path d='M12 2C8.686 2 6 4.686 6 8c0 5.25 6 14 6 14s6-8.75 6-14c0-3.314-2.686-6-6-6z' fill='#EA4335'/>
+    <path d='M12 2C8.686 2 6 4.686 6 8c0 1.2.35 2.32.95 3.27L12 2z' fill='#FBBC04'/>
+    <path d='M6.95 11.27C7.9 12.73 9.35 13.75 11 13.96V2.05C8.73 2.55 7 4.57 6 7c0 .69.1 1.37.28 2.02.18.65.44 1.25.67 1.62l0 .63z' fill='#FBBC04' opacity='0'/>
+    <path d='M12 5.5A2.5 2.5 0 1 0 12 10.5A2.5 2.5 0 0 0 12 5.5Z' fill='white'/>
+  </svg>`;
+
   const socialIconsHtml = (restaurant.instagram_url || restaurant.facebook_url || restaurant.google_maps_url) ? `
     <div style="display:flex;justify-content:center;gap:10px;margin-bottom:16px">
-      ${restaurant.instagram_url ? `<a href="https://instagram.com/${restaurant.instagram_url.replace('@','')}" target="_blank" style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;background:${t.bg2};border:1px solid ${t.border}"><svg width='20' height='20' viewBox='0 0 24 24' fill='none'><defs><linearGradient id='ig-g' x1='0%' y1='100%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:#f09433'/><stop offset='50%' style='stop-color:#dc2743'/><stop offset='100%' style='stop-color:#bc1888'/></linearGradient></defs><rect x='2' y='2' width='20' height='20' rx='5' fill='url(#ig-g)'/><path d='M12 7a5 5 0 1 0 0 10A5 5 0 0 0 12 7zm0 8a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm5.2-8.8a1.2 1.2 0 1 1-2.4 0 1.2 1.2 0 0 1 2.4 0z' fill='white'/></svg></a>` : ''}
-      ${restaurant.facebook_url ? `<a href="https://facebook.com/${restaurant.facebook_url}" target="_blank" style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;background:${t.bg2};border:1px solid ${t.border}"><svg width='20' height='20' viewBox='0 0 24 24'><rect width='24' height='24' rx='5' fill='#1877F2'/><path d='M16 8h-2.5C13 8 13 8.5 13 9v2h3l-.4 3H13v8h-3v-8H8v-3h2V8.5C10 6.5 11.3 5 13.5 5H16v3z' fill='white'/></svg></a>` : ''}
-      ${restaurant.google_maps_url ? `<a href="${restaurant.google_maps_url}" target="_blank" style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;background:${t.bg2};border:1px solid ${t.border}" title="Google Harita"><svg width='20' height='20' viewBox='0 0 24 24'><circle cx='12' cy='12' r='12' fill='#4285F4'/><path d='M17.5 8.5c0 3.5-5.5 9-5.5 9s-5.5-5.5-5.5-9a5.5 5.5 0 0 1 11 0z' fill='white'/><circle cx='12' cy='8.5' r='2' fill='#4285F4'/></svg></a>` : ''}
+      ${restaurant.instagram_url ? `<a href="https://instagram.com/${restaurant.instagram_url.replace('@','')}" target="_blank" style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.15)" title="Instagram">${igSvg}</a>` : ''}
+      ${restaurant.facebook_url ? `<a href="https://facebook.com/${restaurant.facebook_url}" target="_blank" style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.15)" title="Facebook">${fbSvg}</a>` : ''}
+      ${restaurant.google_maps_url ? `<a href="${restaurant.google_maps_url}" target="_blank" style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.15);background:white" title="Google Harita">${mapsSvg}</a>` : ''}
     </div>` : '';
 
   const hero=`<div class="m-hero" style="background:${t.heroBg}">
