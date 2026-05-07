@@ -2884,6 +2884,18 @@ function renderPublicMenu(data){
     </div>`;
   }).join('');
 
+  // WiFi kartı
+  const wifiHtml = restaurant.wifi_name ? `
+    <div style="margin:0 14px 14px;padding:14px;background:${t.wifiBg};border:1px solid ${t.wifiBorder};border-radius:12px;display:flex;gap:12px;align-items:center">
+      <div style="width:36px;height:36px;border-radius:8px;background:${t.bg2};border:1px solid ${t.wifiBorder};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px">📡</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;color:${t.text};margin-bottom:2px">Wi-Fi</div>
+        <div style="font-size:13px;font-weight:700;color:${t.text};margin-bottom:2px">${restaurant.wifi_name}</div>
+        ${restaurant.wifi_password ? `<div style="font-size:12px;color:${t.text2};font-family:monospace">${restaurant.wifi_password}</div>` : `<div style="font-size:11px;color:${t.text2}">Şifresiz</div>`}
+      </div>
+      ${restaurant.wifi_password ? `<button onclick="navigator.clipboard?.writeText('${restaurant.wifi_password}').then(()=>toast('Şifre kopyalandı 📋','success'))" style="flex-shrink:0;padding:6px 10px;border-radius:8px;border:1px solid ${t.wifiBorder};background:${t.bg2};color:${t.text2};font-size:11px;cursor:pointer;font-family:var(--sans)">Kopyala</button>` : ''}
+    </div>` : '';
+
   const footer=`<div class="m-footer" style="background:${t.footerBg};border-color:${t.border}">
     ${restaurant.waiter_enabled !== false ? `<button class="waiter-btn" style="background:${color}" onclick="callWaiter('${restaurant.id}')">🔔 Garson Çağır</button>` : ''}
 `;
@@ -2893,7 +2905,7 @@ function renderPublicMenu(data){
     <div style="font-size:16px;font-weight:600;margin-bottom:6px">Sonuç bulunamadı</div>
     <div style="font-size:13px;opacity:.6">Farklı bir kelime deneyin</div>
   </div>`;
-  el.innerHTML=hero+search+nav+sections+noResult+footer;
+  el.innerHTML=hero+search+nav+sections+noResult+wifiHtml+footer;
   window._menuData=data;
   window._currentRestaurantId=restaurant.id;
   window._currentTheme=t;

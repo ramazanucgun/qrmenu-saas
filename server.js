@@ -1254,11 +1254,11 @@ const hoursResult = await pool.query(
       products: prodResult.rows.filter(p => p.category_id === cat.id)
     }));
 
-    // Bugün açık mı hesapla
-const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+    // Bugün açık mı hesapla — Türkiye saatiyle (UTC+3)
+const nowTR = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Istanbul' }));
+const todayIndex = nowTR.getDay() === 0 ? 6 : nowTR.getDay() - 1;
 const todayHours = hoursResult.rows.find(h => h.day_of_week === todayIndex);
-const now = new Date();
-const currentTime = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+const currentTime = `${String(nowTR.getHours()).padStart(2,'0')}:${String(nowTR.getMinutes()).padStart(2,'0')}`;
 const isOpen = todayHours && !todayHours.is_closed && currentTime >= todayHours.opens_at && currentTime <= todayHours.closes_at;
 
 res.json({
