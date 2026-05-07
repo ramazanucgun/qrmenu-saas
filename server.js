@@ -18,12 +18,15 @@ try { Iyzipay = require('iyzipay'); } catch(e) { console.warn('iyzipay yüklü d
 
 function getIyzipay() {
   if (!Iyzipay) throw new Error('iyzipay paketi yüklü değil');
+  const apiKey    = (process.env.IYZICO_API_KEY    || '').trim();
+  const secretKey = (process.env.IYZICO_SECRET_KEY || '').trim();
+  const isProd    = (process.env.IYZICO_ENV || '').trim().toLowerCase() === 'prod';
+  if (!apiKey || !secretKey) throw new Error('IYZICO_API_KEY veya IYZICO_SECRET_KEY tanımlanmamış');
+  console.log(`💳 iyzipay ortam: ${isProd ? 'PROD (live)' : 'SANDBOX'}, apiKey: ${apiKey.slice(0,8)}...`);
   return new Iyzipay({
-    apiKey: process.env.IYZICO_API_KEY,
-    secretKey: process.env.IYZICO_SECRET_KEY,
-    uri: process.env.IYZICO_ENV === 'prod'
-      ? 'https://api.iyzipay.com'
-      : 'https://sandbox-api.iyzipay.com'
+    apiKey,
+    secretKey,
+    uri: isProd ? 'https://api.iyzipay.com' : 'https://sandbox-api.iyzipay.com'
   });
 }
 let sharp;

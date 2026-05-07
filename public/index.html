@@ -1565,12 +1565,12 @@ async function startPayment(plan) {
         <div class="form-group" style="margin-bottom:0"><label class="form-label">AD <span style="color:var(--red)">*</span></label><input class="form-input" id="pay-name" placeholder="Adınız"></div>
         <div class="form-group" style="margin-bottom:0"><label class="form-label">SOYAD <span style="color:var(--red)">*</span></label><input class="form-input" id="pay-surname" placeholder="Soyadınız"></div>
       </div>
-      <div class="form-group"><label class="form-label">TELEFON <span style="color:var(--red)">*</span></label><input class="form-input" id="pay-gsm" placeholder="05XX XXX XX XX" type="tel"></div>
-      <div class="form-group"><label class="form-label">TC KİMLİK NO <span style="color:var(--text3);font-weight:400">(bireysel)</span></label><input class="form-input" id="pay-tc" placeholder="11 haneli TC kimlik no" maxlength="11"></div>
+      <div class="form-group"><label class="form-label">TELEFON <span style="color:var(--red)">*</span></label><input class="form-input" id="pay-gsm" placeholder="05XX XXX XX XX" type="tel" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9+\s]/g,'')" maxlength="14"></div>
+      <div class="form-group"><label class="form-label">TC KİMLİK NO <span style="color:var(--text3);font-weight:400">(bireysel)</span></label><input class="form-input" id="pay-tc" placeholder="11 haneli TC kimlik no" maxlength="11" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
       <div style="background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:12px">
         <div style="font-size:11px;color:var(--text3);font-weight:600;letter-spacing:.06em;margin-bottom:10px">KURUMSAL FATURA BİLGİLERİ <span style="color:var(--text3);font-weight:400">(opsiyonel)</span></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div class="form-group" style="margin-bottom:0"><label class="form-label">VERGİ NO</label><input class="form-input" id="pay-taxno" placeholder="Vergi numarası" maxlength="11"></div>
+          <div class="form-group" style="margin-bottom:0"><label class="form-label">VERGİ NO</label><input class="form-input" id="pay-taxno" placeholder="Vergi numarası" maxlength="11" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
           <div class="form-group" style="margin-bottom:0"><label class="form-label">VERGİ DAİRESİ</label><input class="form-input" id="pay-taxoffice" placeholder="Vergi dairesi"></div>
         </div>
         <div class="form-group" style="margin-top:10px;margin-bottom:0"><label class="form-label">FATURA ADRESİ</label><input class="form-input" id="pay-address" placeholder="Mahalle, Sokak, No, İlçe"></div>
@@ -1618,8 +1618,35 @@ async function submitPayment(plan) {
   const city         = document.getElementById('pay-city')?.value.trim();
   const errEl = document.getElementById('pay-error');
 
-  if (!name || !surname || !gsm) {
-    errEl.textContent = 'Ad, soyad ve telefon zorunludur';
+  if (!name || !surname) {
+    errEl.textContent = 'Ad ve soyad zorunludur';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!gsm) {
+    errEl.textContent = 'Telefon numarası zorunludur';
+    errEl.style.display = 'block';
+    return;
+  }
+  // Telefon: 05XX ile başlayan 11 rakam
+  const gsmClean = gsm.replace(/[\s+]/g, '');
+  const gsmNorm = gsmClean.startsWith('90') ? '0' + gsmClean.slice(2) : gsmClean;
+  if (!/^05\d{9}$/.test(gsmNorm)) {
+    errEl.textContent = 'Geçerli bir telefon girin (05XX XXX XX XX)';
+    errEl.style.display = 'block';
+    return;
+  }
+  // TC: girilmişse 11 hane olmalı ve ilk rakam 0 olamaz
+  const tcClean = (tc||'').replace(/\s/g,'');
+  if (tcClean && (tcClean.length !== 11 || tcClean[0] === '0' || !/^\d{11}$/.test(tcClean))) {
+    errEl.textContent = 'TC kimlik numarası 11 haneli olmalı ve 0 ile başlamamalıdır';
+    errEl.style.display = 'block';
+    return;
+  }
+  // Vergi no: girilmişse 10 hane olmalı
+  const taxNoClean = (taxNumber||'').replace(/\s/g,'');
+  if (taxNoClean && (taxNoClean.length !== 10 || !/^\d{10}$/.test(taxNoClean))) {
+    errEl.textContent = 'Vergi numarası 10 haneli olmalıdır';
     errEl.style.display = 'block';
     return;
   }
