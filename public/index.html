@@ -1547,7 +1547,7 @@ async function markAllNotifRead() {
   } catch(e) {}
 }
 
-function startPayment(plan) {
+async function startPayment(plan) {
   const planNames = { starter:'Starter — ₺9.360/yıl (KDV dahil)', pro:'Pro — ₺11.995/yıl (KDV dahil)', enterprise:'Enterprise — ₺11.995/yıl (KDV dahil)' };
   // Ödeme formu öncesi bilgi formu
   const overlay = document.createElement('div');
@@ -1584,6 +1584,26 @@ function startPayment(plan) {
     </div>`;
   overlay.classList.add('open');
   document.body.appendChild(overlay);
+  // DB'den kayıtlı kullanıcı bilgilerini çek ve formu prefill et
+  try {
+    const profile = await api('GET', '/user/profile');
+    if (profile) {
+      const fn = document.getElementById('pay-name');
+      const ln = document.getElementById('pay-surname');
+      const ph = document.getElementById('pay-gsm');
+      const tx = document.getElementById('pay-taxno');
+      const to = document.getElementById('pay-taxoffice');
+      const ad = document.getElementById('pay-address');
+      const ct = document.getElementById('pay-city');
+      if (fn && !fn.value && profile.first_name) fn.value = profile.first_name;
+      if (ln && !ln.value && profile.last_name)  ln.value = profile.last_name;
+      if (ph && !ph.value && profile.phone)       ph.value = profile.phone;
+      if (tx && !tx.value && profile.tax_number)  tx.value = profile.tax_number;
+      if (to && !to.value && profile.tax_office)  to.value = profile.tax_office;
+      if (ad && !ad.value && profile.billing_address) ad.value = profile.billing_address;
+      if (ct && !ct.value && profile.city)        ct.value = profile.city;
+    }
+  } catch(_) {}
   setTimeout(() => document.getElementById('pay-name')?.focus(), 100);
 }
 

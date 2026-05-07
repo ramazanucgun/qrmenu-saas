@@ -1972,25 +1972,39 @@ app.post('/api/payment/init', authMiddleware, async (req, res) => {
   try {
     const iyzipay = getIyzipay();
     const userResult = await pool.query(
-      `SELECT u.email, u.first_name, u.last_name, u.phone, u.tax_number, u.tax_office, u.billing_address, u.city, r.name as restaurant_name FROM users u LEFT JOIN restaurants r ON r.user_id=u.id WHERE u.id=$1`,
+      `SELECT u.email,
+              COALESCE(u.first_name,'') as first_name,
+              COALESCE(u.last_name,'')  as last_name,
+              COALESCE(u.phone,'')      as phone,
+              COALESCE(u.tax_number,'') as tax_number,
+              COALESCE(u.tax_office,'') as tax_office,
+              COALESCE(u.billing_address,'') as billing_address,
+              COALESCE(u.city,'')       as city,
+              r.name as restaurant_name
+       FROM users u
+       LEFT JOIN restaurants r ON r.user_id = u.id
+       WHERE u.id = $1`,
       [req.user.userId]
     );
     const user = userResult.rows[0];
+    if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı, lütfen tekrar giriş yapın' });
+
     const {
       name = '', surname = '', gsm = '',
       tc = '', taxNumber = '', taxOffice = '', billingAddress = '', city = ''
     } = req.body;
 
-    // Önce DB'deki kayıtlı bilgileri kullan, form alanları override edebilir
-    const firstName    = name    || user.first_name  || (user.restaurant_name ? user.restaurant_name.split(' ')[0] : 'Kullanici');
-    const lastName     = surname || user.last_name   || (user.restaurant_name ? user.restaurant_name.split(' ').slice(1).join(' ') || 'CafeMenu' : 'CafeMenu');
-    const gsmRaw       = gsm     || user.phone       || '+905000000000';
+    // Form'dan gelen bilgiler öncelikli, eksikler DB'den tamamlanır
+    const firstName    = (name    || user.first_name  || user.restaurant_name?.split(' ')[0] || 'Musteri').trim();
+    const lastName     = (surname || user.last_name   || user.restaurant_name?.split(' ').slice(1).join(' ') || 'CafeMenu').trim() || 'CafeMenu';
+    const gsmRaw       = (gsm     || user.phone       || '05000000000').replace(/\s/g,'');
     const gsmFormatted = gsmRaw.startsWith('+') ? gsmRaw : '+90' + gsmRaw.replace(/^0/, '');
-    const identityNo   = tc || '11111111111';
-    const buyerCity    = city || user.city || 'Istanbul';
-    const buyerAddress = billingAddress || user.billing_address || 'Türkiye';
-    const buyerTaxNo   = taxNumber || user.tax_number || '';
-    const buyerTaxOff  = taxOffice || user.tax_office || '';
+    // TC: iyzico için 11 hane zorunlu — boşsa dummy kullan (sandbox'ta geçerli)
+    const identityNo   = (tc || '').replace(/\s/g,'').length === 11 ? tc.replace(/\s/g,'') : '11111111111';
+    const buyerCity    = (city || user.city || 'Istanbul').trim() || 'Istanbul';
+    const buyerAddress = (billingAddress || user.billing_address || 'Turkiye').trim() || 'Turkiye';
+
+    console.log('💳 Ödeme başlatılıyor:', { userId: req.user.userId, plan, firstName, lastName, gsm: gsmFormatted, city: buyerCity });
 
     const convId = `sub_${req.user.userId}_${Date.now()}`;
 
@@ -2039,8 +2053,11 @@ app.post('/api/payment/init', authMiddleware, async (req, res) => {
     iyzipay.checkoutFormInitialize.create(request, (err, result) => {
       if (err) return res.status(500).json({ error: err.message || 'İyzico bağlantı hatası' });
       if (result.status !== 'success') {
-        console.error('iyzico hata:', result);
-        return res.status(500).json({ error: result.errorMessage || 'Ödeme başlatılamadı' });
+        console.error('iyzico hata detayı:', JSON.stringify(result, null, 2));
+        const msg = result.errorMessage || result.errorCode
+          ? `${result.errorMessage || 'Ödeme başlatılamadı'} (Kod: ${result.errorCode || '-'})`
+          : 'İyzico ödeme başlatılamadı';
+        return res.status(500).json({ error: msg });
       }
       res.json({ checkoutFormContent: result.checkoutFormContent, token: result.token });
     });
