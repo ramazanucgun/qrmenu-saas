@@ -1079,8 +1079,41 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
 
 <script>
 const API = window.location.origin + '/api';
+// ── İmpersonate: URL'den admin destek token'ı yakala ──
+(function() {
+  const p = new URLSearchParams(location.search);
+  const imp = p.get('_imp');
+  if (imp) {
+    localStorage.setItem('qrmenu_token', imp);
+    localStorage.setItem('qrmenu_imp_name', p.get('_imp_name') || '');
+    localStorage.setItem('qrmenu_is_imp', '1');
+    history.replaceState({}, '', '/');
+  }
+})();
+
 let TOKEN = localStorage.getItem('qrmenu_token');
 let RESTAURANT = JSON.parse(localStorage.getItem('qrmenu_rest') || 'null');
+
+// İmpersonate banner
+if (localStorage.getItem('qrmenu_is_imp') === '1') {
+  const impName = localStorage.getItem('qrmenu_imp_name') || 'Kullanıcı';
+  const banner = document.createElement('div');
+  banner.id = 'imp-banner';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#e8c547;color:#111;padding:9px 16px;display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:600;font-family:sans-serif;box-shadow:0 2px 12px rgba(0,0,0,.2)';
+  banner.innerHTML = '<span>🔐 Destek Modu — <strong>' + impName + '</strong> panelinde görüntülüyorsunuz</span><button onclick="exitImpersonate()" style="background:rgba(0,0,0,.15);border:none;padding:5px 14px;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px;font-family:sans-serif">✕ Admin'e Dön</button>';
+  document.addEventListener('DOMContentLoaded', () => {
+    document.body.prepend(banner);
+    document.body.style.paddingTop = '40px';
+  });
+}
+
+function exitImpersonate() {
+  localStorage.removeItem('qrmenu_token');
+  localStorage.removeItem('qrmenu_rest');
+  localStorage.removeItem('qrmenu_is_imp');
+  localStorage.removeItem('qrmenu_imp_name');
+  window.location.href = '/admin';
+}
 let categories = [], products = [], feedbacks = [], calls = [], campaigns = [];
 let activeCatId = null, fbFilter = 'all', fbType = 'praise', fbRating = 5;
 let editingProductId = null, ws = null;

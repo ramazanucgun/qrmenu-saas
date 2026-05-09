@@ -171,7 +171,9 @@ function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'Token gerekli' });
   try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    req.isImpersonated = !!decoded.impersonatedBy;
     next();
   } catch {
     res.status(401).json({ error: 'Geçersiz token' });
@@ -1825,6 +1827,50 @@ app.get('/api/admin/stats', adminMiddleware, async (req, res) => {
   } catch(err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// Admin → kullanıcı adına geçici token üret (impersonate)
+app.post('/api/admin/impersonate/:userId', adminMiddleware, async (req, res) => {
+  try {
+    const targetUserId = req.params.userId;
+    const userResult = await pool.query(
+      `SELECT u.id, u.email, u.role, r.id as restaurant_id, r.name as restaurant_name, r.slug
+       FROM users u
+       LEFT JOIN restaurants r ON r.user_id = u.id
+       WHERE u.id = $1`,
+      [targetUserId]
+    );
+    const target = userResult.rows[0];
+    if (!target) return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
+    if (target.role === 'admin') return res.status(403).json({ error: 'Admin hesabına impersonate yapılamaz' });
+
+    // Kısa süreli (2 saat) impersonate token — içinde impersonatedBy işareti var
+    const impToken = jwt.sign(
+      {
+        userId: target.id,
+        restaurantId: target.restaurant_id,
+        role: target.role || 'owner',
+        impersonatedBy: req.user.userId,  // hangi admin yaptığını sakla
+        impersonatedAt: new Date().toISOString()
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '2h' }
+    );
+
+    // Audit log
+    console.log(`🔐 IMPERSONATE: Admin ${req.user.userId} → User ${target.id} (${target.email}) at ${new Date().toISOString()}`);
+    await pool.query(
+      `INSERT INTO system_notifications (user_id, title, message) VALUES ($1, $2, $3)`,
+      [target.id,
+       '🔐 Destek Erişimi',
+       `CafeMenu destek ekibi hesabınıza ${new Date().toLocaleString('tr-TR')} tarihinde erişim sağladı.`]
+    ).catch(() => {});
+
+    res.json({
+      token: impToken,
+      user: { id: target.id, email: target.email, restaurant_name: target.restaurant_name, slug: target.slug }
+    });
+  } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
 // Admin oluştur (sadece development ortamında aktif)

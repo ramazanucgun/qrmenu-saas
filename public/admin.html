@@ -321,6 +321,7 @@ function renderUsers() {
       <td style="font-size:12px;color:var(--text3)">${new Date(u.created_at).toLocaleDateString('tr-TR')}</td>
       <td>
         <button class="btn-sm edit-sub-btn" data-id="${u.id}" data-plan="${u.plan||'trial'}" data-status="${u.status||'active'}" data-starts="" data-ends="" data-method="" data-note="" style="margin-right:4px">✏️ Plan</button>
+        <button class="btn-sm imp-btn" data-id="${u.id}" data-email="${u.email}" data-name="${u.restaurant_name||u.email}" style="margin-right:4px;background:rgba(232,197,71,.15);color:#c8a400;border-color:rgba(232,197,71,.3)">🔐 Giriş</button>
         <button class="btn-sm btn-danger del-user-btn" data-id="${u.id}" data-email="${u.email}">🗑 Sil</button>
       </td>
     </tr>
@@ -330,6 +331,9 @@ function renderUsers() {
   });
   tbody.querySelectorAll('.del-user-btn').forEach(btn => {
     btn.addEventListener('click', () => deleteUser(btn.dataset.id, btn.dataset.email));
+  });
+  tbody.querySelectorAll('.imp-btn').forEach(btn => {
+    btn.addEventListener('click', () => impersonateUser(btn.dataset.id, btn.dataset.email, btn.dataset.name));
   });
 }
 
@@ -398,6 +402,28 @@ async function saveSubscription() {
     await loadUsers();
     await loadSubscriptions();
     toast('Abonelik güncellendi ✅', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function impersonateUser(userId, email, name) {
+  if (!confirm(`"${name}" (${email}) adlı kullanıcının paneline giriş yapılacak.
+
+Bu işlem kullanıcıya bildirim gönderecektir.
+Devam etmek istiyor musunuz?`)) return;
+  try {
+    const data = await api('POST', '/admin/impersonate/' + userId);
+    // Token ve admin token'ı sakla
+    const adminToken = localStorage.getItem('adminToken');
+    localStorage.setItem('adminToken', localStorage.getItem('adminToken') || ''); // sakla
+    localStorage.setItem('_impersonateAdminToken', adminToken);
+    localStorage.setItem('_impersonateAdminEmail', localStorage.getItem('adminEmail') || '');
+
+    // Yeni sekmede kullanıcı panelini aç
+    const url = new URL('/', location.origin);
+    url.searchParams.set('_imp', data.token);
+    url.searchParams.set('_imp_name', name);
+    window.open(url.toString(), '_blank');
+    toast(`"${name}" paneli yeni sekmede açıldı 🔐`, 'success');
   } catch(e) { toast(e.message, 'error'); }
 }
 
