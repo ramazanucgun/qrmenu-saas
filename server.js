@@ -259,6 +259,7 @@ async function initDB() {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       restaurant_id UUID REFERENCES restaurants(id) ON DELETE CASCADE,
       table_no VARCHAR(20),
+      note TEXT,
       status VARCHAR(20) DEFAULT 'pending',
       called_at TIMESTAMP DEFAULT NOW()
     );
@@ -355,6 +356,7 @@ CREATE TABLE IF NOT EXISTS password_resets (
   await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS card_style VARCHAR(20) DEFAULT 'list'`).catch(()=>{});
   await pool.query(`ALTER TABLE campaigns ALTER COLUMN image_url TYPE TEXT`).catch(()=>{});
   await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS tagline VARCHAR(255)`).catch(()=>{});
+  await pool.query(`ALTER TABLE waiter_calls ADD COLUMN IF NOT EXISTS note TEXT`).catch(()=>{});
   await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS link_type VARCHAR(20) DEFAULT 'none'`).catch(()=>{}); // none | product | category | url
   await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS link_product_id UUID`).catch(()=>{});
   await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS link_category_id UUID`).catch(()=>{});
@@ -1428,15 +1430,15 @@ app.get('/api/feedback', authMiddleware, async (req, res) => {
 // ═══════════════════════════════
 
 app.post('/api/waiter-call', async (req, res) => {
-  const { restaurant_id, table_no } = req.body;
+  const { restaurant_id, table_no, note } = req.body;
   try {
     const restCheck = await pool.query('SELECT waiter_enabled FROM restaurants WHERE id=$1', [restaurant_id]);
     if (restCheck.rows[0] && restCheck.rows[0].waiter_enabled === false) {
       return res.status(403).json({ error: 'Garson çağrı sistemi şu an aktif değil' });
     }
     const result = await pool.query(
-      'INSERT INTO waiter_calls (restaurant_id, table_no) VALUES ($1,$2) RETURNING *',
-      [restaurant_id, table_no || 'Belirsiz']
+      'INSERT INTO waiter_calls (restaurant_id, table_no, note) VALUES ($1,$2,$3) RETURNING *',
+      [restaurant_id, table_no || 'Belirsiz', note || null]
     );
     notifyRestaurant(restaurant_id, { type: 'waiter_call', data: result.rows[0] });
     res.json(result.rows[0]);

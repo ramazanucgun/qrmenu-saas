@@ -1422,7 +1422,7 @@ function connectWS() {
       if (msg.type === 'waiter_call') {
         calls.unshift(msg.data);
         updateNotifBadge(); updateStats(); renderCalls(); renderHomeCalls();
-        toast(`🔔 ${msg.data.table_no} — Garson çağrısı!`, 'info');
+        toast(`🔔 ${msg.data.table_no}${msg.data.note ? ' — ' + msg.data.note : ''} — Garson çağrısı!`, 'info');
         playWaiterSound(); // async, await yok — kasıtlı
       }
     } catch(e) {}
@@ -2147,10 +2147,13 @@ function renderCalls(){
   if(!calls.length){el.innerHTML='<div class="empty"><div class="empty-icon">🔕</div>Garson çağrısı yok</div>';return;}
   el.innerHTML=calls.map(c=>`
     <div class="notif-card ${c.status==='pending'?'new':''}">
-      <span style="font-size:22px">🔔</span>
-      <div style="flex:1"><div style="font-size:13px;font-weight:600">${c.table_no} — Garson Çağrısı</div>
-      <div style="font-size:11px;color:var(--text3)">${new Date(c.called_at).toLocaleString('tr-TR')}</div></div>
-      ${c.status==='pending'?`<button class="btn-sm" onclick="ackCall('${c.id}')">Kabul Et</button>`:'<span style="color:var(--green)">✅ Kabul edildi</span>'}
+      <span style="font-size:22px">${c.status==='pending'?'🔔':'🔕'}</span>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600">${c.table_no} — Garson Çağrısı</div>
+        ${c.note ? `<div style="font-size:12px;color:var(--accent);background:rgba(232,197,71,.1);border:1px solid rgba(232,197,71,.25);border-radius:6px;padding:3px 8px;margin-top:4px;display:inline-block">💬 ${c.note}</div>` : ''}
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">${new Date(c.called_at).toLocaleString('tr-TR')}</div>
+      </div>
+      ${c.status==='pending'?`<button class="btn-sm" onclick="ackCall('${c.id}')">Kabul Et</button>`:'<span style="color:var(--green);font-size:12px">✅ Kabul edildi</span>'}
     </div>`).join('');
 }
 
@@ -2159,10 +2162,13 @@ function renderHomeCalls(){
   const pending=calls.filter(c=>c.status==='pending').slice(0,5);
   if(!pending.length){el.innerHTML='<div class="empty" style="padding:20px">✅ Bekleyen çağrı yok</div>';return;}
   el.innerHTML=pending.map(c=>`
-    <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border)">
-      <span>🔔</span>
-      <div style="flex:1"><div style="font-size:13px;font-weight:600">${c.table_no}</div>
-      <div style="font-size:11px;color:var(--text3)">${new Date(c.called_at).toLocaleTimeString('tr-TR')}</div></div>
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border)">
+      <span style="font-size:18px">🔔</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700">${c.table_no}</div>
+        ${c.note ? `<div style="font-size:11px;color:var(--accent);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">💬 ${c.note}</div>` : ''}
+        <div style="font-size:11px;color:var(--text3);margin-top:1px">${new Date(c.called_at).toLocaleTimeString('tr-TR')}</div>
+      </div>
       <button class="btn-sm" onclick="ackCall('${c.id}')">Kabul Et</button>
     </div>`).join('');
 }
@@ -3100,57 +3106,137 @@ function showProdDetail(prodId,catId){
   document.getElementById('prod-detail-overlay').classList.add('open');
 }
 
+// Hazır not şablonları
+const WAITER_QUICK_NOTES = [
+  { emoji: '🍞', text: 'Ekmek getirir misiniz?' },
+  { emoji: '💧', text: 'Su alabilir miyim?' },
+  { emoji: '🧾', text: 'Hesap lütfen' },
+  { emoji: '🥄', text: 'Çatal/kaşık getirir misiniz?' },
+  { emoji: '🌶️', text: 'Sos getirir misiniz?' },
+  { emoji: '🗑️', text: 'Masa temizlenebilir mi?' },
+];
+
 function callWaiter(restaurantId){
-  // Masa numarası giriş modalı oluştur
+  const t = window._currentTheme || THEMES.classic;
+  const isDark = document.body.classList.contains('dark') || (t && t.bg && t.bg.includes('0f0f'));
+  const bg = (t && t.bg) || '#fff';
+  const bg2 = (t && t.bg2) || '#f5f5f5';
+  const border = (t && t.border) || '#eee';
+  const textC = (t && t.text) || '#111';
+  const text2C = (t && t.text2) || '#666';
+
   const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding:0 0 20px';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
   overlay.innerHTML = `
-    <div style="background:#fff;border-radius:20px 20px 20px 20px;padding:28px 24px;width:100%;max-width:380px;text-align:center;animation:slideUp .3s ease">
-      <div style="font-size:36px;margin-bottom:12px">🔔</div>
-      <div style="font-size:18px;font-weight:700;color:#111;margin-bottom:6px">Garson Çağır</div>
-      <div style="font-size:13px;color:#888;margin-bottom:20px">Masa numaranızı girin</div>
-      <input id="waiter-table-input" type="number" min="1" placeholder="Örn: 5"
-        style="width:100%;padding:14px;border:2px solid #eee;border-radius:12px;font-size:18px;text-align:center;outline:none;margin-bottom:16px;font-family:inherit"
-        oninput="this.style.borderColor=this.value?'#22c55e':'#eee'">
-      <div id="waiter-table-error" style="color:#ef4444;font-size:12px;margin-bottom:12px;display:none">Lütfen masa numarasını girin</div>
-      <button onclick="submitWaiterCall('${restaurantId}')" 
-        style="width:100%;background:#e8c547;color:#111;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:10px">
-        ✅ Garson Çağır
+    <div style="background:${bg};border-radius:24px 24px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;animation:slideUp .3s ease">
+      <div style="width:36px;height:4px;background:${border};border-radius:2px;margin:0 auto 20px"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+        <div style="width:44px;height:44px;border-radius:12px;background:#e8c54722;display:flex;align-items:center;justify-content:center;font-size:22px">🔔</div>
+        <div>
+          <div style="font-size:16px;font-weight:700;color:${textC}">Garson Çağır</div>
+          <div style="font-size:12px;color:${text2C}">Masa numaranızı girin ve isteğinizi seçin</div>
+        </div>
+      </div>
+
+      <input id="waiter-table-input" type="number" min="1" placeholder="Masa numarası (örn: 5)"
+        style="width:100%;padding:13px 14px;border:2px solid ${border};border-radius:12px;font-size:16px;text-align:center;outline:none;margin-bottom:14px;font-family:inherit;background:${bg2};color:${textC};box-sizing:border-box"
+        oninput="this.style.borderColor=this.value?'#22c55e':'${border}'">
+
+      <div style="font-size:11px;font-weight:600;color:${text2C};letter-spacing:.06em;margin-bottom:8px">HIZLI NOT</div>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px">
+        ${WAITER_QUICK_NOTES.map(n => `
+          <button onclick="toggleWaiterNote(this,'${n.text.replace(/'/g,"&#39;")}')"
+            style="padding:7px 12px;border-radius:20px;border:1.5px solid ${border};background:${bg2};color:${text2C};font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;transition:all .15s"
+            data-note="${n.text.replace(/"/g,'&quot;')}">
+            ${n.emoji} ${n.text}
+          </button>`).join('')}
+      </div>
+
+      <div style="font-size:11px;font-weight:600;color:${text2C};letter-spacing:.06em;margin-bottom:6px">ÖZEL NOT <span style="font-weight:400;opacity:.6">(isteğe bağlı)</span></div>
+      <textarea id="waiter-note-input" placeholder="Başka bir isteğiniz varsa buraya yazın..."
+        style="width:100%;padding:11px 14px;border:1.5px solid ${border};border-radius:12px;font-size:13px;outline:none;font-family:inherit;background:${bg2};color:${textC};resize:none;height:72px;box-sizing:border-box;margin-bottom:14px"
+        oninput="syncWaiterNote(this.value)"></textarea>
+
+      <div id="waiter-table-error" style="color:#ef4444;font-size:12px;margin-bottom:10px;display:none">Lütfen masa numarasını girin</div>
+
+      <button onclick="submitWaiterCall('${restaurantId}')"
+        style="width:100%;background:#e8c547;color:#111;border:none;border-radius:14px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:10px;font-family:inherit">
+        🔔 Garson Çağır
       </button>
       <button onclick="this.closest('[style*=fixed]').remove()"
-        style="width:100%;background:transparent;color:#888;border:none;padding:10px;font-size:14px;cursor:pointer">
+        style="width:100%;background:transparent;color:${text2C};border:none;padding:8px;font-size:14px;cursor:pointer;font-family:inherit">
         İptal
       </button>
     </div>`;
   document.body.appendChild(overlay);
   overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
-  setTimeout(() => document.getElementById('waiter-table-input')?.focus(), 100);
+  setTimeout(() => document.getElementById('waiter-table-input')?.focus(), 150);
+}
+
+// Hazır not butonu tıklama — toggle seçim
+function toggleWaiterNote(btn, noteText) {
+  const textarea = document.getElementById('waiter-note-input');
+  const isSelected = btn.getAttribute('data-selected') === '1';
+  // Tüm butonları sıfırla
+  btn.closest('[style*=flex-wrap]').querySelectorAll('button').forEach(b => {
+    b.setAttribute('data-selected','0');
+    b.style.background = '';
+    b.style.borderColor = '';
+    b.style.color = '';
+    b.style.fontWeight = '';
+  });
+  if (!isSelected) {
+    btn.setAttribute('data-selected','1');
+    btn.style.background = '#e8c54730';
+    btn.style.borderColor = '#e8c547';
+    btn.style.color = '#111';
+    btn.style.fontWeight = '600';
+    if(textarea) textarea.value = noteText;
+  } else {
+    if(textarea) textarea.value = '';
+  }
+}
+
+function syncWaiterNote(val) {
+  // Textarea'ya yazıldığında hazır seçimi temizle
+  const btns = document.querySelector('#waiter-table-input')?.closest('[style*=flex-end]')?.querySelectorAll('[data-note]');
+  if (btns) btns.forEach(b => {
+    if(b.getAttribute('data-selected')==='1' && b.getAttribute('data-note') !== val) {
+      b.setAttribute('data-selected','0');
+      b.style.cssText='';
+    }
+  });
 }
 
 async function submitWaiterCall(restaurantId) {
   const input = document.getElementById('waiter-table-input');
+  const noteInput = document.getElementById('waiter-note-input');
   const errorEl = document.getElementById('waiter-table-error');
   const tableNo = input?.value?.trim();
+  const note = noteInput?.value?.trim() || null;
   if (!tableNo) {
     if(errorEl) { errorEl.style.display='block'; input.style.borderColor='#ef4444'; }
     return;
   }
+  if(errorEl) errorEl.style.display='none';
   const overlay = input?.closest('[style*=fixed]');
+  const btn = overlay?.querySelector('button[onclick*=submitWaiter]');
+  if(btn) { btn.textContent='⏳ Gönderiliyor...'; btn.disabled=true; }
   try {
     await fetch(API+'/waiter-call', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({restaurant_id:restaurantId, table_no:'Masa '+tableNo})
+      body:JSON.stringify({ restaurant_id:restaurantId, table_no:'Masa '+tableNo, note })
     });
     if(overlay) overlay.remove();
-    // Başarı mesajı göster
     const success = document.createElement('div');
-    success.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:14px 28px;border-radius:14px;font-size:15px;font-weight:600;z-index:9999;animation:slideUp .3s ease';
-    success.textContent = '✅ Garson yolda!';
+    success.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:14px 28px;border-radius:14px;font-size:15px;font-weight:600;z-index:9999;animation:slideUp .3s ease;white-space:nowrap';
+    success.textContent = note ? `✅ Garson yolda! (${note})` : '✅ Garson yolda!';
     document.body.appendChild(success);
-    setTimeout(() => success.remove(), 2500);
+    setTimeout(() => success.remove(), 3000);
   } catch {
     toast('Çağrı gönderilemedi','error');
+    if(btn) { btn.textContent='🔔 Garson Çağır'; btn.disabled=false; }
   }
 }
 
