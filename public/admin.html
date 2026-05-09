@@ -137,7 +137,7 @@ function doLogin(){ if(typeof _adminDoLogin==='function') _adminDoLogin(); }
       <div class="topbar"><div class="page-title">Kullanıcı Yönetimi</div><button class="btn-sm" onclick="loadUsers()">🔄 Yenile</button></div>
       <div class="panel">
         <table>
-          <thead><tr><th>KULLANICI</th><th>RESTORAN</th><th>PLAN</th><th>DURUM</th><th>KAYIT TARİHİ</th><th>İŞLEM</th></tr></thead>
+          <thead><tr><th>KULLANICI</th><th>RESTORAN</th><th>PLAN</th><th>DURUM</th><th>BAŞLANGIÇ</th><th>BİTİŞ</th><th>İŞLEM</th></tr></thead>
           <tbody id="users-table"></tbody>
         </table>
       </div>
@@ -318,7 +318,10 @@ function renderUsers() {
       <td>${u.restaurant_name || '—'}<br><span style="font-size:11px;color:var(--text3)">${u.slug ? '/menu/'+u.slug : ''}</span></td>
       <td><span class="badge ${planBadge[u.plan]||'b-blue'}">${(u.plan||'trial').toUpperCase()}</span></td>
       <td><span class="badge ${statusBadge[u.status]||'b-yellow'}">${u.status==='active'?'Aktif':u.status==='cancelled'?'İptal':'Süresi Doldu'}</span></td>
-      <td style="font-size:12px;color:var(--text3)">${new Date(u.created_at).toLocaleDateString('tr-TR')}</td>
+      <td style="font-size:12px;color:var(--text3)">${u.starts_at ? new Date(u.starts_at).toLocaleDateString('tr-TR') : new Date(u.created_at).toLocaleDateString('tr-TR')}</td>
+      <td style="font-size:12px;color:${(u.ends_at||u.trial_ends_at)&&new Date(u.ends_at||u.trial_ends_at)<new Date()?'#e84747':'var(--text3)'}">
+        ${(u.ends_at||u.trial_ends_at) ? (new Date(u.ends_at||u.trial_ends_at)<new Date()?'⚠️ ':'')+new Date(u.ends_at||u.trial_ends_at).toLocaleDateString('tr-TR') : '—'}
+      </td>
       <td>
         <button class="btn-sm edit-sub-btn" data-id="${u.id}" data-plan="${u.plan||'trial'}" data-status="${u.status||'active'}" data-starts="" data-ends="" data-method="" data-note="" style="margin-right:4px">✏️ Plan</button>
         <button class="btn-sm imp-btn" data-id="${u.id}" data-email="${u.email}" data-name="${u.restaurant_name||u.email}" style="margin-right:4px;background:rgba(232,197,71,.15);color:#c8a400;border-color:rgba(232,197,71,.3)">🔐 Giriş</button>

@@ -1217,13 +1217,37 @@ app.get('/api/menu/:slug', async (req, res) => {
                    ELSE logo_url END as logo_url,
               brand_color, font_family, theme, card_style, google_maps_url,
               wifi_name, wifi_password, instagram_url, facebook_url,
-              is_published, waiter_enabled,
+              is_published, waiter_enabled, user_id,
               COALESCE(tagline, '') as tagline, created_at
        FROM restaurants WHERE slug=$1 AND is_published=true`,
       [req.params.slug]
     );
     if (!restResult.rows[0]) return res.status(404).json({ error: 'Menü bulunamadı' });
     const restaurant = restResult.rows[0];
+
+    // Abonelik kontrolü — süresi dolmuşsa menüyü dondur (panele giriş açık kalır)
+    const subCheck = await pool.query(
+      `SELECT plan, status, trial_ends_at, ends_at FROM subscriptions WHERE user_id=$1`,
+      [restaurant.user_id]
+    ).catch(() => ({ rows: [] }));
+    const sub = subCheck.rows[0];
+    if (sub) {
+      const expiry = sub.ends_at || sub.trial_ends_at;
+      const isExpired = expiry && new Date(expiry) < new Date();
+      const isCancelled = sub.status === 'cancelled';
+      if (isExpired || isCancelled) {
+        return res.json({
+          restaurant: { ...restaurant, is_published: false },
+          subscription_expired: true,
+          subscription_plan: sub.plan,
+          subscription_expiry: expiry,
+          categories: [],
+          products: [],
+          hours: [],
+          campaign: null
+        });
+      }
+    }
 
     const catResult = await pool.query(
       'SELECT * FROM categories WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order',
@@ -1731,7 +1755,7 @@ app.get('/api/admin/users', adminMiddleware, async (req, res) => {
     const result = await pool.query(`
       SELECT u.id, u.email, u.role, u.created_at,
              r.name as restaurant_name, r.slug,
-             s.plan, s.status, s.trial_ends_at
+             s.plan, s.status, s.trial_ends_at, s.starts_at, s.ends_at
       FROM users u
       LEFT JOIN restaurants r ON r.user_id = u.id
       LEFT JOIN subscriptions s ON s.user_id = u.id

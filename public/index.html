@@ -2826,6 +2826,30 @@ async function loadMenuImages(slug) {
 
 function renderPublicMenu(data){
   const{restaurant,categories:cats,campaign,today_hours,is_open}=data;
+
+  // Abonelik süresi dolmuş — nazik uyarı sayfası göster
+  if (data.subscription_expired) {
+    const r = restaurant;
+    const t2 = THEMES[r.theme||'classic']||THEMES.classic;
+    const font2 = r.font_family||'DM Serif Display';
+    const expDate = data.subscription_expiry ? new Date(data.subscription_expiry).toLocaleDateString('tr-TR') : '';
+    const el2 = document.getElementById('menu-public');
+    el2.style.background = t2.bg;
+    el2.innerHTML = `<div style="min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;background:${t2.heroBg}">
+      ${r.logo_url?`<img src="${r.logo_url}" alt="${r.name}" style="height:72px;object-fit:contain;margin-bottom:20px;border-radius:12px">`:`<div style="font-size:56px;margin-bottom:20px">🍽️</div>`}
+      <div style="font-size:1.5rem;font-weight:700;color:${t2.text};font-family:'${font2}',serif;margin-bottom:8px">${r.name}</div>
+      ${r.tagline?`<div style="font-size:13px;color:${t2.text2};margin-bottom:28px">${r.tagline}</div>`:''}
+      <div style="background:${t2.bg};border:1px solid ${t2.border};border-radius:16px;padding:28px 24px;max-width:340px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.06)">
+        <div style="font-size:36px;margin-bottom:12px">🔒</div>
+        <div style="font-size:15px;font-weight:700;color:${t2.text};margin-bottom:10px">Menü Geçici Olarak Devre Dışı</div>
+        <div style="font-size:13px;color:${t2.text2};line-height:1.65;margin-bottom:${expDate?'14px':'0'}">Bu restoranın dijital menüsü şu an görüntülenemiyor. Kısa süre içinde tekrar ziyaret edebilirsiniz.</div>
+        ${expDate?`<div style="font-size:11px;color:${t2.text2};opacity:.45;margin-top:4px">${expDate} tarihinden itibaren</div>`:''}
+      </div>
+      <div style="margin-top:28px;font-size:11px;color:${t2.text2};opacity:.35">cafemenu.com.tr</div>
+    </div>`;
+    return;
+  }
+
   // DB'den gelen tema kullan, yoksa currentTheme, yoksa classic
   const t=THEMES[restaurant.theme]||THEMES[currentTheme]||THEMES.classic;
   const color=restaurant.brand_color||t.accent;
