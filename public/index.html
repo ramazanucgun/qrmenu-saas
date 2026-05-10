@@ -1204,7 +1204,7 @@ const MENU_STRINGS = {
 };
 
 let _menuLang = localStorage.getItem('menu_lang') || 'tr';
-function t(key) { return (MENU_STRINGS[_menuLang] || MENU_STRINGS.tr)[key] || MENU_STRINGS.tr[key] || key; }
+function mt(key) { return (MENU_STRINGS[_menuLang] || MENU_STRINGS.tr)[key] || MENU_STRINGS.tr[key] || key; }
 function tr(obj, lang) {
   // Obje {tr,en,ru,ar} veya string döndür
   if (!obj || typeof obj === 'string') return obj || '';
@@ -3122,15 +3122,15 @@ function renderPublicMenu(data){
     <div class="m-tag" style="color:${t.text2}">${restaurant.tagline||'Dijital Menü'}</div>
     ${langSwitcherHtml}
     ${socialIconsHtml}
-    ${today_hours&&!today_hours.is_closed?`<div style="display:inline-flex;align-items:center;gap:6px;background:${is_open?'rgba(71,201,126,.1)':'rgba(232,71,71,.1)'};border:1px solid ${is_open?'rgba(71,201,126,.3)':'rgba(232,71,71,.3)'};border-radius:20px;padding:5px 14px;font-size:12px;font-weight:500;color:${is_open?'#47c97e':'#e84747'};margin-bottom:10px">${is_open?t('open'):t('closed')} · ${today_hours.opens_at} - ${today_hours.closes_at}</div>`:''}
+    ${today_hours&&!today_hours.is_closed?`<div style="display:inline-flex;align-items:center;gap:6px;background:${is_open?'rgba(71,201,126,.1)':'rgba(232,71,71,.1)'};border:1px solid ${is_open?'rgba(71,201,126,.3)':'rgba(232,71,71,.3)'};border-radius:20px;padding:5px 14px;font-size:12px;font-weight:500;color:${is_open?'#47c97e':'#e84747'};margin-bottom:10px">${is_open?mt('open'):mt('closed')} · ${today_hours.opens_at} - ${today_hours.closes_at}</div>`:''}
     <div class="m-pills">
-      <button class="m-pill" style="background:${t.pillBg};color:${t.pillColor};border-color:${t.pillBorder}" onclick="document.getElementById('fb-modal').classList.add('open')">${t('feedback')}</button>
-      ${restaurant.waiter_enabled !== false ? `<button class="m-pill" style="background:${t.pillBg};color:${t.pillColor};border-color:${t.pillBorder}" onclick="callWaiter('${restaurant.id}')">${t('waiter')}</button>` : ''}
+      <button class="m-pill" style="background:${t.pillBg};color:${t.pillColor};border-color:${t.pillBorder}" onclick="document.getElementById('fb-modal').classList.add('open')">${mt('feedback')}</button>
+      ${restaurant.waiter_enabled !== false ? `<button class="m-pill" style="background:${t.pillBg};color:${t.pillColor};border-color:${t.pillBorder}" onclick="callWaiter('${restaurant.id}')">${mt('waiter')}</button>` : ''}
     </div>
   </div>`;
 
   const search=`<div class="m-search-wrap" style="background:${t.bg}">
-    <input class="m-search" id="menu-search-input" placeholder="${t('search')}" style="background:${t.searchBg};border:1px solid ${t.searchBorder};color:${t.searchColor};border-radius:10px" oninput="searchMenu(this.value)" autocomplete="off" autocorrect="off" spellcheck="false">
+    <input class="m-search" id="menu-search-input" placeholder="${mt('search')}" style="background:${t.searchBg};border:1px solid ${t.searchBorder};color:${t.searchColor};border-radius:10px" oninput="searchMenu(this.value)" autocomplete="off" autocorrect="off" spellcheck="false">
   </div>`;
 
   const nav=`<div class="sticky-nav" style="background:${t.navBg};border-color:${t.border}">
@@ -3192,7 +3192,7 @@ function renderPublicMenu(data){
         <div style="font-size:13px;font-weight:700;color:${t.text};margin-bottom:2px">${restaurant.wifi_name}</div>
         ${restaurant.wifi_password ? `<div style="font-size:12px;color:${t.text2};font-family:monospace">${restaurant.wifi_password}</div>` : `<div style="font-size:11px;color:${t.text2}">Şifresiz</div>`}
       </div>
-      ${restaurant.wifi_password ? `<button onclick="navigator.clipboard?.writeText('${restaurant.wifi_password}').then(()=>toast(t('wifiCopied'),'success'))" style="flex-shrink:0;padding:6px 10px;border-radius:8px;border:1px solid ${t.wifiBorder};background:${t.bg2};color:${t.text2};font-size:11px;cursor:pointer;font-family:var(--sans)">${t('wifiCopy')}</button>` : ''}
+      ${restaurant.wifi_password ? `<button onclick="navigator.clipboard?.writeText('${restaurant.wifi_password}').then(()=>toast(mt('wifiCopied'),'success'))" style="flex-shrink:0;padding:6px 10px;border-radius:8px;border:1px solid ${t.wifiBorder};background:${t.bg2};color:${t.text2};font-size:11px;cursor:pointer;font-family:var(--sans)">${mt('wifiCopy')}</button>` : ''}
     </div>` : '';
 
   const footer=`<div class="m-footer" style="background:${t.footerBg};border-color:${t.border}">
@@ -3316,6 +3316,7 @@ function showProdDetail(prodId,catId){
 }
 
 // Hazır not şablonları
+// WAITER_QUICK_NOTES — mt() ile dinamik, dil değişince güncellenir
 const WAITER_QUICK_NOTES = [
   { emoji: '🍞', text: 'Ekmek getirir misiniz?' },
   { emoji: '💧', text: 'Su alabilir miyim?' },
@@ -3353,7 +3354,7 @@ function callWaiter(restaurantId){
 
       <div style="font-size:11px;font-weight:600;color:${text2C};letter-spacing:.06em;margin-bottom:8px">HIZLI NOT</div>
       <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px">
-        ${WAITER_QUICK_NOTES.map(n => `
+        ${(mt('quickNotes')||[]).map((note,i) => { const n={emoji:note.split(' ')[0], text:note.split(' ').slice(1).join(' ')}; return `
           <button onclick="toggleWaiterNote(this,'${n.text.replace(/'/g,"&#39;")}')"
             style="padding:7px 12px;border-radius:20px;border:1.5px solid ${border};background:${bg2};color:${text2C};font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;transition:all .15s"
             data-note="${n.text.replace(/"/g,'&quot;')}">
