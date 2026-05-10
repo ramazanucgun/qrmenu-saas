@@ -1492,31 +1492,19 @@ async function loadApp() {
 }
 
 let _wsReconnectTimer = null;
-let _wsReconnectDelay = 2000;
-let _wsConnected = false;
+let _wsReconnectDelay = 3000;
 
 function connectWS() {
-  if (!RESTAURANT) return;
-  if (_wsReconnectTimer) { clearTimeout(_wsReconnectTimer); _wsReconnectTimer = null; }
-
-  // Mevcut bağlantı açıksa kapatma, bekleme
-  if (ws && ws.readyState === WebSocket.OPEN) return;
+  if(!RESTAURANT) return;
+  if(_wsReconnectTimer) { clearTimeout(_wsReconnectTimer); _wsReconnectTimer = null; }
 
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  try {
-    ws = new WebSocket(`${proto}://${location.host}/?restaurantId=${RESTAURANT.id}`);
-  } catch(e) {
-    _wsReconnectTimer = setTimeout(connectWS, 5000);
-    return;
-  }
+  ws = new WebSocket(`${proto}://${location.host}/?restaurantId=${RESTAURANT.id}`);
 
   ws.onopen = () => {
-    _wsConnected = true;
-    _wsReconnectDelay = 2000; // başarılı bağlantıda delay sıfırla
-    console.log('✅ WebSocket bağlandı');
-    // Ses buffer'ını hazırla (henüz yüklenmemişse)
-    if (!_rawArrayBuffer) preloadWaiterSound();
-    else if (!_audioBuffer && _rawArrayBuffer) preloadWaiterSound();
+    _wsReconnectDelay = 3000; // başarılı bağlantıda delay'i sıfırla
+    // Reconnect sonrası audio buffer geçerliliğini kontrol et
+    if (!_audioBuffer && _rawArrayBuffer) preloadWaiterSound();
   };
 
   ws.onmessage = e => {
@@ -1525,66 +1513,24 @@ function connectWS() {
       if (msg.type === 'waiter_call') {
         calls.unshift(msg.data);
         updateNotifBadge(); updateStats(); renderCalls(); renderHomeCalls();
-        toast(`🔔 ${msg.data.table_no}${msg.data.note ? ' · ' + msg.data.note : ''} — Garson çağrısı!`, 'info');
-        // Ses çal — AudioContext suspend durumunu handle et
-        playWaiterSoundSafe();
+        toast(`🔔 ${msg.data.table_no}${msg.data.note ? ' — ' + msg.data.note : ''} — Garson çağrısı!`, 'info');
+        playWaiterSound(); // async, await yok — kasıtlı
       }
-    } catch(_) {}
+    } catch(e) {}
   };
 
   ws.onerror = () => {}; // onclose zaten tetiklenecek
 
   ws.onclose = () => {
-    _wsConnected = false;
-    // Sabit 3sn bekle — exponential backoff panelde çok uzun beklemeye neden oluyordu
-    _wsReconnectDelay = 3000;
+    // Exponential backoff — max 30sn
+    _wsReconnectDelay = Math.min(_wsReconnectDelay * 1.5, 30000);
     _wsReconnectTimer = setTimeout(connectWS, _wsReconnectDelay);
   };
-}
-
-// Ses çalma — suspend/closed durumunu güvenli handle eder
-async function playWaiterSoundSafe() {
-  try {
-    // AudioContext suspended ise resume et
-    if (_audioCtx && _audioCtx.state === 'suspended') {
-      await _audioCtx.resume();
-    }
-    // Context kapalıysa sıfırla
-    if (_audioCtx && _audioCtx.state === 'closed') {
-      _audioCtx = null;
-      _audioBuffer = null;
-    }
-    // Context yoksa oluştur
-    if (!_audioCtx) {
-      _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    // Buffer yoksa yeniden yükle ve çal
-    if (!_audioBuffer && _rawArrayBuffer) {
-      _audioBuffer = await _audioCtx.decodeAudioData(_rawArrayBuffer.slice(0));
-    }
-    await playWaiterSound();
-  } catch(err) {
-    // Son çare: system notification ile sesli uyarı
-    console.warn('Ses çalınamadı:', err.message);
-    try {
-      // Tarayıcı bildirim izni varsa titreşim+ses için bildirim gönder
-      if (Notification.permission === 'granted') {
-        new Notification('🔔 Garson Çağrısı!', { body: 'Yeni bir garson çağrısı var', silent: false });
-      }
-    } catch(_) {}
-  }
 }
 
 async function loadCategories(){ try{categories=await api('GET','/categories');}catch{categories=[];} renderCatList(); populateCatSelects(); }
 async function loadProducts(){ try{products=await api('GET','/products');}catch{products=[];} if(activeCatId) renderProductList(); updatePreview(); }
 async function loadCalls(){ try{calls=await api('GET','/waiter-calls');}catch{calls=[];} updateNotifBadge(); renderCalls(); renderHomeCalls(); }
-
-// Tarayıcı bildirim izni iste — ses çalınamazsa fallback için
-function requestNotifPermission() {
-  if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission();
-  }
-}
 async function loadFeedback(){ try{feedbacks=await api('GET','/feedback');}catch{feedbacks=[];} renderFeedback(); }
 function updateSupportedLangs() { /* saveDesign çağrısında otomatik alınır */ }
 async function loadCampaigns(){ try{campaigns=await api('GET','/campaigns');}catch{campaigns=[];} renderCampaigns(); }
