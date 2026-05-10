@@ -647,16 +647,6 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
               </div>
               <div><div class="form-label" style="margin-bottom:6px">RESTORAN ADI</div><input class="form-input" id="d-rest-name" placeholder="Cafe Riviera" oninput="updatePreview()"></div>
               <div><div class="form-label" style="margin-bottom:6px">KISA AÇIKLAMA</div><input class="form-input" id="d-tagline" placeholder="Geleneksel lezzetler · İstanbul" oninput="updatePreview()"></div>
-              <div>
-                <div class="form-label" style="margin-bottom:8px">MENÜ DİLLERİ</div>
-                <div style="display:flex;flex-wrap:wrap;gap:8px">
-                  <label style="display:flex;align-items:center;gap:6px;padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;opacity:.5"><input type="checkbox" checked disabled> 🇹🇷 Türkçe</label>
-                  <label style="display:flex;align-items:center;gap:6px;padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px"><input type="checkbox" id="lang-cb-en" value="en" style="accent-color:var(--accent)" onchange="updateSupportedLangs()"> 🇬🇧 English</label>
-                  <label style="display:flex;align-items:center;gap:6px;padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px"><input type="checkbox" id="lang-cb-ru" value="ru" style="accent-color:var(--accent)" onchange="updateSupportedLangs()"> 🇷🇺 Русский</label>
-                  <label style="display:flex;align-items:center;gap:6px;padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px"><input type="checkbox" id="lang-cb-ar" value="ar" style="accent-color:var(--accent)" onchange="updateSupportedLangs()"> 🇸🇦 العربية</label>
-                </div>
-                <div style="font-size:11px;color:var(--text3);margin-top:6px">Seçilen diller müşteri menüsünde dil seçici olarak gösterilir.</div>
-              </div>
               <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:2px">
                 <div class="form-label" style="margin-bottom:10px">📱 SOSYAL MEDYA</div>
                 <div style="display:flex;flex-direction:column;gap:10px">
@@ -949,16 +939,8 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
   <div class="modal">
     <div class="modal-head"><span class="modal-title" id="prod-modal-title">Ürün Ekle</span><button class="modal-close" onclick="closeModal('prod-modal')">✕</button></div>
     <div class="form-group"><label class="form-label">KATEGORİ</label><select class="form-input" id="prod-cat-select"></select></div>
-    <div class="form-group"><label class="form-label">ÜRÜN ADI <span style="color:var(--text3);font-weight:400">(Türkçe)</span></label><input class="form-input" id="prod-name" placeholder="örn. Mercimek Çorbası"></div>
-    <div class="form-group"><label class="form-label">AÇIKLAMA <span style="color:var(--text3);font-weight:400">(Türkçe)</span></label><textarea class="form-input" id="prod-desc" placeholder="Kısa açıklama..."></textarea></div>
-    <details id="prod-trans-details" style="margin-bottom:12px">
-      <summary style="cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.06em;padding:8px 0;user-select:none">🌐 ÇEVİRİLER <span id="prod-trans-badge" style="font-size:10px;color:var(--accent)"></span></summary>
-      <div style="margin-top:8px;padding:12px;background:var(--bg3);border-radius:10px;display:flex;flex-direction:column;gap:10px">
-        <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇬🇧 İngilizce</div><input class="form-input" id="prod-name-en" placeholder="English name" style="margin-bottom:6px"><textarea class="form-input" id="prod-desc-en" placeholder="English description" style="height:56px"></textarea></div>
-        <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇷🇺 Rusça</div><input class="form-input" id="prod-name-ru" placeholder="Название на русском" style="margin-bottom:6px"><textarea class="form-input" id="prod-desc-ru" placeholder="Описание на русском" style="height:56px"></textarea></div>
-        <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇸🇦 Arapça</div><input class="form-input" id="prod-name-ar" placeholder="الاسم بالعربية" dir="rtl" style="margin-bottom:6px;text-align:right"><textarea class="form-input" id="prod-desc-ar" placeholder="الوصف بالعربية" dir="rtl" style="height:56px;text-align:right"></textarea></div>
-      </div>
-    </details>
+    <div class="form-group"><label class="form-label">ÜRÜN ADI</label><input class="form-input" id="prod-name" placeholder="örn. Mercimek Çorbası"></div>
+    <div class="form-group"><label class="form-label">AÇIKLAMA</label><textarea class="form-input" id="prod-desc" placeholder="Kısa açıklama..."></textarea></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-group"><label class="form-label">FİYAT (₺)</label><input class="form-input" id="prod-price" type="number" min="0" step="0.01" placeholder="0.00"></div>
       <div class="form-group"><label class="form-label">EMOJİ</label><input class="form-input" id="prod-emoji" placeholder="🍽️" maxlength="4"></div>
@@ -987,15 +969,7 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
 <div class="modal-overlay" id="cat-modal">
   <div class="modal" style="width:340px">
     <div class="modal-head"><span class="modal-title">Kategori Ekle</span><button class="modal-close" onclick="closeModal('cat-modal')">✕</button></div>
-    <div class="form-group"><label class="form-label">KATEGORİ ADI <span style="color:var(--text3);font-weight:400">(Türkçe)</span></label><input class="form-input" id="cat-name" placeholder="örn. Tatlılar"></div>
-    <details style="margin-bottom:12px">
-      <summary style="cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.06em;padding:8px 0;user-select:none">🌐 ÇEVİRİLER</summary>
-      <div style="margin-top:8px;padding:12px;background:var(--bg3);border-radius:10px;display:flex;flex-direction:column;gap:8px">
-        <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇬🇧 İngilizce</div><input class="form-input" id="cat-name-en" placeholder="English name"></div>
-        <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇷🇺 Rusça</div><input class="form-input" id="cat-name-ru" placeholder="Название на русском"></div>
-        <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇸🇦 Arapça</div><input class="form-input" id="cat-name-ar" placeholder="الاسم بالعربية" dir="rtl" style="text-align:right"></div>
-      </div>
-    </details>
+    <div class="form-group"><label class="form-label">KATEGORİ ADI</label><input class="form-input" id="cat-name" placeholder="örn. Tatlılar"></div>
     <div class="modal-footer">
       <button class="btn-sm" onclick="closeModal('cat-modal')">İptal</button>
       <button class="btn-sm btn-accent" onclick="saveCategory()">Ekle</button>
@@ -1145,71 +1119,6 @@ let activeCatId = null, fbFilter = 'all', fbType = 'praise', fbRating = 5;
 let editingProductId = null, ws = null;
 let currentTheme = localStorage.getItem('qrmenu_theme') || 'classic';
 let currentCardStyle = localStorage.getItem('qrmenu_cardstyle') || 'list';
-
-// ═══════════════════════════════
-// ÇOK DİL SİSTEMİ
-// ═══════════════════════════════
-const LANG_META = {
-  tr: { label: 'Türkçe',   flag: '🇹🇷', dir: 'ltr' },
-  en: { label: 'English',  flag: '🇬🇧', dir: 'ltr' },
-  ru: { label: 'Русский',  flag: '🇷🇺', dir: 'ltr' },
-  ar: { label: 'العربية',  flag: '🇸🇦', dir: 'rtl' },
-};
-
-const MENU_STRINGS = {
-  tr: {
-    search: 'Menüde ara...', feedback: '💬 Geri Bildirim', waiter: '🔔 Garson Çağır',
-    open: '🟢 Şu an açık', closed: '🔴 Şu an kapalı', noResult: 'Sonuç bulunamadı',
-    noResultSub: 'Farklı bir kelime deneyin', allDay: 'Tüm gün açık',
-    wifi: 'Wi-Fi', wifiNoPass: 'Şifresiz', wifiCopy: 'Kopyala', wifiCopied: 'Şifre kopyalandı 📋',
-    callWaiter: 'Garson Çağır', tableNo: 'Masa numarası (örn: 5)',
-    quickNote: 'HIZLI NOT', customNote: 'ÖZEL NOT', noteOptional: '(isteğe bağlı)',
-    send: '🔔 Garson Çağır', cancel: 'İptal', waiterOnWay: '✅ Garson yolda!',
-    feedbackTitle: 'Görüşleriniz', feedbackSend: 'Gönder', feedbackThanks: '🙏 Teşekkürler!',
-    quickNotes: ['🍞 Ekmek getirir misiniz?','💧 Su alabilir miyim?','🧾 Hesap lütfen','🥄 Çatal/kaşık getirir misiniz?','🌶️ Sos getirir misiniz?','🗑️ Masa temizlenebilir mi?'],
-  },
-  en: {
-    search: 'Search menu...', feedback: '💬 Feedback', waiter: '🔔 Call Waiter',
-    open: '🟢 Open now', closed: '🔴 Closed now', noResult: 'No results found',
-    noResultSub: 'Try a different keyword', allDay: 'Open all day',
-    wifi: 'Wi-Fi', wifiNoPass: 'No password', wifiCopy: 'Copy', wifiCopied: 'Password copied 📋',
-    callWaiter: 'Call Waiter', tableNo: 'Table number (e.g. 5)',
-    quickNote: 'QUICK NOTE', customNote: 'CUSTOM NOTE', noteOptional: '(optional)',
-    send: '🔔 Call Waiter', cancel: 'Cancel', waiterOnWay: '✅ Waiter is on the way!',
-    feedbackTitle: 'Your Feedback', feedbackSend: 'Send', feedbackThanks: '🙏 Thank you!',
-    quickNotes: ['🍞 Can we get some bread?','💧 Can I get water?','🧾 Check please','🥄 Can we get cutlery?','🌶️ Can we get sauce?','🗑️ Can the table be cleared?'],
-  },
-  ru: {
-    search: 'Поиск по меню...', feedback: '💬 Отзыв', waiter: '🔔 Позвать официанта',
-    open: '🟢 Сейчас открыто', closed: '🔴 Сейчас закрыто', noResult: 'Ничего не найдено',
-    noResultSub: 'Попробуйте другое слово', allDay: 'Открыто весь день',
-    wifi: 'Wi-Fi', wifiNoPass: 'Без пароля', wifiCopy: 'Скопировать', wifiCopied: 'Пароль скопирован 📋',
-    callWaiter: 'Позвать официанта', tableNo: 'Номер стола (напр. 5)',
-    quickNote: 'БЫСТРАЯ ЗАМЕТКА', customNote: 'СВОЯ ЗАМЕТКА', noteOptional: '(необязательно)',
-    send: '🔔 Позвать официанта', cancel: 'Отмена', waiterOnWay: '✅ Официант уже идёт!',
-    feedbackTitle: 'Ваш отзыв', feedbackSend: 'Отправить', feedbackThanks: '🙏 Спасибо!',
-    quickNotes: ['🍞 Принесите хлеб?','💧 Можно воды?','🧾 Счёт пожалуйста','🥄 Принесите приборы?','🌶️ Принесите соус?','🗑️ Уберите стол?'],
-  },
-  ar: {
-    search: 'ابحث في القائمة...', feedback: '💬 رأيك', waiter: '🔔 استدعاء النادل',
-    open: '🟢 مفتوح الآن', closed: '🔴 مغلق الآن', noResult: 'لا توجد نتائج',
-    noResultSub: 'جرّب كلمة مختلفة', allDay: 'مفتوح طوال اليوم',
-    wifi: 'واي فاي', wifiNoPass: 'بدون كلمة مرور', wifiCopy: 'نسخ', wifiCopied: 'تم نسخ كلمة المرور 📋',
-    callWaiter: 'استدعاء النادل', tableNo: 'رقم الطاولة (مثلاً 5)',
-    quickNote: 'ملاحظة سريعة', customNote: 'ملاحظة مخصصة', noteOptional: '(اختياري)',
-    send: '🔔 استدعاء النادل', cancel: 'إلغاء', waiterOnWay: '✅ النادل في الطريق!',
-    feedbackTitle: 'ملاحظاتك', feedbackSend: 'إرسال', feedbackThanks: '🙏 شكراً!',
-    quickNotes: ['🍞 هل يمكن إحضار خبز؟','💧 هل يمكنني الحصول على ماء؟','🧾 الحساب من فضلك','🥄 هل يمكن إحضار أدوات المائدة؟','🌶️ هل يمكن إحضار صلصة؟','🗑️ هل يمكن تنظيف الطاولة؟'],
-  },
-};
-
-let _menuLang = localStorage.getItem('menu_lang') || 'tr';
-function mt(key) { return (MENU_STRINGS[_menuLang] || MENU_STRINGS.tr)[key] || MENU_STRINGS.tr[key] || key; }
-function tr(obj, lang) {
-  // Obje {tr,en,ru,ar} veya string döndür
-  if (!obj || typeof obj === 'string') return obj || '';
-  return obj[lang || _menuLang] || obj['tr'] || Object.values(obj)[0] || '';
-}
 
 const THEMES = {
   classic: { name:'Klasik Açık', accent:'#c0a020', bg:'#fff', bg2:'#f9f9f9', border:'#f0f0f0', text:'#111', text2:'#666', heroBg:'linear-gradient(180deg,#fdf6e3 0%,#fff 70%)', navBg:'#fff', footerBg:'#fafafa', pillBg:'rgba(0,0,0,.05)', pillColor:'#555', pillBorder:'rgba(0,0,0,.1)', searchBg:'#f5f5f5', searchBorder:'#e5e5e5', searchColor:'#111', wifiBg:'#fff', wifiBorder:'#eee', socialBg:'#f5f5f5', socialBorder:'#eee' },
@@ -1492,19 +1401,31 @@ async function loadApp() {
 }
 
 let _wsReconnectTimer = null;
-let _wsReconnectDelay = 3000;
+let _wsReconnectDelay = 2000;
+let _wsConnected = false;
 
 function connectWS() {
-  if(!RESTAURANT) return;
-  if(_wsReconnectTimer) { clearTimeout(_wsReconnectTimer); _wsReconnectTimer = null; }
+  if (!RESTAURANT) return;
+  if (_wsReconnectTimer) { clearTimeout(_wsReconnectTimer); _wsReconnectTimer = null; }
+
+  // Mevcut bağlantı açıksa kapatma, bekleme
+  if (ws && ws.readyState === WebSocket.OPEN) return;
 
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  ws = new WebSocket(`${proto}://${location.host}/?restaurantId=${RESTAURANT.id}`);
+  try {
+    ws = new WebSocket(`${proto}://${location.host}/?restaurantId=${RESTAURANT.id}`);
+  } catch(e) {
+    _wsReconnectTimer = setTimeout(connectWS, 5000);
+    return;
+  }
 
   ws.onopen = () => {
-    _wsReconnectDelay = 3000; // başarılı bağlantıda delay'i sıfırla
-    // Reconnect sonrası audio buffer geçerliliğini kontrol et
-    if (!_audioBuffer && _rawArrayBuffer) preloadWaiterSound();
+    _wsConnected = true;
+    _wsReconnectDelay = 2000; // başarılı bağlantıda delay sıfırla
+    console.log('✅ WebSocket bağlandı');
+    // Ses buffer'ını hazırla (henüz yüklenmemişse)
+    if (!_rawArrayBuffer) preloadWaiterSound();
+    else if (!_audioBuffer && _rawArrayBuffer) preloadWaiterSound();
   };
 
   ws.onmessage = e => {
@@ -1513,26 +1434,67 @@ function connectWS() {
       if (msg.type === 'waiter_call') {
         calls.unshift(msg.data);
         updateNotifBadge(); updateStats(); renderCalls(); renderHomeCalls();
-        toast(`🔔 ${msg.data.table_no}${msg.data.note ? ' — ' + msg.data.note : ''} — Garson çağrısı!`, 'info');
-        playWaiterSound(); // async, await yok — kasıtlı
+        toast(`🔔 ${msg.data.table_no}${msg.data.note ? ' · ' + msg.data.note : ''} — Garson çağrısı!`, 'info');
+        // Ses çal — AudioContext suspend durumunu handle et
+        playWaiterSoundSafe();
       }
-    } catch(e) {}
+    } catch(_) {}
   };
 
   ws.onerror = () => {}; // onclose zaten tetiklenecek
 
   ws.onclose = () => {
-    // Exponential backoff — max 30sn
-    _wsReconnectDelay = Math.min(_wsReconnectDelay * 1.5, 30000);
+    _wsConnected = false;
+    // Sabit 3sn bekle — exponential backoff panelde çok uzun beklemeye neden oluyordu
+    _wsReconnectDelay = 3000;
     _wsReconnectTimer = setTimeout(connectWS, _wsReconnectDelay);
   };
+}
+
+// Ses çalma — suspend/closed durumunu güvenli handle eder
+async function playWaiterSoundSafe() {
+  try {
+    // AudioContext suspended ise resume et
+    if (_audioCtx && _audioCtx.state === 'suspended') {
+      await _audioCtx.resume();
+    }
+    // Context kapalıysa sıfırla
+    if (_audioCtx && _audioCtx.state === 'closed') {
+      _audioCtx = null;
+      _audioBuffer = null;
+    }
+    // Context yoksa oluştur
+    if (!_audioCtx) {
+      _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    // Buffer yoksa yeniden yükle ve çal
+    if (!_audioBuffer && _rawArrayBuffer) {
+      _audioBuffer = await _audioCtx.decodeAudioData(_rawArrayBuffer.slice(0));
+    }
+    await playWaiterSound();
+  } catch(err) {
+    // Son çare: system notification ile sesli uyarı
+    console.warn('Ses çalınamadı:', err.message);
+    try {
+      // Tarayıcı bildirim izni varsa titreşim+ses için bildirim gönder
+      if (Notification.permission === 'granted') {
+        new Notification('🔔 Garson Çağrısı!', { body: 'Yeni bir garson çağrısı var', silent: false });
+      }
+    } catch(_) {}
+  }
 }
 
 async function loadCategories(){ try{categories=await api('GET','/categories');}catch{categories=[];} renderCatList(); populateCatSelects(); }
 async function loadProducts(){ try{products=await api('GET','/products');}catch{products=[];} if(activeCatId) renderProductList(); updatePreview(); }
 async function loadCalls(){ try{calls=await api('GET','/waiter-calls');}catch{calls=[];} updateNotifBadge(); renderCalls(); renderHomeCalls(); }
+
+// Tarayıcı bildirim izni iste — ses çalınamazsa fallback için
+function requestNotifPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
 async function loadFeedback(){ try{feedbacks=await api('GET','/feedback');}catch{feedbacks=[];} renderFeedback(); }
-function updateSupportedLangs() { /* saveDesign çağrısında otomatik alınır */ }
 async function loadCampaigns(){ try{campaigns=await api('GET','/campaigns');}catch{campaigns=[];} renderCampaigns(); }
 
 function updateStats(){
@@ -1962,15 +1924,7 @@ function selectCat(id,name){ activeCatId=id; document.getElementById('active-cat
 async function saveCategory(){
   const name=document.getElementById('cat-name').value.trim();
   if(!name) return toast('Kategori adı gerekli','error');
-  const catTrans={};
-  ['en','ru','ar'].forEach(l=>{const v=document.getElementById('cat-name-'+l)?.value.trim();if(v)catTrans[l]=v;});
-  try{
-    const body={name, translations:Object.keys(catTrans).length?catTrans:undefined};
-    const cat=await api('POST','/categories',body);
-    categories.push(cat); closeModal('cat-modal'); document.getElementById('cat-name').value='';
-    ['en','ru','ar'].forEach(l=>{const e=document.getElementById('cat-name-'+l);if(e)e.value='';});
-    renderCatList(); populateCatSelects(); updateStats(); toast(`"${name}" eklendi`,'success');
-  }catch(e){toast(e.message,'error');}
+  try{ const cat=await api('POST','/categories',{name}); categories.push(cat); closeModal('cat-modal'); document.getElementById('cat-name').value=''; renderCatList(); populateCatSelects(); updateStats(); toast(`"${name}" eklendi`,'success'); }catch(e){toast(e.message,'error');}
 }
 
 async function deleteCat(id){
@@ -2020,19 +1974,7 @@ function renderProductList(){
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){
   document.getElementById(id).classList.remove('open');
-  if(id==='prod-modal'){
-    editingProductId=null;
-    document.getElementById('prod-modal-title').textContent='Ürün Ekle';
-    ['prod-name','prod-desc','prod-price','prod-emoji'].forEach(x=>{const e=document.getElementById(x);if(e)e.value='';});
-    document.getElementById('prod-image').value='';
-    document.getElementById('img-preview').innerHTML='📷';
-    document.getElementById('img-status').textContent='';
-    ['en','ru','ar'].forEach(l=>{
-      const n=document.getElementById('prod-name-'+l);if(n)n.value='';
-      const d=document.getElementById('prod-desc-'+l);if(d)d.value='';
-    });
-    const det=document.getElementById('prod-trans-details');if(det)det.open=false;
-  }
+  if(id==='prod-modal'){editingProductId=null;document.getElementById('prod-modal-title').textContent='Ürün Ekle';document.getElementById('prod-name').value='';document.getElementById('prod-desc').value='';document.getElementById('prod-price').value='';document.getElementById('prod-emoji').value='';document.getElementById('prod-image').value='';document.getElementById('img-preview').innerHTML='📷';document.getElementById('img-status').textContent='';}
   if(id==='camp-modal'){
     editingCampaignId=null;
     document.getElementById('camp-modal-title').textContent='Kampanya Ekle';
@@ -2076,14 +2018,6 @@ function editProduct(id){
   document.getElementById('prod-desc').value=p.description||'';
   document.getElementById('prod-price').value=p.price;
   document.getElementById('prod-emoji').value=p.emoji||'';
-  // Çevirileri doldur
-  ['en','ru','ar'].forEach(l=>{
-    const trans=p.translations?.[l]||{};
-    const ne=document.getElementById('prod-name-'+l); if(ne) ne.value=trans.name||'';
-    const de=document.getElementById('prod-desc-'+l); if(de) de.value=trans.description||'';
-  });
-  const hasTr=['en','ru','ar'].some(l=>p.translations?.[l]?.name);
-  const det=document.getElementById('prod-trans-details'); if(det) det.open=hasTr;
   if(p.image_url){document.getElementById('img-preview').innerHTML=`<img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover;border-radius:7px">`;document.getElementById('img-status').textContent='Mevcut fotoğraf';}
   openModal('prod-modal');
 }
@@ -2108,15 +2042,8 @@ async function saveProduct(){
     }catch{toast('Fotoğraf yüklenemedi','error');}
   }
   const existing=products.find(p=>p.id===editingProductId);
-  const prodTrans={};
-  ['en','ru','ar'].forEach(l=>{
-    const n=document.getElementById('prod-name-'+l)?.value.trim();
-    const d=document.getElementById('prod-desc-'+l)?.value.trim();
-    if(n||d)prodTrans[l]={name:n||'',description:d||''};
-  });
   const body={category_id,name,description,price,emoji,is_visible:existing?existing.is_visible:true};
   if(image_url) body.image_url=image_url;
-  if(Object.keys(prodTrans).length) body.translations=prodTrans;
   try{
     let prod;
     if(editingProductId){prod=await api('PUT','/products/'+editingProductId,body);const idx=products.findIndex(p=>p.id===editingProductId);if(idx>-1)products[idx]=prod;toast(`"${prod.name}" güncellendi`,'success');}
@@ -2305,15 +2232,6 @@ async function ackCall(id){
 }
 
 function clearCalls(){calls=[];renderCalls();renderHomeCalls();updateNotifBadge();}
-
-function switchMenuLang(lang) {
-  _menuLang = lang;
-  localStorage.setItem('menu_lang', lang);
-  // Menüyü yeniden render et
-  if (window._menuData) {
-    renderPublicMenu(window._menuData);
-  }
-}
 function updateNotifBadge(){const count=calls.filter(c=>c.status==='pending').length;const badge=document.getElementById('notif-badge');badge.textContent=count;badge.style.display=count?'inline':'none';}
 
 function renderCampaigns(){
@@ -2687,12 +2605,6 @@ function loadDesignFields(){
   document.getElementById('d-fb').value=RESTAURANT.facebook_url||'';
   document.getElementById('d-rest-name').value=RESTAURANT.name||'';
   document.getElementById('d-tagline').value=RESTAURANT.tagline||'';
-  // Desteklenen dilleri işaretle
-  const supportedL = RESTAURANT.supported_languages || ['tr'];
-  ['en','ru','ar'].forEach(l => {
-    const cb = document.getElementById('lang-cb-'+l);
-    if (cb) cb.checked = supportedL.includes(l);
-  });
   if(RESTAURANT.logo_url){document.getElementById('logo-preview').innerHTML=`<img src="${RESTAURANT.logo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:11px">`;}
   document.getElementById('preview-theme-label').textContent=THEMES[currentTheme]?.name||'Klasik Açık';
   updatePreview();loadWorkingHours();
@@ -2764,8 +2676,7 @@ async function saveWorkingHours(){
 
 async function saveDesign(){
   const waiterCb = document.getElementById('d-waiter-enabled');
-  const supportedLangsArr = ['tr', ...['en','ru','ar'].filter(l => document.getElementById('lang-cb-'+l)?.checked)];
-  const body={name:document.getElementById('d-rest-name').value||RESTAURANT?.name,tagline:document.getElementById('d-tagline')?.value||'',supported_languages:supportedLangsArr,brand_color:document.getElementById('d-color').value,font_family:document.getElementById('d-font').value,theme:currentTheme||'classic',card_style:currentCardStyle||'list',wifi_name:document.getElementById('d-wifi').value,wifi_password:document.getElementById('d-wpass').value,instagram_url:document.getElementById('d-ig').value,facebook_url:document.getElementById('d-fb').value,google_maps_url:document.getElementById('d-maps')?.value||'',waiter_enabled:waiterCb?waiterCb.checked:true};
+  const body={name:document.getElementById('d-rest-name').value||RESTAURANT?.name,tagline:document.getElementById('d-tagline')?.value||'',brand_color:document.getElementById('d-color').value,font_family:document.getElementById('d-font').value,theme:currentTheme||'classic',card_style:currentCardStyle||'list',wifi_name:document.getElementById('d-wifi').value,wifi_password:document.getElementById('d-wpass').value,instagram_url:document.getElementById('d-ig').value,facebook_url:document.getElementById('d-fb').value,google_maps_url:document.getElementById('d-maps')?.value||'',waiter_enabled:waiterCb?waiterCb.checked:true};
   try{RESTAURANT=await api('PUT','/restaurant/me',body);localStorage.setItem('qrmenu_rest',JSON.stringify(RESTAURANT));toast('Tasarım kaydedildi ✅','success');updatePreview();}catch(e){toast(e.message,'error');}
 }
 
@@ -3044,17 +2955,6 @@ function renderPublicMenu(data){
     <path d='M12 5.5A2.5 2.5 0 1 0 12 10.5A2.5 2.5 0 0 0 12 5.5Z' fill='white'/>
   </svg>`;
 
-  // Aktif dil — restaurant'ın desteklediği dillerden
-  const supportedLangs = (restaurant.supported_languages || ['tr']).filter(l => LANG_META[l]);
-  if (!supportedLangs.includes(_menuLang)) _menuLang = supportedLangs[0] || 'tr';
-
-  const langSwitcherHtml = supportedLangs.length > 1 ? `
-    <div style="display:flex;justify-content:center;gap:6px;margin-bottom:14px" id="lang-switcher">
-      ${supportedLangs.map(l => `<button onclick="switchMenuLang('${l}')"
-        style="padding:5px 12px;border-radius:20px;border:1.5px solid ${'${_menuLang}'===l?color:t.border};background:${'${_menuLang}'===l?color+'22':t.bg2};color:${'${_menuLang}'===l?t.text:t.text2};font-size:12px;font-weight:${'${_menuLang}'===l?'700':'400'};cursor:pointer;font-family:var(--sans)">
-        ${LANG_META[l].flag} ${LANG_META[l].label}</button>`).join('')}
-    </div>` : '';
-
   const socialIconsHtml = (restaurant.instagram_url || restaurant.facebook_url || restaurant.google_maps_url) ? `
     <div style="display:flex;justify-content:center;gap:10px;margin-bottom:16px">
       ${restaurant.instagram_url ? `<a href="https://instagram.com/${restaurant.instagram_url.replace('@','')}" target="_blank" style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.15)" title="Instagram">${igSvg}</a>` : ''}
@@ -3066,17 +2966,16 @@ function renderPublicMenu(data){
     ${logoHtml}
     <div class="m-rest-name" style="color:${t.text};font-family:'${font}',serif">${restaurant.name}</div>
     <div class="m-tag" style="color:${t.text2}">${restaurant.tagline||'Dijital Menü'}</div>
-    ${langSwitcherHtml}
     ${socialIconsHtml}
-    ${today_hours&&!today_hours.is_closed?`<div style="display:inline-flex;align-items:center;gap:6px;background:${is_open?'rgba(71,201,126,.1)':'rgba(232,71,71,.1)'};border:1px solid ${is_open?'rgba(71,201,126,.3)':'rgba(232,71,71,.3)'};border-radius:20px;padding:5px 14px;font-size:12px;font-weight:500;color:${is_open?'#47c97e':'#e84747'};margin-bottom:10px">${is_open?mt('open'):mt('closed')} · ${today_hours.opens_at} - ${today_hours.closes_at}</div>`:''}
+    ${today_hours&&!today_hours.is_closed?`<div style="display:inline-flex;align-items:center;gap:6px;background:${is_open?'rgba(71,201,126,.1)':'rgba(232,71,71,.1)'};border:1px solid ${is_open?'rgba(71,201,126,.3)':'rgba(232,71,71,.3)'};border-radius:20px;padding:5px 14px;font-size:12px;font-weight:500;color:${is_open?'#47c97e':'#e84747'};margin-bottom:10px">${is_open?'🟢 Şu an açık':'🔴 Şu an kapalı'} · ${today_hours.opens_at} - ${today_hours.closes_at}</div>`:''}
     <div class="m-pills">
-      <button class="m-pill" style="background:${t.pillBg};color:${t.pillColor};border-color:${t.pillBorder}" onclick="document.getElementById('fb-modal').classList.add('open')">${mt('feedback')}</button>
-      ${restaurant.waiter_enabled !== false ? `<button class="m-pill" style="background:${t.pillBg};color:${t.pillColor};border-color:${t.pillBorder}" onclick="callWaiter('${restaurant.id}')">${mt('waiter')}</button>` : ''}
+      <button class="m-pill" style="background:${t.pillBg};color:${t.pillColor};border-color:${t.pillBorder}" onclick="document.getElementById('fb-modal').classList.add('open')">💬 Geri Bildirim</button>
+      ${restaurant.waiter_enabled !== false ? `<button class="m-pill" style="background:${t.pillBg};color:${t.pillColor};border-color:${t.pillBorder}" onclick="callWaiter('${restaurant.id}')">🔔 Garson Çağır</button>` : ''}
     </div>
   </div>`;
 
   const search=`<div class="m-search-wrap" style="background:${t.bg}">
-    <input class="m-search" id="menu-search-input" placeholder="${mt('search')}" style="background:${t.searchBg};border:1px solid ${t.searchBorder};color:${t.searchColor};border-radius:10px" oninput="searchMenu(this.value)" autocomplete="off" autocorrect="off" spellcheck="false">
+    <input class="m-search" id="menu-search-input" placeholder="Menüde ara..." style="background:${t.searchBg};border:1px solid ${t.searchBorder};color:${t.searchColor};border-radius:10px" oninput="searchMenu(this.value)" autocomplete="off" autocorrect="off" spellcheck="false">
   </div>`;
 
   const nav=`<div class="sticky-nav" style="background:${t.navBg};border-color:${t.border}">
@@ -3124,7 +3023,7 @@ function renderPublicMenu(data){
       </div>`).join('');
     }
     return`<div class="m-section" id="sec-${cat.id}" style="background:${t.bg}">
-      <div class="m-section-title" style="color:${t.text};border-color:${t.border};font-family:'${font}',serif">${(cat.translations&&cat.translations[_menuLang])||cat.name}</div>
+      <div class="m-section-title" style="color:${t.text};border-color:${t.border};font-family:'${font}',serif">${cat.name}</div>
       ${prodsHtml}
     </div>`;
   }).join('');
@@ -3138,7 +3037,7 @@ function renderPublicMenu(data){
         <div style="font-size:13px;font-weight:700;color:${t.text};margin-bottom:2px">${restaurant.wifi_name}</div>
         ${restaurant.wifi_password ? `<div style="font-size:12px;color:${t.text2};font-family:monospace">${restaurant.wifi_password}</div>` : `<div style="font-size:11px;color:${t.text2}">Şifresiz</div>`}
       </div>
-      ${restaurant.wifi_password ? `<button onclick="navigator.clipboard?.writeText('${restaurant.wifi_password}').then(()=>toast(mt('wifiCopied'),'success'))" style="flex-shrink:0;padding:6px 10px;border-radius:8px;border:1px solid ${t.wifiBorder};background:${t.bg2};color:${t.text2};font-size:11px;cursor:pointer;font-family:var(--sans)">${mt('wifiCopy')}</button>` : ''}
+      ${restaurant.wifi_password ? `<button onclick="navigator.clipboard?.writeText('${restaurant.wifi_password}').then(()=>toast('Şifre kopyalandı 📋','success'))" style="flex-shrink:0;padding:6px 10px;border-radius:8px;border:1px solid ${t.wifiBorder};background:${t.bg2};color:${t.text2};font-size:11px;cursor:pointer;font-family:var(--sans)">Kopyala</button>` : ''}
     </div>` : '';
 
   const footer=`<div class="m-footer" style="background:${t.footerBg};border-color:${t.border}">
@@ -3262,7 +3161,6 @@ function showProdDetail(prodId,catId){
 }
 
 // Hazır not şablonları
-// WAITER_QUICK_NOTES — mt() ile dinamik, dil değişince güncellenir
 const WAITER_QUICK_NOTES = [
   { emoji: '🍞', text: 'Ekmek getirir misiniz?' },
   { emoji: '💧', text: 'Su alabilir miyim?' },
@@ -3300,7 +3198,7 @@ function callWaiter(restaurantId){
 
       <div style="font-size:11px;font-weight:600;color:${text2C};letter-spacing:.06em;margin-bottom:8px">HIZLI NOT</div>
       <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px">
-        ${(mt('quickNotes')||[]).map((note,i) => { const n={emoji:note.split(' ')[0], text:note.split(' ').slice(1).join(' ')}; return `
+        ${WAITER_QUICK_NOTES.map(n => `
           <button onclick="toggleWaiterNote(this,'${n.text.replace(/'/g,"&#39;")}')"
             style="padding:7px 12px;border-radius:20px;border:1.5px solid ${border};background:${bg2};color:${text2C};font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;transition:all .15s"
             data-note="${n.text.replace(/"/g,'&quot;')}">

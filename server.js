@@ -101,22 +101,53 @@ const server = http.createServer(app);
 
 // WebSocket — garson çağrı sistemi
 const wss = new WebSocket.Server({ server });
+// restaurantId → Set<WebSocket>  (birden fazla sekme/cihaz desteklenir)
 const restaurantSockets = {};
 
 wss.on('connection', (ws, req) => {
-  const params = new URLSearchParams(req.url.replace('/?', ''));
+  const params = new URLSearchParams(req.url.replace('/?', '').replace('?', ''));
   const restaurantId = params.get('restaurantId');
-  if (restaurantId) {
-    restaurantSockets[restaurantId] = ws;
-    ws.on('close', () => delete restaurantSockets[restaurantId]);
-  }
+  if (!restaurantId) { ws.close(); return; }
+
+  if (!restaurantSockets[restaurantId]) restaurantSockets[restaurantId] = new Set();
+  restaurantSockets[restaurantId].add(ws);
+
+  // Ping/pong — Render 55sn'de idle bağlantıyı keser, 30sn'de ping at
+  ws.isAlive = true;
+  ws.on('pong', () => { ws.isAlive = true; });
+
+  ws.on('close', () => {
+    if (restaurantSockets[restaurantId]) {
+      restaurantSockets[restaurantId].delete(ws);
+      if (restaurantSockets[restaurantId].size === 0) {
+        delete restaurantSockets[restaurantId];
+      }
+    }
+  });
+
+  ws.on('error', () => ws.terminate());
 });
 
+// Her 30 saniyede ping gönder — bağlantıyı canlı tut
+const wsPingInterval = setInterval(() => {
+  wss.clients.forEach(ws => {
+    if (ws.isAlive === false) { ws.terminate(); return; }
+    ws.isAlive = false;
+    ws.ping();
+  });
+}, 30000);
+
+wss.on('close', () => clearInterval(wsPingInterval));
+
 function notifyRestaurant(restaurantId, data) {
-  const ws = restaurantSockets[restaurantId];
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify(data));
-  }
+  const sockets = restaurantSockets[restaurantId];
+  if (!sockets || sockets.size === 0) return;
+  const json = JSON.stringify(data);
+  sockets.forEach(ws => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(json);
+    }
+  });
 }
 
 // Veritabanı bağlantısı
@@ -357,10 +388,6 @@ CREATE TABLE IF NOT EXISTS password_resets (
   await pool.query(`ALTER TABLE campaigns ALTER COLUMN image_url TYPE TEXT`).catch(()=>{});
   await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS tagline VARCHAR(255)`).catch(()=>{});
   await pool.query(`ALTER TABLE waiter_calls ADD COLUMN IF NOT EXISTS note TEXT`).catch(()=>{});
-  // Çok dil desteği — JSONB: {en:'...', ru:'...', ar:'...'}
-  await pool.query(`ALTER TABLE categories ADD COLUMN IF NOT EXISTS translations JSONB DEFAULT '{}'`).catch(()=>{});
-  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS translations JSONB DEFAULT '{}'`).catch(()=>{});
-  await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS supported_languages TEXT[] DEFAULT ARRAY['tr']`).catch(()=>{});
   await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS link_type VARCHAR(20) DEFAULT 'none'`).catch(()=>{}); // none | product | category | url
   await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS link_product_id UUID`).catch(()=>{});
   await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS link_category_id UUID`).catch(()=>{});
@@ -923,8 +950,7 @@ app.put('/api/restaurant/me', authMiddleware, async (req, res) => {
        theme=COALESCE($10, theme),
        card_style=COALESCE($11, card_style),
        google_maps_url=COALESCE($12, google_maps_url),
-       tagline=COALESCE($13, tagline),
-       supported_languages=COALESCE($15::text[], supported_languages)
+       tagline=COALESCE($13, tagline)
        WHERE id=$14 RETURNING *`,
       [name, brand_color, font_family, wifi_name, wifi_password, instagram_url, facebook_url,
        waiter_enabled !== undefined ? waiter_enabled : null,
@@ -933,8 +959,7 @@ app.put('/api/restaurant/me', authMiddleware, async (req, res) => {
        card_style || null,
        google_maps_url || null,
        tagline !== undefined ? tagline : null,
-       req.user.restaurantId,
-       supported_languages ? supported_languages : null]
+       req.user.restaurantId]
     );
     res.json(result.rows[0]);
   } catch(err) {
@@ -962,7 +987,7 @@ app.get('/api/restaurant/me/qr', authMiddleware, async (req, res) => {
 
 app.get('/api/categories', authMiddleware, async (req, res) => {
   const result = await pool.query(
-    'SELECT *, COALESCE(translations,\'{}\') as translations FROM categories WHERE restaurant_id=$1 ORDER BY sort_order ASC',
+    'SELECT * FROM categories WHERE restaurant_id=$1 ORDER BY sort_order ASC',
     [req.user.restaurantId]
   );
   res.json(result.rows);
@@ -1041,7 +1066,7 @@ app.patch('/api/products/reorder', authMiddleware, async (req, res) => {
 
 app.get('/api/products', authMiddleware, async (req, res) => {
   const { categoryId } = req.query;
-  let query = 'SELECT *, COALESCE(translations,\'{}\') as translations FROM products WHERE restaurant_id=$1';
+  let query = 'SELECT * FROM products WHERE restaurant_id=$1';
   const params = [req.user.restaurantId];
   if (categoryId) { query += ' AND category_id=$2'; params.push(categoryId); }
   query += ' ORDER BY sort_order ASC';
@@ -1064,7 +1089,7 @@ app.put('/api/products/:id', authMiddleware, async (req, res) => {
   
   // Mevcut ürünü al
   const existing = await pool.query(
-    'SELECT *, COALESCE(translations,\'{}\') as translations FROM products WHERE id=$1 AND restaurant_id=$2',
+    'SELECT * FROM products WHERE id=$1 AND restaurant_id=$2',
     [req.params.id, req.user.restaurantId]
   );
   if (!existing.rows[0]) return res.status(404).json({ error: 'Ürün bulunamadı' });
@@ -1072,15 +1097,14 @@ app.put('/api/products/:id', authMiddleware, async (req, res) => {
   const current = existing.rows[0];
   
   const result = await pool.query(
-    `UPDATE products SET
-      name=$1,
-      description=$2,
-      price=$3,
+    `UPDATE products SET 
+      name=$1, 
+      description=$2, 
+      price=$3, 
       emoji=$4,
-      is_visible=$5,
+      is_visible=$5, 
       category_id=$6,
-      image_url=$7,
-      translations=COALESCE($10::jsonb, translations)
+      image_url=$7
      WHERE id=$8 AND restaurant_id=$9 RETURNING *`,
     [
       name || current.name,
@@ -1091,8 +1115,7 @@ app.put('/api/products/:id', authMiddleware, async (req, res) => {
       category_id || current.category_id,
       image_url !== undefined ? image_url : current.image_url,
       req.params.id,
-      req.user.restaurantId,
-      translations ? JSON.stringify(translations) : null
+      req.user.restaurantId
     ]
   );
   res.json(result.rows[0]);
@@ -1260,7 +1283,7 @@ app.get('/api/menu/:slug', async (req, res) => {
     }
 
     const catResult = await pool.query(
-      'SELECT *, COALESCE(translations,\'{}\') as translations FROM categories WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order',
+      'SELECT * FROM categories WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order',
       [restaurant.id]
     );
 
@@ -2259,11 +2282,11 @@ app.get('/api/restaurant/me/pdf', authMiddleware, async (req, res) => {
     const restResult = await pool.query('SELECT * FROM restaurants WHERE id=$1', [req.user.restaurantId]);
     const restaurant = restResult.rows[0];
     const catResult = await pool.query(
-      'SELECT *, COALESCE(translations,\'{}\') as translations FROM categories WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order',
+      'SELECT * FROM categories WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order',
       [req.user.restaurantId]
     );
     const prodResult = await pool.query(
-      'SELECT *, COALESCE(translations,\'{}\') as translations FROM products WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order',
+      'SELECT * FROM products WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order',
       [req.user.restaurantId]
     );
 
