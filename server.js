@@ -101,22 +101,53 @@ const server = http.createServer(app);
 
 // WebSocket — garson çağrı sistemi
 const wss = new WebSocket.Server({ server });
+// restaurantId → Set<WebSocket>  (birden fazla sekme/cihaz desteklenir)
 const restaurantSockets = {};
 
 wss.on('connection', (ws, req) => {
-  const params = new URLSearchParams(req.url.replace('/?', ''));
+  const params = new URLSearchParams(req.url.replace('/?', '').replace('?', ''));
   const restaurantId = params.get('restaurantId');
-  if (restaurantId) {
-    restaurantSockets[restaurantId] = ws;
-    ws.on('close', () => delete restaurantSockets[restaurantId]);
-  }
+  if (!restaurantId) { ws.close(); return; }
+
+  if (!restaurantSockets[restaurantId]) restaurantSockets[restaurantId] = new Set();
+  restaurantSockets[restaurantId].add(ws);
+
+  // Ping/pong — Render 55sn'de idle bağlantıyı keser, 30sn'de ping at
+  ws.isAlive = true;
+  ws.on('pong', () => { ws.isAlive = true; });
+
+  ws.on('close', () => {
+    if (restaurantSockets[restaurantId]) {
+      restaurantSockets[restaurantId].delete(ws);
+      if (restaurantSockets[restaurantId].size === 0) {
+        delete restaurantSockets[restaurantId];
+      }
+    }
+  });
+
+  ws.on('error', () => ws.terminate());
 });
 
+// Her 30 saniyede ping gönder — bağlantıyı canlı tut
+const wsPingInterval = setInterval(() => {
+  wss.clients.forEach(ws => {
+    if (ws.isAlive === false) { ws.terminate(); return; }
+    ws.isAlive = false;
+    ws.ping();
+  });
+}, 30000);
+
+wss.on('close', () => clearInterval(wsPingInterval));
+
 function notifyRestaurant(restaurantId, data) {
-  const ws = restaurantSockets[restaurantId];
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify(data));
-  }
+  const sockets = restaurantSockets[restaurantId];
+  if (!sockets || sockets.size === 0) return;
+  const json = JSON.stringify(data);
+  sockets.forEach(ws => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(json);
+    }
+  });
 }
 
 // Veritabanı bağlantısı
