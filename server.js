@@ -386,6 +386,9 @@ CREATE TABLE IF NOT EXISTS password_resets (
   await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS theme VARCHAR(50) DEFAULT 'classic'`).catch(()=>{});
   await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS card_style VARCHAR(20) DEFAULT 'list'`).catch(()=>{});
   await pool.query(`ALTER TABLE campaigns ALTER COLUMN image_url TYPE TEXT`).catch(()=>{});
+  await pool.query(`ALTER TABLE categories ADD COLUMN IF NOT EXISTS translations JSONB DEFAULT '{}'`).catch(()=>{});
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS translations JSONB DEFAULT '{}'`).catch(()=>{});
+  await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS supported_languages TEXT[] DEFAULT ARRAY['tr']`).catch(()=>{});
   await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS tagline VARCHAR(255)`).catch(()=>{});
   await pool.query(`ALTER TABLE waiter_calls ADD COLUMN IF NOT EXISTS note TEXT`).catch(()=>{});
   await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS link_type VARCHAR(20) DEFAULT 'none'`).catch(()=>{}); // none | product | category | url
@@ -928,7 +931,9 @@ app.get('/api/restaurant/me', authMiddleware, async (req, res) => {
               theme, card_style, wifi_name, wifi_password,
               instagram_url, facebook_url, google_maps_url,
               is_published, waiter_enabled,
-              COALESCE(tagline, '') as tagline, created_at
+              COALESCE(tagline, '') as tagline,
+              COALESCE(supported_languages, ARRAY['tr']) as supported_languages,
+              created_at
        FROM restaurants WHERE id = $1`,
       [req.user.restaurantId]
     );
@@ -940,7 +945,7 @@ app.get('/api/restaurant/me', authMiddleware, async (req, res) => {
 });
 
 app.put('/api/restaurant/me', authMiddleware, async (req, res) => {
-  const { name, brand_color, font_family, theme, card_style, wifi_name, wifi_password, instagram_url, facebook_url, google_maps_url, waiter_enabled, is_published, tagline } = req.body;
+  const { name, brand_color, font_family, theme, card_style, wifi_name, wifi_password, instagram_url, facebook_url, google_maps_url, waiter_enabled, is_published, tagline, supported_languages } = req.body;
   try {
     const result = await pool.query(
       `UPDATE restaurants SET name=$1, brand_color=$2, font_family=$3,
@@ -950,7 +955,8 @@ app.put('/api/restaurant/me', authMiddleware, async (req, res) => {
        theme=COALESCE($10, theme),
        card_style=COALESCE($11, card_style),
        google_maps_url=COALESCE($12, google_maps_url),
-       tagline=COALESCE($13, tagline)
+       tagline=COALESCE($13, tagline),
+       supported_languages=COALESCE($15::text[], supported_languages)
        WHERE id=$14 RETURNING *`,
       [name, brand_color, font_family, wifi_name, wifi_password, instagram_url, facebook_url,
        waiter_enabled !== undefined ? waiter_enabled : null,
@@ -959,7 +965,8 @@ app.put('/api/restaurant/me', authMiddleware, async (req, res) => {
        card_style || null,
        google_maps_url || null,
        tagline !== undefined ? tagline : null,
-       req.user.restaurantId]
+       req.user.restaurantId,
+       supported_languages ? supported_languages : null]
     );
     res.json(result.rows[0]);
   } catch(err) {
@@ -987,7 +994,7 @@ app.get('/api/restaurant/me/qr', authMiddleware, async (req, res) => {
 
 app.get('/api/categories', authMiddleware, async (req, res) => {
   const result = await pool.query(
-    'SELECT * FROM categories WHERE restaurant_id=$1 ORDER BY sort_order ASC',
+    'SELECT *, COALESCE(translations,\'{}\') as translations FROM categories WHERE restaurant_id=$1 ORDER BY sort_order ASC',
     [req.user.restaurantId]
   );
   res.json(result.rows);
@@ -1007,10 +1014,10 @@ app.post('/api/categories', authMiddleware, async (req, res) => {
 });
 
 app.put('/api/categories/:id', authMiddleware, async (req, res) => {
-  const { name, is_visible } = req.body;
+  const { name, is_visible, translations } = req.body;
   const result = await pool.query(
-    'UPDATE categories SET name=$1, is_visible=$2 WHERE id=$3 AND restaurant_id=$4 RETURNING *',
-    [name, is_visible, req.params.id, req.user.restaurantId]
+    `UPDATE categories SET name=$1, is_visible=$2, translations=COALESCE($3::jsonb,translations) WHERE id=$4 AND restaurant_id=$5 RETURNING *`,
+    [name, is_visible, translations ? JSON.stringify(translations) : null, req.params.id, req.user.restaurantId]
   );
   res.json(result.rows[0]);
 });
@@ -1066,7 +1073,7 @@ app.patch('/api/products/reorder', authMiddleware, async (req, res) => {
 
 app.get('/api/products', authMiddleware, async (req, res) => {
   const { categoryId } = req.query;
-  let query = 'SELECT * FROM products WHERE restaurant_id=$1';
+  let query = 'SELECT *, COALESCE(translations,\'{}\') as translations FROM products WHERE restaurant_id=$1';
   const params = [req.user.restaurantId];
   if (categoryId) { query += ' AND category_id=$2'; params.push(categoryId); }
   query += ' ORDER BY sort_order ASC';
@@ -1075,17 +1082,18 @@ app.get('/api/products', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/products', authMiddleware, async (req, res) => {
-  const { category_id, name, description, price, emoji, variants } = req.body;
+  const { category_id, name, description, price, emoji, variants, translations } = req.body;
   const result = await pool.query(
-    `INSERT INTO products (category_id, restaurant_id, name, description, price, emoji, variants)
-     VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-    [category_id, req.user.restaurantId, name, description, price, emoji || '🍽️', JSON.stringify(variants || [])]
+    `INSERT INTO products (category_id, restaurant_id, name, description, price, emoji, variants, translations)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+    [category_id, req.user.restaurantId, name, description, price, emoji || '🍽️',
+     JSON.stringify(variants || []), translations ? JSON.stringify(translations) : '{}']
   );
   res.json(result.rows[0]);
 });
 
 app.put('/api/products/:id', authMiddleware, async (req, res) => {
-  const { name, description, price, emoji, is_visible, category_id, image_url } = req.body;
+  const { name, description, price, emoji, is_visible, category_id, image_url, translations } = req.body;
   
   // Mevcut ürünü al
   const existing = await pool.query(
@@ -1104,7 +1112,8 @@ app.put('/api/products/:id', authMiddleware, async (req, res) => {
       emoji=$4,
       is_visible=$5, 
       category_id=$6,
-      image_url=$7
+      image_url=$7,
+      translations=COALESCE($10::jsonb,translations)
      WHERE id=$8 AND restaurant_id=$9 RETURNING *`,
     [
       name || current.name,
@@ -1115,7 +1124,8 @@ app.put('/api/products/:id', authMiddleware, async (req, res) => {
       category_id || current.category_id,
       image_url !== undefined ? image_url : current.image_url,
       req.params.id,
-      req.user.restaurantId
+      req.user.restaurantId,
+      translations ? JSON.stringify(translations) : null
     ]
   );
   res.json(result.rows[0]);
@@ -1251,7 +1261,9 @@ app.get('/api/menu/:slug', async (req, res) => {
               brand_color, font_family, theme, card_style, google_maps_url,
               wifi_name, wifi_password, instagram_url, facebook_url,
               is_published, waiter_enabled, user_id,
-              COALESCE(tagline, '') as tagline, created_at
+              COALESCE(tagline, '') as tagline,
+              COALESCE(supported_languages, ARRAY['tr']) as supported_languages,
+              created_at
        FROM restaurants WHERE slug=$1 AND is_published=true`,
       [req.params.slug]
     );
@@ -1283,7 +1295,7 @@ app.get('/api/menu/:slug', async (req, res) => {
     }
 
     const catResult = await pool.query(
-      'SELECT * FROM categories WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order',
+      'SELECT *, COALESCE(translations,\'{}\') as translations FROM categories WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order',
       [restaurant.id]
     );
 
@@ -2282,11 +2294,11 @@ app.get('/api/restaurant/me/pdf', authMiddleware, async (req, res) => {
     const restResult = await pool.query('SELECT * FROM restaurants WHERE id=$1', [req.user.restaurantId]);
     const restaurant = restResult.rows[0];
     const catResult = await pool.query(
-      'SELECT * FROM categories WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order',
+      'SELECT *, COALESCE(translations,\'{}\') as translations FROM categories WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order',
       [req.user.restaurantId]
     );
     const prodResult = await pool.query(
-      'SELECT * FROM products WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order',
+      'SELECT *, COALESCE(translations,\'{}\') as translations FROM products WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order',
       [req.user.restaurantId]
     );
 
