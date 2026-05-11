@@ -936,7 +936,9 @@ app.get('/api/restaurant/me', authMiddleware, async (req, res) => {
               theme, card_style, wifi_name, wifi_password,
               instagram_url, facebook_url, google_maps_url,
               is_published, waiter_enabled,
-              COALESCE(tagline, '') as tagline, created_at
+              COALESCE(tagline, '') as tagline,
+              COALESCE(supported_languages, ARRAY['tr']) as supported_languages,
+              created_at
        FROM restaurants WHERE id = $1`,
       [req.user.restaurantId]
     );
@@ -1263,7 +1265,9 @@ app.get('/api/menu/:slug', async (req, res) => {
               brand_color, font_family, theme, card_style, google_maps_url,
               wifi_name, wifi_password, instagram_url, facebook_url,
               is_published, waiter_enabled, user_id,
-              COALESCE(tagline, '') as tagline, created_at
+              COALESCE(tagline, '') as tagline,
+              COALESCE(supported_languages, ARRAY['tr']) as supported_languages,
+              created_at
        FROM restaurants WHERE slug=$1 AND is_published=true`,
       [req.params.slug]
     );
