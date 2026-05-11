@@ -3354,12 +3354,16 @@ function callWaiter(restaurantId){
 
       <div style="font-size:11px;font-weight:600;color:${text2C};letter-spacing:.06em;margin-bottom:8px">HIZLI NOT</div>
       <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px">
-        ${(mt('quickNotes')||[]).map((note,i) => { const n={emoji:note.split(' ')[0], text:note.split(' ').slice(1).join(' ')}; return `
-          <button onclick="toggleWaiterNote(this,'${n.text.replace(/'/g,"&#39;")}')"
-            style="padding:7px 12px;border-radius:20px;border:1.5px solid ${border};background:${bg2};color:${text2C};font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;transition:all .15s"
-            data-note="${n.text.replace(/"/g,'&quot;')}">
-            ${n.emoji} ${n.text}
-          </button>`).join('')}
+        ${(mt('quickNotes')||[]).map(note => {
+          const emoji=note.split(' ')[0];
+          const txt=note.split(' ').slice(1).join(' ');
+          const safeNote=note.replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+          return '<button onclick="toggleWaiterNote(this,\'' + safeNote + '\')" '
+            + 'style="padding:7px 12px;border-radius:20px;border:1.5px solid ' + border + ';background:' + bg2 + ';color:' + text2C + ';font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;transition:all .15s" '
+            + 'data-note="' + safeNote + '">'
+            + emoji + ' ' + txt
+            + '</button>';
+        }).join('')}
       </div>
 
       <div style="font-size:11px;font-weight:600;color:${text2C};letter-spacing:.06em;margin-bottom:6px">ÖZEL NOT <span style="font-weight:400;opacity:.6">(isteğe bağlı)</span></div>
