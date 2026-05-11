@@ -1203,12 +1203,41 @@ const MENU_STRINGS = {
   },
 };
 
-let _menuLang = localStorage.getItem('menu_lang') || 'tr';
+let _menuLang = localStorage.getItem('menu_lang') || 'tr'; // varsayılan, menü render'da override edilir
+let _autoLangDetected = false;
+
+function detectBrowserLang(supportedLangs) {
+  if (_autoLangDetected || localStorage.getItem('menu_lang')) return; // Kullanıcı seçtiyse dokunma
+  const browserLangs = (navigator.languages || [navigator.language || 'tr'])
+    .map(l => l.toLowerCase().split('-')[0]);
+  for (const bl of browserLangs) {
+    if (supportedLangs.includes(bl)) {
+      _menuLang = bl;
+      _autoLangDetected = true;
+      return;
+    }
+  }
+}
 function mt(key) { return (MENU_STRINGS[_menuLang] || MENU_STRINGS.tr)[key] || MENU_STRINGS.tr[key] || key; }
 function tr(obj, lang) {
-  // Obje {tr,en,ru,ar} veya string döndür
   if (!obj || typeof obj === 'string') return obj || '';
-  return obj[lang || _menuLang] || obj['tr'] || Object.values(obj)[0] || '';
+  const l = lang || _menuLang;
+  return obj[l] || obj['tr'] || Object.values(obj)[0] || '';
+}
+// Ürün/kategori adını çevir
+function trName(item) {
+  if (!item) return '';
+  if (item.translations && item.translations[_menuLang] && item.translations[_menuLang].name)
+    return item.translations[_menuLang].name;
+  if (item.translations && item.translations[_menuLang] && typeof item.translations[_menuLang] === 'string')
+    return item.translations[_menuLang];
+  return item.name || '';
+}
+function trDesc(item) {
+  if (!item) return '';
+  if (item.translations && item.translations[_menuLang] && item.translations[_menuLang].description)
+    return item.translations[_menuLang].description;
+  return item.description || '';
 }
 
 const THEMES = {
@@ -2362,10 +2391,14 @@ function clearCalls(){calls=[];renderCalls();renderHomeCalls();updateNotifBadge(
 
 function switchMenuLang(lang) {
   _menuLang = lang;
+  _autoLangDetected = true; // Manuel seçim — bir daha auto-detect yapma
   localStorage.setItem('menu_lang', lang);
-  // Menüyü yeniden render et
   if (window._menuData) {
     renderPublicMenu(window._menuData);
+    // Arapça için RTL düzeni
+    const menuRoot = document.getElementById('menu-root') || document.getElementById('menu-public');
+    if (menuRoot) menuRoot.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+    window.scrollTo(0, 0);
   }
 }
 function updateNotifBadge(){const count=calls.filter(c=>c.status==='pending').length;const badge=document.getElementById('notif-badge');badge.textContent=count;badge.style.display=count?'inline':'none';}
@@ -3060,6 +3093,7 @@ function renderPublicMenu(data){
   const el=document.getElementById('menu-public');
   el.style.background=t.bg;
   el.style.color=t.text;
+  el.setAttribute('dir', _menuLang === 'ar' ? 'rtl' : 'ltr');
 
   const logoHtml=restaurant.logo_url
     ?`<img class="m-logo" src="${restaurant.logo_url}" alt="${restaurant.name}" loading="lazy">`
@@ -3100,14 +3134,23 @@ function renderPublicMenu(data){
 
   // Aktif dil — restaurant'ın desteklediği dillerden
   const supportedLangs = (restaurant.supported_languages || ['tr']).filter(l => LANG_META[l]);
+  detectBrowserLang(supportedLangs); // tarayıcı diline göre otomatik seç (kullanıcı seçmediyse)
   if (!supportedLangs.includes(_menuLang)) _menuLang = supportedLangs[0] || 'tr';
 
-  const langSwitcherHtml = supportedLangs.length > 1 ? `
-    <div style="display:flex;justify-content:center;gap:6px;margin-bottom:14px" id="lang-switcher">
-      ${supportedLangs.map(l => `<button onclick="switchMenuLang('${l}')"
-        style="padding:5px 12px;border-radius:20px;border:1.5px solid ${'${_menuLang}'===l?color:t.border};background:${'${_menuLang}'===l?color+'22':t.bg2};color:${'${_menuLang}'===l?t.text:t.text2};font-size:12px;font-weight:${'${_menuLang}'===l?'700':'400'};cursor:pointer;font-family:var(--sans)">
-        ${LANG_META[l].flag} ${LANG_META[l].label}</button>`).join('')}
-    </div>` : '';
+  const langSwitcherHtml = supportedLangs.length > 1
+    ? '<div style="display:flex;justify-content:center;gap:6px;margin-bottom:14px" id="lang-switcher">'
+      + supportedLangs.map(l => {
+          const isActive = l === _menuLang;
+          const btnStyle = 'padding:5px 14px;border-radius:20px;border:1.5px solid '
+            + (isActive ? color : t.border) + ';background:'
+            + (isActive ? color + '22' : t.bg2) + ';color:'
+            + (isActive ? t.text : t.text2) + ';font-size:13px;font-weight:'
+            + (isActive ? '700' : '400') + ';cursor:pointer;font-family:var(--sans);transition:all .2s';
+          return '<button onclick="switchMenuLang(\'' + l + '\')" style="' + btnStyle + '">'
+            + LANG_META[l].flag + ' ' + LANG_META[l].label + '</button>';
+        }).join('')
+      + '</div>'
+    : '';
 
   const socialIconsHtml = (restaurant.instagram_url || restaurant.facebook_url || restaurant.google_maps_url) ? `
     <div style="display:flex;justify-content:center;gap:10px;margin-bottom:16px">
@@ -3153,8 +3196,8 @@ function renderPublicMenu(data){
         ${cat.products.map(p=>`<div class="m-product" data-prod-id="${p.id}" style="background:${t.bg2};border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
           <div class="m-prod-img" style="background:${t.bg2}"><span class="m-prod-img-placeholder">${p.emoji||'🍽️'}</span></div>
           <div class="m-prod-body">
-            <div class="m-prod-name" style="color:${t.text}">${p.name}</div>
-            <div class="m-prod-desc" style="color:${t.text2}">${p.description||''}</div>
+            <div class="m-prod-name" style="color:${t.text}">${trName(p)}</div>
+            <div class="m-prod-desc" style="color:${t.text2}">${trDesc(p)}</div>
             <div class="m-prod-price" style="color:${color}">₺${parseFloat(p.price).toFixed(2)}</div>
           </div>
         </div>`).join('')}
@@ -3162,8 +3205,8 @@ function renderPublicMenu(data){
     }else if(cardStyle==='compact'){
       prodsHtml=cat.products.map(p=>`<div class="m-product style-compact" data-prod-id="${p.id}" style="border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
         <div class="m-prod-left">
-          <div class="m-prod-name" style="color:${t.text}">${p.name}</div>
-          <div class="m-prod-desc" style="color:${t.text2}">${p.description||''}</div>
+          <div class="m-prod-name" style="color:${t.text}">${trName(p)}</div>
+          <div class="m-prod-desc" style="color:${t.text2}">${trDesc(p)}</div>
         </div>
         <div class="m-prod-price" style="color:${color}">₺${parseFloat(p.price).toFixed(2)}</div>
       </div>`).join('');
@@ -3171,14 +3214,14 @@ function renderPublicMenu(data){
       prodsHtml=cat.products.map(p=>`<div class="m-product style-list" data-prod-id="${p.id}" style="border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
         <div class="m-prod-img" style="background:${t.bg2};border-radius:10px"><span class="m-prod-img-placeholder">${p.emoji||'🍽️'}</span></div>
         <div style="flex:1">
-          <div class="m-prod-name" style="color:${t.text}">${p.name}</div>
-          <div class="m-prod-desc" style="color:${t.text2}">${p.description||''}</div>
+          <div class="m-prod-name" style="color:${t.text}">${trName(p)}</div>
+          <div class="m-prod-desc" style="color:${t.text2}">${trDesc(p)}</div>
           <div class="m-prod-price" style="color:${color}">₺${parseFloat(p.price).toFixed(2)}</div>
         </div>
       </div>`).join('');
     }
     return`<div class="m-section" id="sec-${cat.id}" style="background:${t.bg}">
-      <div class="m-section-title" style="color:${t.text};border-color:${t.border};font-family:'${font}',serif">${(cat.translations&&cat.translations[_menuLang])||cat.name}</div>
+      <div class="m-section-title" style="color:${t.text};border-color:${t.border};font-family:'${font}',serif">${trName(cat)}</div>
       ${prodsHtml}
     </div>`;
   }).join('');
@@ -3307,9 +3350,9 @@ function showProdDetail(prodId,catId){
   const prodImgUrl = (window._menuImages && window._menuImages[p.id]) || (p.image_url && !p.image_url.startsWith('data:') ? p.image_url : null);
   document.getElementById('prod-detail-img').innerHTML=prodImgUrl?`<img src="${prodImgUrl}" loading="lazy" style="width:100%;height:100%;object-fit:cover">`:`<span style="font-size:80px">${p.emoji||'🍽️'}</span>`;
   document.getElementById('prod-detail-name').style.color=t.text;
-  document.getElementById('prod-detail-name').textContent=p.name;
+  document.getElementById('prod-detail-name').textContent=trName(p);
   document.getElementById('prod-detail-desc').style.color=t.text2;
-  document.getElementById('prod-detail-desc').textContent=p.description||'';
+  document.getElementById('prod-detail-desc').textContent=trDesc(p);
   document.getElementById('prod-detail-price').style.color=color;
   document.getElementById('prod-detail-price').textContent=`₺${parseFloat(p.price).toFixed(2)}`;
   document.getElementById('prod-detail-overlay').classList.add('open');

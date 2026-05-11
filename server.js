@@ -195,7 +195,11 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(express.static('public'));
+app.use(express.static('public', {
+  setHeaders: (res, fp) => {
+    if (fp.endsWith('manifest.json')) res.setHeader('Content-Type', 'application/manifest+json');
+  }
+}));
 
 // JWT doğrulama
 function authMiddleware(req, res, next) {
