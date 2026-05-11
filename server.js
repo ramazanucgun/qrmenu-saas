@@ -60,12 +60,31 @@ async function resizeImage(buffer, mimeType, options = {}) {
 const s3 = new S3Client({
   region: 'auto',
   endpoint: process.env.R2_ENDPOINT,
-  forcePathStyle: false, // Cloudflare R2 virtual-hosted style kullanır
+  forcePathStyle: false,
   credentials: {
     accessKeyId: process.env.R2_ACCESS_KEY,
     secretAccessKey: process.env.R2_SECRET_KEY,
   },
 });
+
+// R2'ye yükle — URL döndür. R2 config yoksa base64 fallback.
+async function uploadToR2(buffer, mimeType, folder) {
+  if (!process.env.R2_ENDPOINT || !process.env.R2_ACCESS_KEY || !process.env.R2_BUCKET) {
+    // R2 config yok — base64 döndür (fallback)
+    return { url: `data:${mimeType};base64,${buffer.toString('base64')}`, isBase64: true };
+  }
+  const ext = mimeType === 'image/webp' ? 'webp' : mimeType === 'image/png' ? 'png' : 'jpg';
+  const key = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  await s3.send(new PutObjectCommand({
+    Bucket: process.env.R2_BUCKET,
+    Key: key,
+    Body: buffer,
+    ContentType: mimeType,
+    CacheControl: 'public, max-age=31536000',
+  }));
+  const publicBase = process.env.R2_PUBLIC_URL || process.env.R2_ENDPOINT.replace('https://', 'https://pub-').replace('.r2.cloudflarestorage.com','');
+  return { url: `${publicBase}/${key}`, isBase64: false };
+}
 
 // Multer — resim yükleme
 const upload = multer({
@@ -193,8 +212,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '15mb' }));
+app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 app.use(express.static('public', {
   setHeaders: (res, fp) => {
     if (fp.endsWith('manifest.json')) res.setHeader('Content-Type', 'application/manifest+json');
@@ -2469,7 +2488,7 @@ app.post('/api/upload/product-image', authMiddleware, upload.single('image'), as
     const { buffer, mimeType } = await resizeImage(req.file.buffer, req.file.mimetype, {
       width: 600, height: 600, quality: 72
     });
-    const imageUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;
+    const { url: imageUrl } = await uploadToR2(buffer, mimeType, 'products');
     res.json({ imageUrl });
   } catch (err) {
     res.status(500).json({ error: 'Yükleme hatası: ' + err.message });
@@ -2480,9 +2499,9 @@ app.post('/api/upload/logo', authMiddleware, upload.single('image'), async (req,
   if (!req.file) return res.status(400).json({ error: 'Dosya seçilmedi' });
   try {
     const { buffer, mimeType } = await resizeImage(req.file.buffer, req.file.mimetype, {
-      width: 200, height: 200, quality: 80
+      width: 400, height: 400, quality: 85
     });
-    const logoUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;
+    const { url: logoUrl } = await uploadToR2(buffer, mimeType, 'logos');
     await pool.query('UPDATE restaurants SET logo_url=$1 WHERE id=$2', [logoUrl, req.user.restaurantId]);
     res.json({ logoUrl });
   } catch (err) {
@@ -2493,9 +2512,9 @@ app.post('/api/upload/campaign-image', authMiddleware, upload.single('image'), a
   if (!req.file) return res.status(400).json({ error: 'Dosya seçilmedi' });
   try {
     const { buffer, mimeType } = await resizeImage(req.file.buffer, req.file.mimetype, {
-      width: 800, height: 500, quality: 75
+      width: 1080, height: 1920, quality: 80  // Instagram story oranı
     });
-    const imageUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;
+    const { url: imageUrl } = await uploadToR2(buffer, mimeType, 'campaigns');
     res.json({ imageUrl });
   } catch (err) {
     res.status(500).json({ error: 'Yükleme hatası: ' + err.message });
