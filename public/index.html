@@ -12,13 +12,14 @@
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link rel="icon" type="image/png" href="/icons/cafemenu-icon.png">
   <script src="https://accounts.google.com/gsi/client" async></script>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>CafeMenu — Dijital Menü Platformu</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@400;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{--accent:#e8c547;--bg:#0d0d0f;--bg2:#141416;--bg3:#1c1c20;--border:rgba(255,255,255,0.08);--text:#f0f0ee;--text2:#a8a8a4;--text3:#555;--green:#47c97e;--red:#e84747;--blue:#4799e8;--r:10px;--serif:'DM Serif Display',serif;--sans:'DM Sans',sans-serif}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh}
+html,body{overflow-x:hidden;width:100%;max-width:100%}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
 button{cursor:pointer;font-family:var(--sans)}
 input,textarea,select{font-family:var(--sans)}
 .view{display:none;min-height:100vh}
@@ -169,10 +170,11 @@ textarea.form-input{resize:vertical;min-height:80px}
 #menu-view{flex-direction:column}
 .menu-topbar-admin{background:#111;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .menu-back{background:rgba(255,255,255,.1);border:none;color:#aaa;font-size:12px;padding:5px 12px;border-radius:6px;cursor:pointer}
-.menu-public{flex:1;max-width:500px;margin:0 auto;width:100%;min-height:100vh;box-shadow:0 0 40px rgba(0,0,0,.15)}
+.menu-public{flex:1;max-width:500px;margin:0 auto;width:100%;min-height:100vh;box-shadow:0 0 40px rgba(0,0,0,.15);overflow-x:hidden;box-sizing:border-box}
+#menu-public{overflow-x:hidden;width:100%;max-width:100vw}
 
 /* Müşteri menüsü genel stiller */
-.m-hero{padding:32px 20px 24px;text-align:center;position:relative;overflow:hidden}
+.m-hero{padding:32px 20px 24px;text-align:center;position:relative;overflow:hidden;box-sizing:border-box;width:100%}
 .m-hero-bg{position:absolute;inset:0;opacity:.6}
 .m-logo{width:72px;height:72px;border-radius:16px;object-fit:cover;border:3px solid rgba(255,255,255,.2);margin-bottom:12px}
 .m-logo-placeholder{width:72px;height:72px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 12px;border:3px solid rgba(255,255,255,.2)}
@@ -182,14 +184,14 @@ textarea.form-input{resize:vertical;min-height:80px}
 .m-pill{display:flex;align-items:center;gap:5px;font-size:12px;border-radius:20px;padding:6px 14px;cursor:pointer;border:1px solid;font-family:var(--sans);transition:all .15s;font-weight:500}
 
 /* Arama */
-.m-search-wrap{padding:12px 16px}
+.m-search-wrap{padding:12px 16px;box-sizing:border-box;width:100%}
 .m-search{width:100%;padding:10px 14px 10px 36px;border-radius:10px;font-size:14px;font-family:var(--sans);outline:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23999' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:10px center}
 
-.sticky-nav{position:sticky;top:0;display:flex;overflow-x:auto;z-index:10;scrollbar-width:none;border-bottom:1px solid}
+.sticky-nav{position:sticky;top:0;display:flex;overflow-x:auto;z-index:10;scrollbar-width:none;border-bottom:1px solid;-webkit-overflow-scrolling:touch;touch-action:pan-x}
 .sticky-nav::-webkit-scrollbar{display:none}
 .snav-item{padding:12px 16px;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
 
-.m-section{padding:18px 16px}
+.m-section{padding:18px 16px;overflow:hidden;box-sizing:border-box}
 .m-section-title{font-size:1.2rem;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid}
 
 /* KART STİLİ 1: Liste */
@@ -206,9 +208,10 @@ textarea.form-input{resize:vertical;min-height:80px}
 .style-card .m-products-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .style-card .m-product{border-radius:12px;overflow:hidden;border:1px solid;cursor:pointer;transition:transform .15s}
 .style-card .m-product:hover{transform:translateY(-2px)}
-.style-card .m-prod-img{width:100%;height:140px;display:flex;align-items:center;justify-content:center;font-size:48px;overflow:hidden}.style-card .m-prod-img img{width:100%;height:140px;object-fit:cover;display:block}.style-card .m-prod-img img{width:100%;height:140px;object-fit:cover;display:block}.style-card .m-prod-img img{width:100%;height:140px;object-fit:cover;display:block}.style-card .m-prod-img img{width:100%;height:140px;object-fit:cover;display:block}.style-card .m-prod-img img{width:100%;height:140px;object-fit:cover;display:block}.style-card .m-prod-img img{width:100%;height:140px;object-fit:cover;display:block}.style-card .m-prod-img img{width:100%;height:140px;object-fit:cover;display:block}.style-card .m-prod-img img{width:100%;height:140px;object-fit:cover;display:block}
+.style-card .m-prod-img{width:100%;height:140px;display:flex;align-items:center;justify-content:center;font-size:48px;overflow:hidden}.style-card .m-prod-img img{width:100%;height:140px;object-fit:cover;display:block}
 .style-card .m-prod-img img{width:100%;height:100%;object-fit:cover}
-.style-card .m-prod-body{padding:12px}
+.style-card .m-products{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;box-sizing:border-box}
+.style-card .m-prod-body{padding:10px;box-sizing:border-box}
 .style-card .m-prod-name{font-size:13px;font-weight:600;margin-bottom:3px}
 .style-card .m-prod-desc{font-size:11px;line-height:1.4;margin-bottom:6px;opacity:.7;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;line-clamp:1}
 .style-card .m-prod-price{font-size:14px;font-weight:700}
@@ -222,7 +225,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 .style-compact .m-prod-price{font-size:14px;font-weight:700;margin-left:12px;flex-shrink:0}
 .style-compact .m-prod-img{display:none}
 
-.m-footer{padding:28px 20px;border-top:1px solid;text-align:center}
+.m-footer{padding:28px 20px;border-top:1px solid;text-align:center;padding-bottom:max(28px,env(safe-area-inset-bottom))}
 .waiter-btn{color:#fff;border:none;border-radius:12px;padding:13px 28px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;margin:0 auto 16px;cursor:pointer;transition:all .15s;font-family:var(--sans)}
 .waiter-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
 .wifi-card{border:1px solid;border-radius:12px;padding:14px;display:inline-flex;gap:12px;align-items:center;text-align:left;margin-bottom:14px}
