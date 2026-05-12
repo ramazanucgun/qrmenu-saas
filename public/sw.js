@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cafemenu-admin-v2';
+const CACHE_NAME = 'cafemenu-admin-v3';
 const STATIC_ASSETS = [
   '/admin',
   '/admin.html',
@@ -53,13 +53,20 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        if (response.ok && response.type === 'basic') {
+        // Geçerli response'u cache'le
+        if (response && response.ok && response.status < 400 && response.type === 'basic') {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone)).catch(()=>{});
         }
         return response;
       })
-      .catch(() => caches.match(event.request))
+      .catch(() => {
+        // Network başarısız — cache'ten dön, o da yoksa boş 503
+        return caches.match(event.request).then(cached => {
+          if (cached) return cached;
+          return new Response('', { status: 503, statusText: 'Service Unavailable' });
+        });
+      })
   );
 });
 
