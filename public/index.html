@@ -43,21 +43,23 @@ input,textarea,select{font-family:var(--sans)}
 .btn-google{width:100%;padding:11px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;font-family:var(--sans)}
 .btn-google:hover{background:var(--bg2);border-color:rgba(255,255,255,.2)}
 #app-view{flex-direction:row}
-.sidebar{width:220px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100}
+.sidebar{width:220px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:200;transition:transform .25s ease}
 .sidebar-logo{padding:22px 18px;font-family:var(--serif);font-size:1.2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
 .sidebar-logo span{color:var(--accent)}
 .sidebar-nav{flex:1;padding:10px 8px;overflow-y:auto}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;backdrop-filter:blur(2px)}
 .nav-section{font-size:10px;color:var(--text3);letter-spacing:.1em;padding:10px 10px 5px;font-weight:600}
 .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text2);transition:all .15s;position:relative}
 .nav-item:hover{background:var(--bg3);color:var(--text)}
 .nav-item.active{background:rgba(232,197,71,.1);color:var(--accent)}
 .nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;display:none}
-.sidebar-footer{padding:14px;border-top:1px solid var(--border)}
+.sidebar-footer{padding:14px;border-top:1px solid var(--border);padding-bottom:max(14px,env(safe-area-inset-bottom))}
 .plan-box{background:rgba(232,197,71,.07);border:1px solid rgba(232,197,71,.15);border-radius:8px;padding:10px 12px}
 .plan-name{color:var(--accent);font-size:12px;font-weight:600}
 .plan-meta{color:var(--text3);font-size:11px;margin-top:2px}
-.main{margin-left:220px;flex:1}
-.topbar{height:54px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:50}
+.main{margin-left:220px;flex:1;min-width:0;transition:margin-left .25s ease}
+.topbar{height:54px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;position:sticky;top:0;z-index:50}
+.hamburger{display:none;background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;color:var(--text);font-size:20px;line-height:1}
 .topbar-title{font-size:15px;font-weight:600;flex:1}
 .btn-sm{background:var(--bg3);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:var(--text);font-size:12px;padding:7px 14px;transition:all .15s;font-weight:500}
 .btn-sm:hover{background:var(--bg2)}
@@ -249,6 +251,29 @@ textarea.form-input{resize:vertical;min-height:80px}
 .camp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:400;display:none;align-items:center;justify-content:center;padding:0}
 .camp-overlay.open{display:flex}
 .camp-box{position:relative;background:#111;overflow:hidden;width:100%;max-width:420px;height:100svh;max-height:100svh;text-align:center;animation:popIn .35s cubic-bezier(.34,1.56,.64,1);box-shadow:0 0 60px rgba(0,0,0,.6);display:flex;flex-direction:column}
+/* ── MOBİL RESPONSIVE: Admin Panel ── */
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);width:260px;box-shadow:4px 0 24px rgba(0,0,0,.2)}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-overlay.open{display:block}
+  .main{margin-left:0!important}
+  .hamburger{display:flex;align-items:center;justify-content:center}
+  .topbar{padding:0 12px}
+  /* Stat kartları — tek sütun */
+  .stats-grid{grid-template-columns:repeat(2,1fr)!important;gap:10px!important}
+  /* Panel genişliği */
+  .panel{margin-bottom:12px}
+  /* Tablolar scroll */
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  /* Butonlar tam genişlik bazı yerlerde */
+  .modal{padding:16px!important;margin:12px!important;max-height:calc(100vh - 24px)!important}
+  /* QR ve diğer büyük içerikler */
+  .content-area{padding:12px!important}
+}
+@media(max-width:400px){
+  .stats-grid{grid-template-columns:1fr!important}
+  .topbar-title{font-size:13px}
+}
 @media(min-width:480px){.camp-box{max-width:390px;height:calc(390px * 16/9);max-height:95svh;border-radius:20px}}
 @keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
 .camp-img{flex:1;display:flex;align-items:center;justify-content:center;font-size:80px;background:linear-gradient(135deg,#fde68a,#f59e0b);overflow:hidden;position:relative;min-height:0}
@@ -414,7 +439,8 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
 
 <!-- APP -->
 <div id="app-view" class="view">
-  <aside class="sidebar">
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo"><img src="/icons/cafemenu-logo.png" style="height:40px;object-fit:contain"></div>
     <nav class="sidebar-nav">
       <div class="nav-section">DASHBOARD</div>
@@ -440,6 +466,7 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
   </aside>
   <main class="main">
     <div class="topbar">
+      <button class="hamburger" onclick="toggleSidebar()" aria-label="Menü">☰</button>
       <span class="topbar-title" id="topbar-title">Genel Bakış</span>
       <div style="display:flex;gap:8px">
         <button class="btn-sm" onclick="openMenu()">👁 Önizle</button>
@@ -1456,6 +1483,27 @@ async function _doRegister() {
 
 function doLogout() { TOKEN=null; RESTAURANT=null; localStorage.removeItem('qrmenu_token'); localStorage.removeItem('qrmenu_rest'); document.getElementById('app-view').classList.remove('active'); document.getElementById('auth-view').classList.add('active'); }
 
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  if (!sb) return;
+  const isOpen = sb.classList.contains('open');
+  if (isOpen) { closeSidebar(); } else {
+    sb.classList.add('open');
+    ov.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+}
+function closeSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  if (sb) sb.classList.remove('open');
+  if (ov) ov.classList.remove('open');
+  document.body.style.overflow = '';
+}
+// Sayfa değişince sidebar kapat
+const _origGoPage = window.goPage;
+
 async function loadApp() {
   document.getElementById('auth-view').classList.remove('active');
   document.getElementById('app-view').classList.add('active');
@@ -1917,6 +1965,7 @@ function renderAnalyticsChart(byDay, period){
 }
 
 function goPage(id,el){
+  if(window.innerWidth<=768) closeSidebar();
   document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
   if(el) el.classList.add('active');
   document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
