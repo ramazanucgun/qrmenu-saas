@@ -821,7 +821,7 @@ await pool.query(
             </p>
             <div style="background:#fff8e1;border:1px solid #e8c547;border-radius:10px;padding:16px;margin-bottom:20px;text-align:center">
               <div style="font-size:13px;color:#666;margin-bottom:10px">Email adresinizi doğrulamak için aşağıdaki butona tıklayın:</div>
-              <a href="${process.env.APP_URL}/verify-email?token=${verifyToken}" style="background:#e8c547;color:#111;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block">✅ Email Adresimi Doğrula</a>
+              <a href="${(process.env.APP_URL||'https://app.cafemenu.com.tr')}/verify-email?token=${verifyToken}" style="background:#e8c547;color:#111;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block">✅ Email Adresimi Doğrula</a>
               <div style="font-size:11px;color:#aaa;margin-top:8px">Bu link 24 saat geçerlidir</div>
             </div>
             <div style="text-align:center">
@@ -835,6 +835,8 @@ await pool.query(
       });
     } catch(emailErr) {
       console.error('❌ Hoşgeldin emaili gönderilemedi:', emailErr?.message || emailErr);
+      console.error('RESEND_API_KEY var mı:', !!process.env.RESEND_API_KEY);
+      console.error('Alıcı:', email);
     }
 
     res.json({
@@ -1896,6 +1898,43 @@ app.get('/api/admin/stats', adminMiddleware, async (req, res) => {
   } catch(err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// Admin → kullanıcı email güncelle
+app.put('/api/admin/users/:id/email', adminMiddleware, async (req, res) => {
+  const { email } = req.body;
+  if (!email || !email.includes('@')) return res.status(400).json({ error: 'Geçerli bir email girin' });
+  try {
+    // Email çakışması kontrol
+    const exists = await pool.query('SELECT id FROM users WHERE email=$1 AND id!=$2', [email, req.params.id]);
+    if (exists.rows.length) return res.status(400).json({ error: 'Bu email zaten kullanımda' });
+    await pool.query('UPDATE users SET email=$1, is_verified=false WHERE id=$2', [email, req.params.id]);
+    res.json({ success: true, message: 'Email güncellendi' });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// Admin → kullanıcı şifre sıfırla
+app.put('/api/admin/users/:id/password', adminMiddleware, async (req, res) => {
+  const { password } = req.body;
+  if (!password || password.length < 6) return res.status(400).json({ error: 'Şifre en az 6 karakter olmalı' });
+  try {
+    const hash = await bcrypt.hash(password, 10);
+    await pool.query('UPDATE users SET password_hash=$1 WHERE id=$2', [hash, req.params.id]);
+    res.json({ success: true, message: 'Şifre güncellendi' });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// Admin → restoran slug güncelle
+app.put('/api/admin/users/:id/slug', adminMiddleware, async (req, res) => {
+  const { slug } = req.body;
+  if (!slug || slug.length < 3) return res.status(400).json({ error: 'Slug en az 3 karakter olmalı' });
+  const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  try {
+    const exists = await pool.query('SELECT id FROM restaurants WHERE slug=$1 AND user_id!=$2', [cleanSlug, req.params.id]);
+    if (exists.rows.length) return res.status(400).json({ error: 'Bu slug zaten kullanımda' });
+    await pool.query('UPDATE restaurants SET slug=$1 WHERE user_id=$2', [cleanSlug, req.params.id]);
+    res.json({ success: true, slug: cleanSlug, message: 'Menü linki güncellendi' });
+  } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
 // Admin → kullanıcı adına geçici token üret (impersonate)

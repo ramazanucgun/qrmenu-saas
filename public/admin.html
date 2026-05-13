@@ -324,6 +324,7 @@ function renderUsers() {
       </td>
       <td>
         <button class="btn-sm edit-sub-btn" data-id="${u.id}" data-plan="${u.plan||'trial'}" data-status="${u.status||'active'}" data-starts="" data-ends="" data-method="" data-note="" style="margin-right:4px">✏️ Plan</button>
+        <button class="btn-sm edit-user-btn" data-id="${u.id}" data-email="${u.email}" data-slug="${u.slug||''}" data-name="${u.restaurant_name||u.email}" style="margin-right:4px;background:rgba(99,179,237,.12);color:#2b6cb0;border-color:rgba(99,179,237,.3)">✏️ Düzenle</button>
         <button class="btn-sm imp-btn" data-id="${u.id}" data-email="${u.email}" data-name="${u.restaurant_name||u.email}" style="margin-right:4px;background:rgba(232,197,71,.15);color:#c8a400;border-color:rgba(232,197,71,.3)">🔐 Giriş</button>
         <button class="btn-sm btn-danger del-user-btn" data-id="${u.id}" data-email="${u.email}">🗑 Sil</button>
       </td>
@@ -334,6 +335,9 @@ function renderUsers() {
   });
   tbody.querySelectorAll('.del-user-btn').forEach(btn => {
     btn.addEventListener('click', () => deleteUser(btn.dataset.id, btn.dataset.email));
+  });
+  tbody.querySelectorAll('.edit-user-btn').forEach(btn => {
+    btn.addEventListener('click', () => openEditUser(btn.dataset.id, btn.dataset.email, btn.dataset.slug, btn.dataset.name));
   });
   tbody.querySelectorAll('.imp-btn').forEach(btn => {
     btn.addEventListener('click', () => impersonateUser(btn.dataset.id, btn.dataset.email, btn.dataset.name));
@@ -493,6 +497,136 @@ window.addEventListener('appinstalled', () => {
   const btn = document.getElementById('install-btn');
   if (btn) btn.style.display = 'none';
 });
+</script>
+
+<!-- Kullanıcı Düzenleme Modalı -->
+<div id="edit-user-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--bg2);border-radius:16px;padding:28px;width:100%;max-width:440px;border:1px solid var(--border)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:700;color:var(--text)" id="edit-user-title">Kullanıcı Düzenle</div>
+      <button onclick="closeEditUser()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3)">✕</button>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:4px;margin-bottom:20px;background:var(--bg3);border-radius:8px;padding:4px">
+      <button id="eu-tab-email" onclick="euTab('email')" style="flex:1;padding:7px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;background:var(--bg2);color:var(--text)">📧 Email</button>
+      <button id="eu-tab-pass" onclick="euTab('pass')" style="flex:1;padding:7px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--text3)">🔑 Şifre</button>
+      <button id="eu-tab-slug" onclick="euTab('slug')" style="flex:1;padding:7px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--text3)">🔗 Menü Linki</button>
+    </div>
+
+    <!-- Email tab -->
+    <div id="eu-panel-email">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:8px">Mevcut email değiştiriliyor. Kullanıcı yeni emailiyle giriş yapacak.</div>
+      <input class="admin-input" id="eu-email" type="email" placeholder="yeni@email.com" style="width:100%;margin-bottom:12px">
+      <button onclick="saveUserEmail()" class="btn-primary" style="width:100%">Email Güncelle</button>
+    </div>
+
+    <!-- Şifre tab -->
+    <div id="eu-panel-pass" style="display:none">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:8px">Kullanıcı için yeni şifre belirleyin (min 6 karakter).</div>
+      <input class="admin-input" id="eu-password" type="password" placeholder="Yeni şifre" style="width:100%;margin-bottom:6px">
+      <input class="admin-input" id="eu-password2" type="password" placeholder="Şifreyi tekrar girin" style="width:100%;margin-bottom:12px">
+      <button onclick="saveUserPassword()" class="btn-primary" style="width:100%">Şifre Güncelle</button>
+    </div>
+
+    <!-- Slug tab -->
+    <div id="eu-panel-slug" style="display:none">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:8px">Menü linki değiştiriliyor. Eski link çalışmayı durduracak.</div>
+      <div style="display:flex;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px">
+        <span style="padding:0 8px;font-size:11px;color:var(--text3);white-space:nowrap;border-right:1px solid var(--border)">app.cafemenu.com.tr/</span>
+        <input id="eu-slug" style="background:transparent;border:none;outline:none;color:var(--text);font-size:13px;padding:10px;flex:1;font-family:monospace" placeholder="yeni-link" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9-]/g,'-')">
+      </div>
+      <button onclick="saveUserSlug()" class="btn-primary" style="width:100%">Linki Güncelle</button>
+    </div>
+
+    <div id="eu-msg" style="margin-top:12px;font-size:13px;display:none;padding:8px 12px;border-radius:8px"></div>
+  </div>
+</div>
+
+<script>
+let _editUserId = null;
+
+function openEditUser(id, email, slug, name) {
+  _editUserId = id;
+  document.getElementById('edit-user-title').textContent = `${name} — Düzenle`;
+  document.getElementById('eu-email').value = email;
+  document.getElementById('eu-slug').value = slug || '';
+  document.getElementById('eu-password').value = '';
+  document.getElementById('eu-password2').value = '';
+  document.getElementById('eu-msg').style.display = 'none';
+  document.getElementById('edit-user-overlay').style.display = 'flex';
+  euTab('email');
+}
+
+function closeEditUser() {
+  document.getElementById('edit-user-overlay').style.display = 'none';
+  _editUserId = null;
+}
+
+function euTab(tab) {
+  ['email','pass','slug'].forEach(t => {
+    document.getElementById('eu-panel-'+t).style.display = t===tab ? '' : 'none';
+    const btn = document.getElementById('eu-tab-'+t);
+    btn.style.background = t===tab ? 'var(--bg2)' : 'transparent';
+    btn.style.color = t===tab ? 'var(--text)' : 'var(--text3)';
+  });
+}
+
+function euMsg(msg, ok=false) {
+  const el = document.getElementById('eu-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.background = ok ? 'rgba(72,187,120,.1)' : 'rgba(245,101,101,.1)';
+  el.style.color = ok ? '#276749' : '#9b2c2c';
+}
+
+async function saveUserEmail() {
+  const email = document.getElementById('eu-email').value.trim();
+  if (!email) return euMsg('Email boş olamaz');
+  try {
+    const r = await fetch(`/api/admin/users/${_editUserId}/email`, {
+      method:'PUT', headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('adminToken')},
+      body: JSON.stringify({email})
+    });
+    const d = await r.json();
+    if (!r.ok) return euMsg(d.error||'Hata');
+    euMsg('✅ Email güncellendi', true);
+    renderUsers();
+  } catch(e) { euMsg(e.message); }
+}
+
+async function saveUserPassword() {
+  const p1 = document.getElementById('eu-password').value;
+  const p2 = document.getElementById('eu-password2').value;
+  if (p1.length < 6) return euMsg('Şifre en az 6 karakter olmalı');
+  if (p1 !== p2) return euMsg('Şifreler eşleşmiyor');
+  try {
+    const r = await fetch(`/api/admin/users/${_editUserId}/password`, {
+      method:'PUT', headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('adminToken')},
+      body: JSON.stringify({password:p1})
+    });
+    const d = await r.json();
+    if (!r.ok) return euMsg(d.error||'Hata');
+    euMsg('✅ Şifre güncellendi', true);
+    document.getElementById('eu-password').value = '';
+    document.getElementById('eu-password2').value = '';
+  } catch(e) { euMsg(e.message); }
+}
+
+async function saveUserSlug() {
+  const slug = document.getElementById('eu-slug').value.trim();
+  if (slug.length < 3) return euMsg('Slug en az 3 karakter olmalı');
+  try {
+    const r = await fetch(`/api/admin/users/${_editUserId}/slug`, {
+      method:'PUT', headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('adminToken')},
+      body: JSON.stringify({slug})
+    });
+    const d = await r.json();
+    if (!r.ok) return euMsg(d.error||'Hata');
+    euMsg('✅ Menü linki güncellendi: ' + d.slug, true);
+    renderUsers();
+  } catch(e) { euMsg(e.message); }
+}
 </script>
 </body>
 </html>
