@@ -585,7 +585,7 @@ async function saveUserEmail() {
   if (!email) return euMsg('Email boş olamaz');
   try {
     const r = await fetch(`/api/admin/users/${_editUserId}/email`, {
-      method:'PUT', headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('adminToken')},
+      method:'PUT', headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('admin_token')},
       body: JSON.stringify({email})
     });
     const d = await r.json();
@@ -602,7 +602,7 @@ async function saveUserPassword() {
   if (p1 !== p2) return euMsg('Şifreler eşleşmiyor');
   try {
     const r = await fetch(`/api/admin/users/${_editUserId}/password`, {
-      method:'PUT', headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('adminToken')},
+      method:'PUT', headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('admin_token')},
       body: JSON.stringify({password:p1})
     });
     const d = await r.json();
@@ -618,7 +618,7 @@ async function saveUserSlug() {
   if (slug.length < 3) return euMsg('Slug en az 3 karakter olmalı');
   try {
     const r = await fetch(`/api/admin/users/${_editUserId}/slug`, {
-      method:'PUT', headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('adminToken')},
+      method:'PUT', headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('admin_token')},
       body: JSON.stringify({slug})
     });
     const d = await r.json();
