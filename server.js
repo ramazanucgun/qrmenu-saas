@@ -1800,7 +1800,7 @@ app.post('/api/admin/login', async (req, res) => {
 app.get('/api/admin/users', adminMiddleware, async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT u.id, u.email, u.role, u.created_at,
+      SELECT u.id, u.email, u.role, u.created_at, u.is_verified,
              r.name as restaurant_name, r.slug,
              s.plan, s.status, s.trial_ends_at, s.starts_at, s.ends_at
       FROM users u
@@ -1898,6 +1898,24 @@ app.get('/api/admin/stats', adminMiddleware, async (req, res) => {
   } catch(err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// Admin → kullanıcı email doğrulamasını onayla
+app.post('/api/admin/users/:id/verify', adminMiddleware, async (req, res) => {
+  try {
+    await pool.query('UPDATE users SET is_verified=true WHERE id=$1', [req.params.id]);
+    await pool.query('DELETE FROM email_verifications WHERE user_id=$1', [req.params.id]);
+    console.log(`✅ Admin email doğruladı: user ${req.params.id}`);
+    res.json({ success: true, message: 'Email doğrulandı' });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// Admin → kullanıcı email doğrulamasını kaldır
+app.post('/api/admin/users/:id/unverify', adminMiddleware, async (req, res) => {
+  try {
+    await pool.query('UPDATE users SET is_verified=false WHERE id=$1', [req.params.id]);
+    res.json({ success: true, message: 'Doğrulama kaldırıldı' });
+  } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
 // Admin → kullanıcı email güncelle

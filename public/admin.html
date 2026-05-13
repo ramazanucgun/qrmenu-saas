@@ -314,6 +314,9 @@ function renderUsers() {
     <tr>
       <td>
         <div style="font-weight:600">${u.email}</div>
+        <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;${u.is_verified?'background:rgba(72,187,120,.12);color:#276749':'background:rgba(245,101,101,.1);color:#9b2c2c'}">
+          ${u.is_verified?'✅ Doğrulandı':'⚠️ Doğrulanmadı'}
+        </span>
       </td>
       <td>${u.restaurant_name || '—'}<br><span style="font-size:11px;color:var(--text3)">${u.slug ? '/menu/'+u.slug : ''}</span></td>
       <td><span class="badge ${planBadge[u.plan]||'b-blue'}">${(u.plan||'trial').toUpperCase()}</span></td>
@@ -324,7 +327,7 @@ function renderUsers() {
       </td>
       <td>
         <button class="btn-sm edit-sub-btn" data-id="${u.id}" data-plan="${u.plan||'trial'}" data-status="${u.status||'active'}" data-starts="" data-ends="" data-method="" data-note="" style="margin-right:4px">✏️ Plan</button>
-        <button class="btn-sm edit-user-btn" data-id="${u.id}" data-email="${u.email}" data-slug="${u.slug||''}" data-name="${u.restaurant_name||u.email}" style="margin-right:4px;background:rgba(99,179,237,.12);color:#2b6cb0;border-color:rgba(99,179,237,.3)">✏️ Düzenle</button>
+        <button class="btn-sm edit-user-btn" data-id="${u.id}" data-email="${u.email}" data-slug="${u.slug||''}" data-name="${u.restaurant_name||u.email}" data-verified="${u.is_verified?'1':''}" style="margin-right:4px;background:rgba(99,179,237,.12);color:#2b6cb0;border-color:rgba(99,179,237,.3)">✏️ Düzenle</button>
         <button class="btn-sm imp-btn" data-id="${u.id}" data-email="${u.email}" data-name="${u.restaurant_name||u.email}" style="margin-right:4px;background:rgba(232,197,71,.15);color:#c8a400;border-color:rgba(232,197,71,.3)">🔐 Giriş</button>
         <button class="btn-sm btn-danger del-user-btn" data-id="${u.id}" data-email="${u.email}">🗑 Sil</button>
       </td>
@@ -337,7 +340,7 @@ function renderUsers() {
     btn.addEventListener('click', () => deleteUser(btn.dataset.id, btn.dataset.email));
   });
   tbody.querySelectorAll('.edit-user-btn').forEach(btn => {
-    btn.addEventListener('click', () => openEditUser(btn.dataset.id, btn.dataset.email, btn.dataset.slug, btn.dataset.name));
+    btn.addEventListener('click', () => openEditUser(btn.dataset.id, btn.dataset.email, btn.dataset.slug, btn.dataset.name, btn.dataset.verified==='1'));
   });
   tbody.querySelectorAll('.imp-btn').forEach(btn => {
     btn.addEventListener('click', () => impersonateUser(btn.dataset.id, btn.dataset.email, btn.dataset.name));
@@ -512,6 +515,7 @@ window.addEventListener('appinstalled', () => {
       <button id="eu-tab-email" onclick="euTab('email')" style="flex:1;padding:7px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;background:var(--bg2);color:var(--text)">📧 Email</button>
       <button id="eu-tab-pass" onclick="euTab('pass')" style="flex:1;padding:7px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--text3)">🔑 Şifre</button>
       <button id="eu-tab-slug" onclick="euTab('slug')" style="flex:1;padding:7px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--text3)">🔗 Menü Linki</button>
+      <button id="eu-tab-verify" onclick="euTab('verify')" style="flex:1;padding:7px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--text3)">✅ Doğrulama</button>
     </div>
 
     <!-- Email tab -->
@@ -539,6 +543,17 @@ window.addEventListener('appinstalled', () => {
       <button onclick="saveUserSlug()" class="btn-primary" style="width:100%">Linki Güncelle</button>
     </div>
 
+    <!-- Doğrulama panel -->
+    <div id="eu-panel-verify" style="display:none">
+      <div style="text-align:center;padding:8px 0">
+        <div id="eu-verify-status" style="font-size:15px;font-weight:700;margin-bottom:16px"></div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:20px;line-height:1.6">
+          Kullanıcının email doğrulama linkini tıklamasına gerek kalmadan<br>siz manuel olarak onaylayabilirsiniz.
+        </div>
+        <button id="eu-verify-btn" onclick="toggleVerify()" class="btn-primary" style="width:100%"></button>
+      </div>
+    </div>
+
     <div id="eu-msg" style="margin-top:12px;font-size:13px;display:none;padding:8px 12px;border-radius:8px"></div>
   </div>
 </div>
@@ -546,17 +561,25 @@ window.addEventListener('appinstalled', () => {
 <script>
 let _editUserId = null;
 
-function openEditUser(id, email, slug, name) {
+function openEditUser(id, email, slug, name, isVerified) {
   _editUserId = id;
+  _editUserVerified = isVerified;
   document.getElementById('edit-user-title').textContent = `${name} — Düzenle`;
   document.getElementById('eu-email').value = email;
   document.getElementById('eu-slug').value = slug || '';
   document.getElementById('eu-password').value = '';
   document.getElementById('eu-password2').value = '';
   document.getElementById('eu-msg').style.display = 'none';
+  // Doğrulama durumu
+  document.getElementById('eu-verify-status').textContent = isVerified ? '✅ Email Doğrulanmış' : '⚠️ Email Doğrulanmamış';
+  document.getElementById('eu-verify-status').style.color = isVerified ? '#276749' : '#9b2c2c';
+  document.getElementById('eu-verify-btn').textContent = isVerified ? '❌ Doğrulamayı Kaldır' : '✅ Manuel Onayla';
+  document.getElementById('eu-verify-btn').style.background = isVerified ? '#fed7d7' : '#e8c547';
+  document.getElementById('eu-verify-btn').style.color = isVerified ? '#9b2c2c' : '#111';
   document.getElementById('edit-user-overlay').style.display = 'flex';
   euTab('email');
 }
+let _editUserVerified = false;
 
 function closeEditUser() {
   document.getElementById('edit-user-overlay').style.display = 'none';
@@ -564,7 +587,7 @@ function closeEditUser() {
 }
 
 function euTab(tab) {
-  ['email','pass','slug'].forEach(t => {
+  ['email','pass','slug','verify'].forEach(t => {
     document.getElementById('eu-panel-'+t).style.display = t===tab ? '' : 'none';
     const btn = document.getElementById('eu-tab-'+t);
     btn.style.background = t===tab ? 'var(--bg2)' : 'transparent';
@@ -610,6 +633,25 @@ async function saveUserPassword() {
     euMsg('✅ Şifre güncellendi', true);
     document.getElementById('eu-password').value = '';
     document.getElementById('eu-password2').value = '';
+  } catch(e) { euMsg(e.message); }
+}
+
+async function toggleVerify() {
+  const action = _editUserVerified ? 'unverify' : 'verify';
+  try {
+    const r = await fetch(`/api/admin/users/${_editUserId}/${action}`, {
+      method:'POST', headers:{'Authorization':'Bearer '+localStorage.getItem('admin_token')}
+    });
+    const d = await r.json();
+    if (!r.ok) return euMsg(d.error||'Hata');
+    _editUserVerified = !_editUserVerified;
+    document.getElementById('eu-verify-status').textContent = _editUserVerified ? '✅ Email Doğrulanmış' : '⚠️ Email Doğrulanmamış';
+    document.getElementById('eu-verify-status').style.color = _editUserVerified ? '#276749' : '#9b2c2c';
+    document.getElementById('eu-verify-btn').textContent = _editUserVerified ? '❌ Doğrulamayı Kaldır' : '✅ Manuel Onayla';
+    document.getElementById('eu-verify-btn').style.background = _editUserVerified ? '#fed7d7' : '#e8c547';
+    document.getElementById('eu-verify-btn').style.color = _editUserVerified ? '#9b2c2c' : '#111';
+    euMsg(d.message, true);
+    renderUsers();
   } catch(e) { euMsg(e.message); }
 }
 
