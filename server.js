@@ -2181,20 +2181,24 @@ app.post('/api/payment/init', authMiddleware, async (req, res) => {
 
     console.log('💳 Ödeme başlatılıyor:', { userId: req.user.userId, plan, firstName, lastName, gsm: gsmFormatted, city: buyerCity });
 
-    const convId = `sub_${req.user.userId}_${Date.now()}`;
+    // conversationId: split('_') ile ayrıştırılacak — UUID'yi base64'e al, güvenli format
+    const userIdSafe = Buffer.from(req.user.userId).toString('base64').replace(/[^a-zA-Z0-9]/g,'');
+    const convId = `sub_${userIdSafe}_${Date.now()}`;
 
-    const priceKdvDahil    = pricesWithKdv[plan];      // toplam ödenen tutar (KDV dahil)
-    const priceKdvHaric    = pricesWithoutKdv[plan];   // sepet kalemi tutarı (KDV hariç, iyzico kuralı)
+    const priceKdvDahil    = pricesWithKdv[plan];   // KDV dahil nihai fiyat
+    // İyzico: price = paidPrice = basketItems toplamı (taksitsiz ödemede eşit olmalı)
+    // KDV dahil fiyatı tüm alanlarda kullan — tutarsızlık reddine neden oluyor
+    const finalPrice = priceKdvDahil.toFixed(2);
 
     const request = {
       locale: 'tr',
       conversationId: convId,
-      price: priceKdvHaric.toFixed(2),        // sepet kalemleri toplamı (KDV hariç)
-      paidPrice: priceKdvDahil.toFixed(2),    // müşterinin ödediği tutar (KDV dahil)
+      price: finalPrice,        // sepet toplamı
+      paidPrice: finalPrice,    // ödenen tutar (taksitsiz: ikisi eşit olmalı)
       currency: 'TRY',
       basketId: `plan_${plan}_${req.user.userId}`,
       paymentGroup: 'PRODUCT',
-      callbackUrl: `${process.env.APP_URL}/api/payment/callback`,
+      callbackUrl: `${process.env.APP_URL||'https://app.cafemenu.com.tr'}/api/payment/callback`,
       enabledInstallments: [1, 2, 3, 6, 9, 12],
       buyer: {
         id: req.user.userId,
@@ -2221,19 +2225,28 @@ app.post('/api/payment/init', authMiddleware, async (req, res) => {
         name: `CafeMenu ${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan (1 Yil)`,
         category1: 'Yazilim',
         itemType: 'VIRTUAL',
-        price: priceKdvHaric.toFixed(2)  // iyzico: sepet kalemi KDV hariç olmalı
+        price: finalPrice  // sepet kalemi fiyatı (price ile eşit olmalı)
       }]
     };
 
     iyzipay.checkoutFormInitialize.create(request, (err, result) => {
-      if (err) return res.status(500).json({ error: err.message || 'İyzico bağlantı hatası' });
+      if (err) {
+        console.error('iyzico bağlantı hatası:', err);
+        return res.status(500).json({ error: err.message || 'İyzico bağlantı hatası' });
+      }
+      if (!result) {
+        return res.status(500).json({ error: 'İyzico boş yanıt döndürdü' });
+      }
       if (result.status !== 'success') {
         console.error('iyzico hata detayı:', JSON.stringify(result, null, 2));
-        const msg = result.errorMessage || result.errorCode
-          ? `${result.errorMessage || 'Ödeme başlatılamadı'} (Kod: ${result.errorCode || '-'})`
-          : 'İyzico ödeme başlatılamadı';
-        return res.status(500).json({ error: msg });
+        const errCode = result.errorCode ? ` (Kod: ${result.errorCode})` : '';
+        return res.status(500).json({ error: (result.errorMessage || 'Ödeme başlatılamadı') + errCode });
       }
+      if (!result.checkoutFormContent) {
+        console.error('iyzico checkoutFormContent boş:', result);
+        return res.status(500).json({ error: 'Ödeme formu alınamadı, lütfen tekrar deneyin' });
+      }
+      console.log('✅ iyzico checkout form oluşturuldu, token:', result.token);
       res.json({ checkoutFormContent: result.checkoutFormContent, token: result.token });
     });
   } catch(err) {
@@ -2257,22 +2270,31 @@ app.post('/api/payment/callback', async (req, res) => {
         // 1. İyzico'nun kendi doğrulaması
         if (err || result.status !== 'success' || result.paymentStatus !== 'SUCCESS') {
           console.error('İyzico ödeme başarısız:', err || result);
-          return res.redirect(`${process.env.APP_URL}/?payment=failed`);
+          return res.redirect(`${process.env.APP_URL||'https://app.cafemenu.com.tr'}/?payment=failed`);
         }
 
         // 2. conversationId formatını doğrula: "sub_<uuid>_<timestamp>"
         const convParts = result.conversationId?.split('_');
         if (!convParts || convParts.length < 3 || convParts[0] !== 'sub') {
           console.error('Geçersiz conversationId formatı:', result.conversationId);
-          return res.redirect(`${process.env.APP_URL}/?payment=failed`);
+          return res.redirect(`${(process.env.APP_URL||'https://app.cafemenu.com.tr')}/?payment=failed`);
         }
-        const userId = convParts[1];
+        // userId base64'ten çöz
+        let userId;
+        try {
+          userId = Buffer.from(convParts[1], 'base64').toString('utf8');
+          // UUID formatını doğrula
+          if (!/^[0-9a-f-]{36}$/i.test(userId)) throw new Error('Invalid UUID');
+        } catch(e) {
+          console.error('UserId çözümlenemedi:', convParts[1], e.message);
+          return res.redirect(`${(process.env.APP_URL||'https://app.cafemenu.com.tr')}/?payment=failed`);
+        }
 
         // 3. Plan değerini whitelist ile doğrula
         const planRaw = result.basketId?.split('_')[1];
         if (!VALID_PLANS.includes(planRaw)) {
           console.error('Geçersiz plan değeri:', planRaw);
-          return res.redirect(`${process.env.APP_URL}/?payment=failed`);
+          return res.redirect(`${process.env.APP_URL||'https://app.cafemenu.com.tr'}/?payment=failed`);
         }
         const plan = planRaw;
 
@@ -2283,7 +2305,7 @@ app.post('/api/payment/callback', async (req, res) => {
         );
         if (!userCheck.rows[0]) {
           console.error('Callback: kullanıcı bulunamadı:', userId);
-          return res.redirect(`${process.env.APP_URL}/?payment=failed`);
+          return res.redirect(`${process.env.APP_URL||'https://app.cafemenu.com.tr'}/?payment=failed`);
         }
 
         // 5. paymentId daha önce işlenmiş mi? (tekrar saldırı önlemi)
@@ -2293,7 +2315,7 @@ app.post('/api/payment/callback', async (req, res) => {
         );
         if (dupCheck.rows[0]) {
           console.warn('Tekrar eden paymentId, işlem atlandı:', result.paymentId);
-          return res.redirect(`${process.env.APP_URL}/?payment=success`);
+          return res.redirect(`${process.env.APP_URL||'https://app.cafemenu.com.tr'}/?payment=success`);
         }
 
         // 6. Aboneliği güncelle
@@ -2318,16 +2340,16 @@ app.post('/api/payment/callback', async (req, res) => {
         );
 
         console.log(`✅ Ödeme işlendi: userId=${userId} plan=${plan} paymentId=${result.paymentId}`);
-        res.redirect(`${process.env.APP_URL}/?payment=success`);
+        res.redirect(`${process.env.APP_URL||'https://app.cafemenu.com.tr'}/?payment=success`);
 
       } catch(innerErr) {
         console.error('Callback işleme hatası:', innerErr.message);
-        res.redirect(`${process.env.APP_URL}/?payment=failed`);
+        res.redirect(`${process.env.APP_URL||'https://app.cafemenu.com.tr'}/?payment=failed`);
       }
     });
   } catch(err) {
     console.error('İyzico callback başlatma hatası:', err.message);
-    res.redirect(`${process.env.APP_URL}/?payment=failed`);
+    res.redirect(`${process.env.APP_URL||'https://app.cafemenu.com.tr'}/?payment=failed`);
   }
 });
 
