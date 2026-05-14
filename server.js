@@ -2690,6 +2690,32 @@ async function checkSubscriptionExpiry() {
 // ═══════════════════════════════
 // OTOMATİK YEDEKLEME — Her gün saat 03:00'da
 // ═══════════════════════════════
+// Eski garson çağrılarını temizle
+async function cleanupWaiterCalls() {
+  try {
+    const acked = await pool.query(
+      `DELETE FROM waiter_calls WHERE status='acked' AND called_at < NOW() - INTERVAL '24 hours'`
+    );
+    const pending = await pool.query(
+      `DELETE FROM waiter_calls WHERE status='pending' AND called_at < NOW() - INTERVAL '7 days'`
+    );
+    const total = (acked.rowCount||0) + (pending.rowCount||0);
+    if (total > 0) console.log(`🧹 ${total} eski garson çağrısı temizlendi`);
+  } catch(err) { console.error('Garson temizleme hatası:', err.message); }
+}
+
+function scheduleWaiterCallsCleanup() {
+  const now = new Date();
+  const next = new Date();
+  next.setHours(4, 0, 0, 0);
+  if (next <= now) next.setDate(next.getDate() + 1);
+  setTimeout(async () => {
+    await cleanupWaiterCalls();
+    setInterval(cleanupWaiterCalls, 24 * 60 * 60 * 1000);
+  }, next - now);
+  console.log(`🧹 Garson temizleme: her gece 04:00`);
+}
+
 function scheduleSubscriptionCheck() {
   const now = new Date();
   // Sabah 09:00'a kaç ms kaldı?
@@ -2777,6 +2803,7 @@ async function startServer() {
       console.log(`🚀 CafeMenu API çalışıyor: port ${PORT}`);
       scheduleBackup();
       scheduleSubscriptionCheck();
+      scheduleWaiterCallsCleanup();
     });
   } catch (err) {
     console.error('❌ Sunucu başlatılamadı:', err.message);
