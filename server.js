@@ -864,19 +864,24 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     const user = result.rows[0];
     if (!user) return res.status(400).json({ error: 'Email veya şifre hatalı' });
 
+    // Google ile kayıt olmuş kullanıcılar password_hash boş olabilir
+    if (!user.password_hash) {
+      return res.status(400).json({ error: 'Bu hesap Google ile oluşturulmuş. Lütfen Google ile giriş yapın.' });
+    }
+
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return res.status(400).json({ error: 'Email veya şifre hatalı' });
 
-    if (!user.is_verified) {
-      return res.status(400).json({ error: 'EMAIL_NOT_VERIFIED' });
-    }
+    // Email doğrulanmamış — ama girişe izin ver, sadece uyar
+    // (Doğrulanmamış kullanıcılar panele girebilsin, menü yayınlayamasın)
+    const isVerified = !!user.is_verified;
 
     const token = jwt.sign(
       { userId: user.id, restaurantId: user.restaurant_id },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
-    res.json({ token, restaurantId: user.restaurant_id });
+    res.json({ token, restaurantId: user.restaurant_id, isVerified });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
