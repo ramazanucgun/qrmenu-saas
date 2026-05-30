@@ -197,6 +197,24 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static('public'));
 
+// cafemenu.com.tr ana domain → landing page
+app.get('/', (req, res, next) => {
+  const host = req.hostname || '';
+  if (host === 'cafemenu.com.tr' || host === 'www.cafemenu.com.tr') {
+    return res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+  }
+  next();
+});
+
+// Yasal sayfalar
+const legalStyle = `<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:sans-serif;background:#0e0e0e;color:#ddd;padding:80px 24px;max-width:760px;margin:0 auto;line-height:1.7}h1{font-size:2rem;color:#e8c547;margin-bottom:32px}h2{font-size:1.1rem;color:#fff;margin:28px 0 10px}p,li{font-size:14px;color:#aaa;margin-bottom:10px}ul{padding-left:20px}a{color:#e8c547}.back{display:inline-block;margin-bottom:32px;color:#666;font-size:13px}</style>`;
+
+app.get('/kullanim-sartlari', (req, res) => { res.send(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kullanım Şartları — CafeMenu</title>${legalStyle}</head><body><a href="/" class="back">← Geri</a><h1>Kullanım Şartları</h1><p>Son güncelleme: Mayıs 2025</p><h2>1. Hizmet Tanımı</h2><p>CafeMenu, restoran ve kafe işletmelerine dijital menü, QR kod yönetimi ve müşteri etkileşim araçları sunan bir SaaS platformudur.</p><h2>2. Hesap Sorumluluğu</h2><p>Hesabınızın güvenliğinden siz sorumlusunuz. Şifrenizi kimseyle paylaşmayın.</p><h2>3. Hizmet Kullanımı</h2><p>Platform yalnızca yasal ticari faaliyetler için kullanılabilir.</p><h2>4. Ödeme ve İptal</h2><p>Yıllık abonelik ücretleri peşin tahsil edilir. İptal durumunda kalan süre için iade yapılmaz.</p><h2>5. İletişim</h2><p>destek@cafemenu.com.tr</p></body></html>`); });
+
+app.get('/gizlilik', (req, res) => { res.send(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gizlilik — CafeMenu</title>${legalStyle}</head><body><a href="/" class="back">← Geri</a><h1>Gizlilik Politikası</h1><p>Son güncelleme: Mayıs 2025</p><h2>1. Toplanan Veriler</h2><p>Ad, soyad, e-posta, telefon ve işletme bilgileriniz toplanır.</p><h2>2. Veri Kullanımı</h2><p>Verileriniz yalnızca hizmet sunumu için kullanılır, üçüncü taraflarla paylaşılmaz.</p><h2>3. Veri Güvenliği</h2><p>Tüm iletişim HTTPS ile şifrelenir.</p><h2>4. Haklarınız</h2><p>Veri talepleriniz için: destek@cafemenu.com.tr</p></body></html>`); });
+
+app.get('/kvkk', (req, res) => { res.send(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KVKK — CafeMenu</title>${legalStyle}</head><body><a href="/" class="back">← Geri</a><h1>KVKK Aydınlatma Metni</h1><p>6698 Sayılı Kanun kapsamında hazırlanmıştır.</p><h2>Veri Sorumlusu</h2><p>CafeMenu — destek@cafemenu.com.tr</p><h2>İşlenen Veriler</h2><ul><li>Ad, soyad, e-posta, telefon</li><li>İşletme ve fatura bilgileri</li></ul><h2>İşleme Amaçları</h2><ul><li>Hizmet sunumu ve sözleşme ifası</li><li>Fatura ve ödeme işlemleri</li><li>Onaylanan ticari elektronik ileti</li></ul><h2>Haklarınız</h2><p>KVKK 11. madde kapsamında başvuru: destek@cafemenu.com.tr</p></body></html>`); });
+
 // JWT doğrulama
 function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];

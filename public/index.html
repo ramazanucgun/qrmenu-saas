@@ -930,7 +930,7 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
       <div class="prod-detail-desc" id="prod-detail-desc"></div>
       <div class="prod-detail-price" id="prod-detail-price"></div>
       <div style="margin-top:16px">
-        <button onclick="document.getElementById('prod-detail-overlay').classList.remove('open')" style="width:100%;padding:13px;border-radius:10px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);background:#f5f5f5;color:#111">Kapat</button>
+        <button onclick="document.getElementById('prod-detail-overlay').classList.remove('open')" id="prod-detail-close-btn" style="width:100%;padding:13px;border-radius:10px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);background:#f5f5f5;color:#111">Kapat</button>
       </div>
     </div>
   </div>
@@ -984,6 +984,9 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
     <details id="prod-trans-details" style="margin-bottom:12px">
       <summary style="cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.06em;padding:8px 0;user-select:none">🌐 ÇEVİRİLER</summary>
       <div style="margin-top:8px;padding:12px;background:var(--bg3);border-radius:10px;display:flex;flex-direction:column;gap:10px">
+        <button type="button" id="ai-translate-prod-btn" onclick="aiTranslateProduct()" style="width:100%;background:linear-gradient(135deg,rgba(232,197,71,.15),rgba(232,197,71,.05));border:1px solid rgba(232,197,71,.4);border-radius:8px;color:var(--accent);font-size:12px;font-weight:600;padding:9px 14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s;font-family:var(--sans)">
+          <span id="ai-prod-btn-icon">✨</span> <span id="ai-prod-btn-text">Yapay Zeka ile Otomatik Çevir</span>
+        </button>
         <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇬🇧 English</div><input class="form-input" id="prod-name-en" placeholder="Product name" style="margin-bottom:6px"><textarea class="form-input" id="prod-desc-en" placeholder="Description" style="height:52px"></textarea></div>
         <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇷🇺 Русский</div><input class="form-input" id="prod-name-ru" placeholder="Название" style="margin-bottom:6px"><textarea class="form-input" id="prod-desc-ru" placeholder="Описание" style="height:52px"></textarea></div>
         <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇸🇦 العربية</div><input class="form-input" id="prod-name-ar" placeholder="الاسم" dir="rtl" style="margin-bottom:6px;text-align:right"><textarea class="form-input" id="prod-desc-ar" placeholder="الوصف" dir="rtl" style="height:52px;text-align:right"></textarea></div>
@@ -1021,6 +1024,9 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
     <details style="margin-bottom:12px">
       <summary style="cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.06em;padding:8px 0;user-select:none">🌐 ÇEVİRİLER</summary>
       <div style="margin-top:8px;padding:12px;background:var(--bg3);border-radius:10px;display:flex;flex-direction:column;gap:8px">
+        <button type="button" id="ai-translate-cat-btn" onclick="aiTranslateCategory()" style="width:100%;background:linear-gradient(135deg,rgba(232,197,71,.15),rgba(232,197,71,.05));border:1px solid rgba(232,197,71,.4);border-radius:8px;color:var(--accent);font-size:12px;font-weight:600;padding:9px 14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s;font-family:var(--sans)">
+          <span id="ai-cat-btn-icon">✨</span> <span id="ai-cat-btn-text">Yapay Zeka ile Otomatik Çevir</span>
+        </button>
         <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇬🇧 English</div><input class="form-input" id="cat-name-en" placeholder="Category name"></div>
         <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇷🇺 Русский</div><input class="form-input" id="cat-name-ru" placeholder="Название категории"></div>
         <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇸🇦 العربية</div><input class="form-input" id="cat-name-ar" placeholder="اسم الفئة" dir="rtl" style="text-align:right"></div>
@@ -1186,16 +1192,16 @@ const LANG_META = {
   ar: { label: 'العربية', flag: '🇸🇦', dir: 'rtl' },
 };
 const MENU_STRINGS = {
-  tr: { search:'Menüde ara...', feedback:'💬 Geri Bildirim', waiter:'🔔 Garson Çağır',
+  tr: { search:'Menüde ara...', feedback:'💬 Geri Bildirim', waiter:'🔔 Garson Çağır', close:'Kapat',
         open:'🟢 Şu an açık', closed:'🔴 Şu an kapalı', wifiCopy:'Kopyala', wifiCopied:'Şifre kopyalandı 📋',
         quickNotes:['🍞 Ekmek getirir misiniz?','💧 Su alabilir miyim?','🧾 Hesap lütfen','🥄 Çatal/kaşık getirir misiniz?','🌶️ Sos getirir misiniz?','🗑️ Masa temizlenebilir mi?'] },
-  en: { search:'Search menu...', feedback:'💬 Feedback', waiter:'🔔 Call Waiter',
+  en: { search:'Search menu...', feedback:'💬 Feedback', waiter:'🔔 Call Waiter', close:'Close',
         open:'🟢 Open now', closed:'🔴 Closed now', wifiCopy:'Copy', wifiCopied:'Password copied 📋',
         quickNotes:['🍞 Can we get bread?','💧 Can I get water?','🧾 Check please','🥄 Can we get cutlery?','🌶️ Can we get sauce?','🗑️ Can the table be cleared?'] },
-  ru: { search:'Поиск по меню...', feedback:'💬 Отзыв', waiter:'🔔 Позвать официанта',
+  ru: { search:'Поиск по меню...', feedback:'💬 Отзыв', waiter:'🔔 Позвать официанта', close:'Закрыть',
         open:'🟢 Сейчас открыто', closed:'🔴 Сейчас закрыто', wifiCopy:'Скопировать', wifiCopied:'Пароль скопирован 📋',
         quickNotes:['🍞 Принесите хлеб?','💧 Можно воды?','🧾 Счёт пожалуйста','🥄 Принесите приборы?','🌶️ Принесите соус?','🗑️ Уберите стол?'] },
-  ar: { search:'ابحث في القائمة...', feedback:'💬 رأيك', waiter:'🔔 استدعاء النادل',
+  ar: { search:'ابحث في القائمة...', feedback:'💬 رأيك', waiter:'🔔 استدعاء النادل', close:'إغلاق',
         open:'🟢 مفتوح الآن', closed:'🔴 مغلق الآن', wifiCopy:'نسخ', wifiCopied:'تم نسخ كلمة المرور 📋',
         quickNotes:['🍞 هل يمكن إحضار خبز؟','💧 هل يمكنني الحصول على ماء؟','🧾 الحساب من فضلك','🥄 هل يمكن إحضار أدوات المائدة؟','🌶️ هل يمكن إحضار صلصة؟','🗑️ هل يمكن تنظيف الطاولة؟'] },
 };
@@ -2086,6 +2092,92 @@ async function dropCat(e, targetIndex) {
 }
 
 function selectCat(id,name){ activeCatId=id; document.getElementById('active-cat-name').textContent=name; renderCatList(); renderProductList(); }
+
+// ═══════════════════════════════
+// YAPAY ZEKA ÇEVİRİ FONKSİYONLARI
+// ═══════════════════════════════
+async function aiCallClaude(prompt) {
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error?.message || 'AI çeviri hatası');
+  const text = data.content?.map(b => b.text || '').join('') || '';
+  const clean = text.replace(/```json[\s\S]*?```/g, m => m.slice(7, -3)).replace(/```/g,'').trim();
+  try { return JSON.parse(clean); } catch { throw new Error('AI yanıtı ayrıştırılamadı'); }
+}
+
+async function aiTranslateProduct() {
+  const name = document.getElementById('prod-name').value.trim();
+  const desc = document.getElementById('prod-desc').value.trim();
+  if (!name) return toast('Önce Türkçe ürün adını girin', 'error');
+  const btn = document.getElementById('ai-translate-prod-btn');
+  const btnIcon = document.getElementById('ai-prod-btn-icon');
+  const btnText = document.getElementById('ai-prod-btn-text');
+  btn.disabled = true;
+  btnIcon.textContent = '⏳';
+  btnText.textContent = 'Çevriliyor...';
+  try {
+    const result = await aiCallClaude(
+      `You are a professional menu translator. Translate the following Turkish menu item into English, Russian, and Arabic. Return ONLY a valid JSON object with no extra text, no markdown fences. Format:\n{"en":{"name":"...","description":"..."},"ru":{"name":"...","description":"..."},"ar":{"name":"...","description":"..."}}\n\nTurkish name: ${name}\nTurkish description: ${desc || '(no description)'}`
+    );
+    if (result.en) {
+      const en = result.en;
+      document.getElementById('prod-name-en').value = en.name || '';
+      document.getElementById('prod-desc-en').value = en.description && en.description !== '(no description)' ? en.description : '';
+    }
+    if (result.ru) {
+      const ru = result.ru;
+      document.getElementById('prod-name-ru').value = ru.name || '';
+      document.getElementById('prod-desc-ru').value = ru.description && ru.description !== '(no description)' ? ru.description : '';
+    }
+    if (result.ar) {
+      const ar = result.ar;
+      document.getElementById('prod-name-ar').value = ar.name || '';
+      document.getElementById('prod-desc-ar').value = ar.description && ar.description !== '(no description)' ? ar.description : '';
+    }
+    const det = document.getElementById('prod-trans-details'); if (det) det.open = true;
+    toast('✅ Çeviri tamamlandı! Düzenleyebilir ve kaydedebilirsiniz.', 'success');
+  } catch(e) {
+    toast('Çeviri başarısız: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btnIcon.textContent = '✨';
+    btnText.textContent = 'Yapay Zeka ile Otomatik Çevir';
+  }
+}
+
+async function aiTranslateCategory() {
+  const name = document.getElementById('cat-name').value.trim();
+  if (!name) return toast('Önce Türkçe kategori adını girin', 'error');
+  const btn = document.getElementById('ai-translate-cat-btn');
+  const btnIcon = document.getElementById('ai-cat-btn-icon');
+  const btnText = document.getElementById('ai-cat-btn-text');
+  btn.disabled = true;
+  btnIcon.textContent = '⏳';
+  btnText.textContent = 'Çevriliyor...';
+  try {
+    const result = await aiCallClaude(
+      `You are a professional menu translator. Translate the following Turkish menu category name into English, Russian, and Arabic. Return ONLY a valid JSON object with no extra text, no markdown fences. Format:\n{"en":"...","ru":"...","ar":"..."}\n\nTurkish category name: ${name}`
+    );
+    if (result.en) document.getElementById('cat-name-en').value = result.en;
+    if (result.ru) document.getElementById('cat-name-ru').value = result.ru;
+    if (result.ar) document.getElementById('cat-name-ar').value = result.ar;
+    toast('✅ Kategori çevirisi tamamlandı!', 'success');
+  } catch(e) {
+    toast('Çeviri başarısız: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btnIcon.textContent = '✨';
+    btnText.textContent = 'Yapay Zeka ile Otomatik Çevir';
+  }
+}
 
 async function saveCategory(){
   const name=document.getElementById('cat-name').value.trim();
@@ -3198,7 +3290,7 @@ function renderPublicMenu(data){
   </div>`;
 
   const nav=`<div class="sticky-nav" style="background:${t.navBg};border-color:${t.border}">
-    ${cats.map((c,i)=>`<div class="snav-item ${i===0?'active':''}" style="color:${i===0?color:t.text2};${i===0?`border-color:${color}`:''}" onclick="scrollToSec('${c.id}',this,'${color}','${t.text2}')">${c.name}</div>`).join('')}
+    ${cats.map((c,i)=>`<div class="snav-item ${i===0?'active':''}" style="color:${i===0?color:t.text2};${i===0?`border-color:${color}`:''}" onclick="scrollToSec('${c.id}',this,'${color}','${t.text2}')">${trName(c)}</div>`).join('')}
   </div>`;
 
   // Card style: DB'den al, yoksa admin panelindeki currentCardStyle
@@ -3260,7 +3352,7 @@ function renderPublicMenu(data){
     </div>` : '';
 
   const footer=`<div class="m-footer" style="background:${t.footerBg};border-color:${t.border}">
-    ${restaurant.waiter_enabled !== false ? `<button class="waiter-btn" style="background:${color}" onclick="callWaiter('${restaurant.id}')">🔔 Garson Çağır</button>` : ''}
+    ${restaurant.waiter_enabled !== false ? `<button class="waiter-btn" style="background:${color}" onclick="callWaiter('${restaurant.id}')">${mt('waiter')}</button>` : ''}
 `;
 
   const noResult = `<div id="search-no-result" style="display:none;text-align:center;padding:48px 24px;color:${t.text2}">
