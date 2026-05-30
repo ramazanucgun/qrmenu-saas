@@ -1229,6 +1229,11 @@ function switchMenuLang(lang) {
   _menuLang = lang; _autoLangDetected = true;
   localStorage.setItem('menu_lang', lang);
   if (window._menuData) {
+    // Scroll spy observer'ı temizle
+    if (window._menuScrollObserver) {
+      window._menuScrollObserver.disconnect();
+      window._menuScrollObserver = null;
+    }
     renderPublicMenu(window._menuData);
     const el = document.getElementById('menu-public');
     if (el) el.setAttribute('dir', lang==='ar'?'rtl':'ltr');
@@ -3256,13 +3261,24 @@ function renderPublicMenu(data){
   const supportedLangs = (restaurant.supported_languages || ['tr']).filter(l => LANG_META[l]);
   detectBrowserLang(supportedLangs);
   if (!supportedLangs.includes(_menuLang)) _menuLang = supportedLangs[0] || 'tr';
+
+  // Hero'daki büyük dil seçici (2+ dil seçilmişse göster)
   const langSwitcherHtml = supportedLangs.length > 1
-    ? '<div style="display:flex;justify-content:center;gap:6px;margin-bottom:14px">'
-      + supportedLangs.map(l => {
-          const active = l === _menuLang;
-          const st = 'padding:5px 14px;border-radius:20px;border:1.5px solid '+(active?color:t.border)+';background:'+(active?color+'22':t.bg2)+';color:'+(active?t.text:t.text2)+';font-size:13px;font-weight:'+(active?'700':'400')+';cursor:pointer;font-family:var(--sans);transition:all .2s';
-          return '<button onclick="switchMenuLang(\'' + l + '\')" style="'+st+'">'+LANG_META[l].flag+' '+LANG_META[l].label+'</button>';
-        }).join('') + '</div>'
+    ? ('<div style="display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin-bottom:14px">'
+      + supportedLangs.map(function(l) {
+          var active = l === _menuLang;
+          var st = 'padding:5px 14px;border-radius:20px;border:1.5px solid ' + (active ? color : t.border) + ';background:' + (active ? color + '22' : t.bg2) + ';color:' + (active ? t.text : t.text2) + ';font-size:13px;font-weight:' + (active ? '700' : '400') + ';cursor:pointer;font-family:var(--sans);transition:all .2s';
+          return '<button onclick="switchMenuLang(\'' + l + '\')" style="' + st + '">' + LANG_META[l].flag + ' ' + LANG_META[l].label + '</button>';
+        }).join('') + '</div>')
+    : '';
+
+  // Sticky nav sağına eklenecek kompakt bayrak butonları (2+ dil varsa)
+  const navLangBtn = supportedLangs.length > 1
+    ? ('<div style="display:flex;align-items:center;gap:3px;padding:0 8px;flex-shrink:0;border-left:1px solid ' + t.border + '">'
+      + supportedLangs.map(function(l) {
+          var active = l === _menuLang;
+          return '<button onclick="switchMenuLang(\'' + l + '\')" title="' + LANG_META[l].label + '" style="padding:3px 6px;border-radius:14px;border:1.5px solid ' + (active ? color : 'transparent') + ';background:' + (active ? color + '22' : 'transparent') + ';font-size:16px;cursor:pointer;line-height:1;transition:all .2s">' + LANG_META[l].flag + '</button>';
+        }).join('') + '</div>')
     : '';
 
   const socialIconsHtml = (restaurant.instagram_url || restaurant.facebook_url || restaurant.google_maps_url) ? `
@@ -3289,8 +3305,10 @@ function renderPublicMenu(data){
     <input class="m-search" id="menu-search-input" placeholder="${mt('search')}" style="background:${t.searchBg};border:1px solid ${t.searchBorder};color:${t.searchColor};border-radius:10px" oninput="searchMenu(this.value)" autocomplete="off" autocorrect="off" spellcheck="false">
   </div>`;
 
-  const nav=`<div class="sticky-nav" style="background:${t.navBg};border-color:${t.border}">
+  const nav=`<div class="sticky-nav" style="background:${t.navBg};border-color:${t.border};display:flex;align-items:stretch">
+    <div style="display:flex;flex:1;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch">
     ${cats.map((c,i)=>`<div class="snav-item ${i===0?'active':''}" style="color:${i===0?color:t.text2};${i===0?`border-color:${color}`:''}" onclick="scrollToSec('${c.id}',this,'${color}','${t.text2}')">${trName(c)}</div>`).join('')}
+    </div>${navLangBtn}
   </div>`;
 
   // Card style: DB'den al, yoksa admin panelindeki currentCardStyle
@@ -3353,7 +3371,7 @@ function renderPublicMenu(data){
 
   const footer=`<div class="m-footer" style="background:${t.footerBg};border-color:${t.border}">
     ${restaurant.waiter_enabled !== false ? `<button class="waiter-btn" style="background:${color}" onclick="callWaiter('${restaurant.id}')">${mt('waiter')}</button>` : ''}
-`;
+  </div>`;
 
   const noResult = `<div id="search-no-result" style="display:none;text-align:center;padding:48px 24px;color:${t.text2}">
     <div style="font-size:48px;margin-bottom:12px">🔍</div>
