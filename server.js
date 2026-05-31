@@ -1603,9 +1603,19 @@ app.post('/api/waiter-call', async (req, res) => {
     if (restCheck.rows[0] && restCheck.rows[0].waiter_enabled === false) {
       return res.status(403).json({ error: 'Garson çağrı sistemi şu an aktif değil' });
     }
+
+    // Notu Türkçeye çevir (zaten TR ise çeviri yapmaz, hata olursa orijinali kullan)
+    let finalNote = note || null;
+    if (note && note.trim()) {
+      try {
+        const translated = await googleTranslateText(note.trim(), 'tr');
+        if (translated && translated.trim()) finalNote = translated.trim();
+      } catch(e) { /* çeviri başarısız, orijinal notu kullan */ }
+    }
+
     const result = await pool.query(
       'INSERT INTO waiter_calls (restaurant_id, table_no, note) VALUES ($1,$2,$3) RETURNING *',
-      [restaurant_id, table_no || 'Belirsiz', note || null]
+      [restaurant_id, table_no || 'Belirsiz', finalNote]
     );
     notifyRestaurant(restaurant_id, { type: 'waiter_call', data: result.rows[0] });
     res.json(result.rows[0]);
