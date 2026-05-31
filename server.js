@@ -1816,7 +1816,7 @@ app.patch('/api/notifications/read-all', authMiddleware, async (req, res) => {
 // ═══════════════════════════════
 const ADMIN_SECRET = process.env.ADMIN_SECRET || 'cafemenu-admin-2024';
 
-// Tüm duyuruları listele (tüm kullanıcılar görür)
+// Tüm duyuruları listele (giriş yapmış tüm kullanıcılar + admin)
 app.get('/api/announcements', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(
@@ -1826,10 +1826,8 @@ app.get('/api/announcements', authMiddleware, async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// Duyuru oluştur (sadece admin — ADMIN_SECRET header ile)
-app.post('/api/announcements', async (req, res) => {
-  const secret = req.headers['x-admin-secret'];
-  if (secret !== ADMIN_SECRET) return res.status(403).json({ error: 'Yetkisiz' });
+// Duyuru oluştur (sadece admin rolü)
+app.post('/api/announcements', adminMiddleware, async (req, res) => {
   const { title, body, type } = req.body;
   if (!title) return res.status(400).json({ error: 'title zorunlu' });
   try {
@@ -1837,8 +1835,8 @@ app.post('/api/announcements', async (req, res) => {
       'INSERT INTO announcements (title, body, type) VALUES ($1,$2,$3) RETURNING *',
       [title, body || '', type || 'info']
     );
-    // Tüm aktif kullanıcılara system_notification gönder
-    const users = await pool.query('SELECT id FROM users WHERE is_active=true').catch(() => ({ rows: [] }));
+    // Tüm kullanıcılara system_notification gönder
+    const users = await pool.query("SELECT id FROM users").catch(() => ({ rows: [] }));
     for (const u of users.rows) {
       await pool.query(
         'INSERT INTO system_notifications (user_id, title, message) VALUES ($1,$2,$3)',
@@ -1849,10 +1847,8 @@ app.post('/api/announcements', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// Duyuru sil (sadece admin)
-app.delete('/api/announcements/:id', async (req, res) => {
-  const secret = req.headers['x-admin-secret'];
-  if (secret !== ADMIN_SECRET) return res.status(403).json({ error: 'Yetkisiz' });
+// Duyuru sil (sadece admin rolü)
+app.delete('/api/announcements/:id', adminMiddleware, async (req, res) => {
   try {
     await pool.query('DELETE FROM announcements WHERE id=$1', [req.params.id]);
     res.json({ ok: true });
