@@ -906,7 +906,7 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
         <button class="btn-sm btn-accent" onclick="loadCalls()">🔄 Yenile</button>
         <button class="btn-sm" onclick="clearCalls()">Temizle</button>
       </div>
-      <div id="notif-list"></div>
+      <div id="calls-list"></div>
     </div>
 
     <!-- SUBSCRIPTION -->
@@ -976,9 +976,38 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
           <span class="panel-title">🔔 Bildirimler</span>
           <button class="btn-sm" onclick="markAllNotifRead()" style="font-size:11px;padding:4px 10px">Tümünü Oku</button>
         </div>
-        <div id="notif-list" style="padding:8px">
+        <div id="sub-notif-list" style="padding:8px">
           <div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">Yükleniyor...</div>
         </div>
+      </div>
+
+      <!-- Sistem Duyuruları -->
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">📢 Sistem Duyuruları</span>
+        </div>
+        <div id="announcements-list" style="padding:8px">
+          <div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">Yükleniyor...</div>
+        </div>
+      </div>
+
+      <!-- Admin Paneli (sadece ADMIN_SECRET ile) -->
+      <div class="panel" id="admin-announce-panel" style="display:none">
+        <div class="panel-head"><span class="panel-title">🛠️ Admin — Duyuru Yayınla</span></div>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+          <input class="form-input" id="ann-secret" type="password" placeholder="Admin şifresi">
+          <input class="form-input" id="ann-title" placeholder="Duyuru başlığı">
+          <select class="form-input" id="ann-type">
+            <option value="info">ℹ️ Bilgi</option>
+            <option value="success">✅ Güncelleme</option>
+            <option value="warning">⚠️ Uyarı</option>
+          </select>
+          <textarea class="form-input" id="ann-body" placeholder="Duyuru içeriği..." style="height:80px"></textarea>
+          <button class="btn-sm btn-accent" onclick="publishAnnouncement()" style="align-self:flex-end">📢 Yayınla</button>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:8px">
+        <button onclick="document.getElementById('admin-announce-panel').style.display=document.getElementById('admin-announce-panel').style.display==='none'?'block':'none'" style="background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer">🔑 Admin Girişi</button>
       </div>
 
     </div>
@@ -1845,6 +1874,7 @@ function updateStats(){
 // ═══════════════════════════════
 async function loadSubscriptionPage() {
   await Promise.all([loadSubStatus(), loadNotifications()]);
+  loadAnnouncements();
 }
 
 async function loadSubStatus() {
@@ -1906,7 +1936,7 @@ async function loadSubStatus() {
 async function loadNotifications() {
   try {
     const notifs = await api('GET', '/notifications');
-    const el = document.getElementById('notif-list');
+    const el = document.getElementById('sub-notif-list');
     if (!el) return;
 
     // Nav badge güncelle
@@ -1914,7 +1944,7 @@ async function loadNotifications() {
     updateNotifNavBadge(unread);
 
     if (!notifs.length) {
-      el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">Bildirim yok</div>';
+      el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">📭 Bildirim yok</div>';
       return;
     }
 
@@ -1965,6 +1995,54 @@ async function markAllNotifRead() {
     loadNotifications();
     toast('Tüm bildirimler okundu', 'success');
   } catch(e) {}
+}
+
+async function loadAnnouncements() {
+  const el = document.getElementById('announcements-list');
+  if (!el) return;
+  try {
+    const list = await api('GET', '/announcements');
+    if (!list.length) {
+      el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">📭 Henüz duyuru yok</div>';
+      return;
+    }
+    const typeIcon = { info:'ℹ️', success:'✅', warning:'⚠️', error:'🚨' };
+    const typeBg   = { info:'rgba(99,179,237,.1)', success:'rgba(72,187,120,.1)', warning:'rgba(237,201,72,.1)', error:'rgba(237,99,99,.1)' };
+    const typeBdr  = { info:'rgba(99,179,237,.3)', success:'rgba(72,187,120,.3)', warning:'rgba(237,201,72,.3)', error:'rgba(237,99,99,.3)' };
+    el.innerHTML = list.map(a => `
+      <div style="margin-bottom:10px;padding:14px;border-radius:10px;background:${typeBg[a.type]||typeBg.info};border:1px solid ${typeBdr[a.type]||typeBdr.info}">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:16px">${typeIcon[a.type]||'ℹ️'}</span>
+          <span style="font-size:13px;font-weight:700;color:var(--text)">${a.title}</span>
+          <span style="margin-left:auto;font-size:11px;color:var(--text3)">${new Date(a.created_at).toLocaleDateString('tr-TR')}</span>
+        </div>
+        ${a.body ? `<div style="font-size:12px;color:var(--text2);line-height:1.5;margin-left:24px">${a.body}</div>` : ''}
+      </div>`).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">Duyurular yüklenemedi</div>';
+  }
+}
+
+async function publishAnnouncement() {
+  const secret = document.getElementById('ann-secret').value.trim();
+  const title  = document.getElementById('ann-title').value.trim();
+  const type   = document.getElementById('ann-type').value;
+  const body   = document.getElementById('ann-body').value.trim();
+  if (!secret) return toast('Admin şifresi gerekli', 'error');
+  if (!title)  return toast('Başlık gerekli', 'error');
+  try {
+    const resp = await fetch(API + '/announcements', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+      body: JSON.stringify({ title, body, type })
+    });
+    const data = await resp.json();
+    if (!resp.ok) return toast(data.error || 'Hata', 'error');
+    toast('✅ Duyuru yayınlandı ve tüm kullanıcılara bildirim gönderildi', 'success');
+    document.getElementById('ann-title').value = '';
+    document.getElementById('ann-body').value  = '';
+    loadAnnouncements();
+  } catch(e) { toast('Yayınlanamadı: ' + e.message, 'error'); }
 }
 
 async function startPayment(plan) {
@@ -2173,7 +2251,7 @@ function goPage(id,el){
   if(id==='editor') renderCatList();
   if(id==='design') loadDesignFields();
   if(id==='analytics') loadAnalytics();
-  if(id==='subscription') loadSubscriptionPage();
+  if(id==='subscription') { loadSubscriptionPage(); loadAnnouncements(); }
 }
 
 // TEMA SEÇİCİ
@@ -2716,7 +2794,8 @@ function renderFeedback(){
 function filterFB(type,btn){fbFilter=type;document.querySelectorAll('#fb-filters .btn-sm').forEach(b=>b.classList.remove('btn-accent'));btn.classList.add('btn-accent');renderFeedback();}
 
 function renderCalls(){
-  const el=document.getElementById('notif-list');
+  const el=document.getElementById('calls-list');
+  if(!el) return;
   if(!calls.length){el.innerHTML='<div class="empty"><div class="empty-icon">🔕</div>Garson çağrısı yok</div>';return;}
   el.innerHTML=calls.map(c=>`
     <div class="notif-card ${c.status==='pending'?'new':''}">

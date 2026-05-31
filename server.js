@@ -446,6 +446,15 @@ CREATE TABLE IF NOT EXISTS password_resets (
   await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS link_category_id UUID`).catch(()=>{});
   await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS link_url TEXT`).catch(()=>{});
 
+  // Duyurular tablosu (admin → tüm kullanıcılar)
+  await pool.query(`CREATE TABLE IF NOT EXISTS announcements (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title VARCHAR(255) NOT NULL,
+    body TEXT,
+    type VARCHAR(30) DEFAULT 'info',
+    created_at TIMESTAMP DEFAULT NOW()
+  )`).catch(()=>{});
+
   // ═══════════════════════════════
   // VERİTABANI İNDEKSLERİ
   // CREATE INDEX IF NOT EXISTS — mevcut indexleri bozmaz, güvenle çalışır
@@ -1798,6 +1807,54 @@ app.patch('/api/notifications/:id/read', authMiddleware, async (req, res) => {
 app.patch('/api/notifications/read-all', authMiddleware, async (req, res) => {
   try {
     await pool.query("UPDATE system_notifications SET is_read=true WHERE user_id=$1", [req.user.userId]);
+    res.json({ ok: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ═══════════════════════════════
+// DUYURULAR (Admin → Kullanıcılar)
+// ═══════════════════════════════
+const ADMIN_SECRET = process.env.ADMIN_SECRET || 'cafemenu-admin-2024';
+
+// Tüm duyuruları listele (tüm kullanıcılar görür)
+app.get('/api/announcements', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM announcements ORDER BY created_at DESC LIMIT 50'
+    );
+    res.json(result.rows);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// Duyuru oluştur (sadece admin — ADMIN_SECRET header ile)
+app.post('/api/announcements', async (req, res) => {
+  const secret = req.headers['x-admin-secret'];
+  if (secret !== ADMIN_SECRET) return res.status(403).json({ error: 'Yetkisiz' });
+  const { title, body, type } = req.body;
+  if (!title) return res.status(400).json({ error: 'title zorunlu' });
+  try {
+    const result = await pool.query(
+      'INSERT INTO announcements (title, body, type) VALUES ($1,$2,$3) RETURNING *',
+      [title, body || '', type || 'info']
+    );
+    // Tüm aktif kullanıcılara system_notification gönder
+    const users = await pool.query('SELECT id FROM users WHERE is_active=true').catch(() => ({ rows: [] }));
+    for (const u of users.rows) {
+      await pool.query(
+        'INSERT INTO system_notifications (user_id, title, message) VALUES ($1,$2,$3)',
+        [u.id, '📢 ' + title, body || '']
+      ).catch(() => {});
+    }
+    res.json(result.rows[0]);
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// Duyuru sil (sadece admin)
+app.delete('/api/announcements/:id', async (req, res) => {
+  const secret = req.headers['x-admin-secret'];
+  if (secret !== ADMIN_SECRET) return res.status(403).json({ error: 'Yetkisiz' });
+  try {
+    await pool.query('DELETE FROM announcements WHERE id=$1', [req.params.id]);
     res.json({ ok: true });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
