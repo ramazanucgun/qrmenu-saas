@@ -76,6 +76,7 @@ input,textarea,select{font-family:var(--sans)}
 .panel-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .panel-title{font-size:13px;font-weight:600}
 .editor-grid{display:grid;grid-template-columns:260px 1fr;gap:16px}
+.editor-grid>.panel{min-height:0}
 .cat-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:all .15s;margin-bottom:4px;border:1px solid transparent}
 .cat-item:hover{background:var(--bg3)}
 .cat-item.active{background:rgba(232,197,71,.08);border-color:rgba(232,197,71,.2);color:var(--accent)}
@@ -92,7 +93,7 @@ input,textarea,select{font-family:var(--sans)}
 .toggle-pill{display:inline-flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;transition:all .2s}
 .toggle-pill.on{background:rgba(71,201,126,.1);border-color:rgba(71,201,126,.3);color:var(--green)}
 .toggle-pill.off{color:var(--text3)}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:12px;box-sizing:border-box;overflow-y:auto}
 .modal-overlay.open{display:flex}
 .modal{background:var(--bg2);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:28px;width:480px;max-width:94vw;max-height:90vh;overflow-y:auto}
 .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
@@ -127,7 +128,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 .preview-box{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;position:sticky;top:70px}
 .preview-bar{padding:10px 14px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:6px}
 .pdot{width:8px;height:8px;border-radius:50%;background:var(--border)}
-.preview-content{height:520px;overflow-y:auto}
+.preview-content{height:520px;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .qr-center{max-width:360px;margin:0 auto;text-align:center}
 .qr-box{width:200px;height:200px;background:#fff;border-radius:12px;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;padding:10px}
 .toast-wrap{position:fixed;bottom:20px;right:20px;z-index:500;display:flex;flex-direction:column;gap:8px}
@@ -253,26 +254,102 @@ textarea.form-input{resize:vertical;min-height:80px}
 .camp-box{position:relative;background:#111;overflow:hidden;width:100%;max-width:420px;height:100svh;max-height:100svh;text-align:center;animation:popIn .35s cubic-bezier(.34,1.56,.64,1);box-shadow:0 0 60px rgba(0,0,0,.6);display:flex;flex-direction:column}
 /* ── MOBİL RESPONSIVE: Admin Panel ── */
 @media(max-width:768px){
+  /* Sidebar */
   .sidebar{transform:translateX(-100%);width:260px;box-shadow:4px 0 24px rgba(0,0,0,.2)}
   .sidebar.open{transform:translateX(0)}
   .sidebar-overlay.open{display:block}
   .main{margin-left:0!important}
   .hamburger{display:flex;align-items:center;justify-content:center}
-  .topbar{padding:0 12px}
-  /* Stat kartları — tek sütun */
-  .stats-grid{grid-template-columns:repeat(2,1fr)!important;gap:10px!important}
-  /* Panel genişliği */
-  .panel{margin-bottom:12px}
+  .topbar{padding:0 10px;gap:8px}
+
+  /* Sayfa ve içerik padding */
+  .page{padding:12px!important}
+  .content-area{padding:10px!important}
+
+  /* Stat kartları — 2 sütun */
+  .stats-grid{grid-template-columns:repeat(2,1fr)!important;gap:8px!important}
+  .stat-card{padding:14px 12px!important}
+  .stat-val{font-size:1.4rem!important}
+
+  /* Panel */
+  .panel{margin-bottom:10px}
+
+  /* Modaller */
+  .modal{padding:16px!important;width:calc(100vw - 24px)!important;max-width:100%!important;max-height:calc(100dvh - 24px)!important;margin:0!important}
+
+  /* Menü Editörü — tek sütun */
+  .editor-grid{grid-template-columns:1fr!important;gap:10px!important}
+
+  /* Tasarım paneli — tek sütun, önizleme alta */
+  .design-grid{grid-template-columns:1fr!important;gap:10px!important}
+
+  /* Önizleme mobilde tam genişlik, daha küçük */
+  .preview-sticky{position:static!important;top:auto!important}
+  .preview-frame{height:420px!important;min-height:420px!important}
+
+  /* Abonelik planları */
+  .plans-grid{grid-template-columns:1fr!important;gap:10px!important}
+
+  /* Tema seçici */
+  .theme-grid{grid-template-columns:repeat(2,1fr)!important}
+
+  /* Kart stili seçici */
+  .card-style-grid{grid-template-columns:repeat(3,1fr)!important}
+
   /* Tablolar scroll */
   .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  /* Butonlar tam genişlik bazı yerlerde */
-  .modal{padding:16px!important;margin:12px!important;max-height:calc(100vh - 24px)!important}
-  /* QR ve diğer büyük içerikler */
-  .content-area{padding:12px!important}
+
+  /* Modal footer butonları */
+  .modal-footer{flex-direction:column-reverse!important}
+  .modal-footer button{width:100%!important}
+
+  /* Ürün kartı aksiyonları */
+  .product-card{flex-wrap:wrap}
+  .prod-actions{width:100%;justify-content:flex-end;margin-top:6px;margin-left:0!important}
+
+  /* Resim yükleme satırı */
+  .img-upload-row{flex-wrap:wrap}
+
+  /* Toast sağ kenara sığsın */
+  .toast-wrap{right:10px;left:10px;bottom:12px}
+  .toast{font-size:12px;padding:10px 14px}
+
+  /* Topbar başlık */
+  .topbar-title{font-size:13px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* Çalışma saatleri satırı */
+  .hours-row{flex-wrap:wrap;gap:6px!important}
+
+  /* QR kodu */
+  .qr-center{max-width:100%!important}
 }
+
+@media(max-width:480px){
+  /* Stat kartları — tek sütun */
+  .stats-grid{grid-template-columns:1fr!important}
+  /* Modal overlay — mobilde alt yerleştir */
+  .modal-overlay{align-items:flex-end!important;padding:0!important}
+  .modal{border-radius:20px 20px 0 0!important;max-height:92dvh!important;width:100%!important;max-width:100%!important}
+
+  /* Tema grid tek sütun */
+  .theme-grid{grid-template-columns:1fr 1fr!important}
+
+  /* Topbar aksiyonları gizle */
+  .topbar-title{font-size:12px}
+
+  /* İçerik padding küçült */
+  .content-area{padding:8px!important}
+  .panel-head{padding:12px 14px!important}
+  .panel > div{padding:10px!important}
+
+  /* Ürün modal sekmeler */
+  .form-tabs{flex-wrap:wrap}
+}
+
 @media(max-width:400px){
   .stats-grid{grid-template-columns:1fr!important}
-  .topbar-title{font-size:13px}
+  .topbar-title{font-size:12px}
+  .card-style-grid{grid-template-columns:repeat(2,1fr)!important}
 }
 @media(min-width:480px){.camp-box{max-width:390px;height:calc(390px * 16/9);max-height:95svh;border-radius:20px}}
 @keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
@@ -541,7 +618,7 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
 <input type="file" id="excel-file" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)">
         <button class="btn-sm btn-accent" onclick="openModal('prod-modal')">+ Ürün Ekle</button>
       </div>
-      <div class="editor-grid">
+      <div class="editor-grid" style="align-items:start">
         <div class="panel">
           <div class="panel-head"><span class="panel-title">Kategoriler</span><button class="btn-sm" onclick="openModal('cat-modal')" style="padding:4px 10px;font-size:11px">+</button></div>
           <div style="padding:8px" id="cat-list"></div>
@@ -556,7 +633,7 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
     <!-- DESIGN -->
     <div class="page" id="page-design">
       <div class="design-grid">
-        <div>
+        <div style="min-width:0;overflow:hidden">
           <!-- TEMA SEÇİCİ -->
           <div class="panel" style="margin-bottom:14px">
             <div class="panel-head"><span class="panel-title">🎨 Menü Teması</span></div>
@@ -743,7 +820,7 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
         </div>
 
         <!-- CANLI ÖNİZLEME -->
-        <div class="preview-box">
+        <div class="preview-box preview-sticky">
           <div class="preview-bar">
             <div class="pdot"></div><div class="pdot"></div><div class="pdot"></div>
             <span style="margin-left:4px">Canlı Önizleme</span>
@@ -985,7 +1062,7 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
     <div class="form-group"><label class="form-label">KATEGORİ</label><select class="form-input" id="prod-cat-select"></select></div>
     <div class="form-group"><label class="form-label">ÜRÜN ADI <span style="color:var(--text3);font-weight:400">(Türkçe)</span></label><input class="form-input" id="prod-name" placeholder="örn. Mercimek Çorbası"></div>
     <div class="form-group"><label class="form-label">AÇIKLAMA <span style="color:var(--text3);font-weight:400">(Türkçe)</span></label><textarea class="form-input" id="prod-desc" placeholder="Kısa açıklama..."></textarea></div>
-    <details id="prod-trans-details" style="margin-bottom:12px">
+    <details id="prod-trans-details" style="margin-bottom:12px;min-width:0;overflow:hidden">
       <summary style="cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.06em;padding:8px 0;user-select:none">🌐 ÇEVİRİLER</summary>
       <div style="margin-top:8px;padding:12px;background:var(--bg3);border-radius:10px;display:flex;flex-direction:column;gap:10px">
         <button type="button" id="ai-translate-prod-btn" onclick="aiTranslateProduct()" style="width:100%;background:linear-gradient(135deg,rgba(232,197,71,.15),rgba(232,197,71,.05));border:1px solid rgba(232,197,71,.4);border-radius:8px;color:var(--accent);font-size:12px;font-weight:600;padding:9px 14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s;font-family:var(--sans)">
