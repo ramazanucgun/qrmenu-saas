@@ -686,6 +686,10 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
                   <label style="display:flex;align-items:center;gap:6px;padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px"><input type="checkbox" id="lang-cb-ar" value="ar" style="accent-color:var(--accent)" onchange="saveLangs()"> 🇸🇦 العربية</label>
                 </div>
                 <div style="font-size:11px;color:var(--text3);margin-top:6px">Seçilen diller müşteri menüsünde dil seçici olarak gösterilir.</div>
+                <button id="ai-translate-all-btn" type="button" onclick="aiTranslateAll()" style="margin-top:10px;width:100%;background:linear-gradient(135deg,rgba(232,197,71,.18),rgba(232,197,71,.06));border:1.5px solid rgba(232,197,71,.5);border-radius:9px;color:var(--accent);font-size:12px;font-weight:700;padding:10px 14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s;font-family:var(--sans)">
+                  🌐 ✨ Tüm İçerikleri Yapay Zeka ile Çevir
+                </button>
+                <div style="font-size:11px;color:var(--text3);margin-top:5px;text-align:center">Seçtiğiniz dillere tüm ürün ve kategorileri otomatik çevirir. Eksik çeviriler doldurulur, mevcutlara dokunulmaz.</div>
               </div>
               <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:2px">
                 <div class="form-label" style="margin-bottom:10px">📱 SOSYAL MEDYA</div>
@@ -1668,7 +1672,13 @@ function requestNotifPermission() {
 }
 async function saveLangs(){
   const sl=['tr',...['en','ru','ar'].filter(l=>document.getElementById('lang-cb-'+l)?.checked)];
-  try{await api('PUT','/restaurant/me',{supported_languages:sl});if(RESTAURANT)RESTAURANT.supported_languages=sl;toast('Dil ayarları kaydedildi','success');}catch(e){toast(e.message,'error');}
+  try{
+    await api('PUT','/restaurant/me',{supported_languages:sl});
+    if(RESTAURANT) RESTAURANT.supported_languages=sl;
+    toast('Dil ayarları kaydedildi','success');
+    const btn=document.getElementById('ai-translate-all-btn');
+    if(btn) btn.style.display=sl.length>1?'flex':'none';
+  }catch(e){toast(e.message,'error');}
 }
 async function loadFeedback(){ try{feedbacks=await api('GET','/feedback');}catch{feedbacks=[];} renderFeedback(); }
 async function loadCampaigns(){ try{campaigns=await api('GET','/campaigns');}catch{campaigns=[];} renderCampaigns(); }
@@ -2101,21 +2111,13 @@ function selectCat(id,name){ activeCatId=id; document.getElementById('active-cat
 // ═══════════════════════════════
 // YAPAY ZEKA ÇEVİRİ FONKSİYONLARI
 // ═══════════════════════════════
-async function aiCallClaude(prompt) {
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      messages: [{ role: 'user', content: prompt }]
-    })
+async function aiCallTranslate(items, targetLangs) {
+  // Backend proxy üzerinden çeviri yap (CORS + API key güvenliği)
+  const data = await api('POST', '/translate', {
+    texts: items,
+    targetLangs: targetLangs || ['en', 'ru', 'ar']
   });
-  const data = await resp.json();
-  if (!resp.ok) throw new Error(data.error?.message || 'AI çeviri hatası');
-  const text = data.content?.map(b => b.text || '').join('') || '';
-  const clean = text.replace(/```json[\s\S]*?```/g, m => m.slice(7, -3)).replace(/```/g,'').trim();
-  try { return JSON.parse(clean); } catch { throw new Error('AI yanıtı ayrıştırılamadı'); }
+  return data.translations; // array
 }
 
 async function aiTranslateProduct() {
@@ -2125,36 +2127,21 @@ async function aiTranslateProduct() {
   const btn = document.getElementById('ai-translate-prod-btn');
   const btnIcon = document.getElementById('ai-prod-btn-icon');
   const btnText = document.getElementById('ai-prod-btn-text');
-  btn.disabled = true;
-  btnIcon.textContent = '⏳';
-  btnText.textContent = 'Çevriliyor...';
+  btn.disabled = true; btnIcon.textContent = '⏳'; btnText.textContent = 'Çevriliyor...';
   try {
-    const result = await aiCallClaude(
-      `You are a professional menu translator. Translate the following Turkish menu item into English, Russian, and Arabic. Return ONLY a valid JSON object with no extra text, no markdown fences. Format:\n{"en":{"name":"...","description":"..."},"ru":{"name":"...","description":"..."},"ar":{"name":"...","description":"..."}}\n\nTurkish name: ${name}\nTurkish description: ${desc || '(no description)'}`
-    );
-    if (result.en) {
-      const en = result.en;
-      document.getElementById('prod-name-en').value = en.name || '';
-      document.getElementById('prod-desc-en').value = en.description && en.description !== '(no description)' ? en.description : '';
-    }
-    if (result.ru) {
-      const ru = result.ru;
-      document.getElementById('prod-name-ru').value = ru.name || '';
-      document.getElementById('prod-desc-ru').value = ru.description && ru.description !== '(no description)' ? ru.description : '';
-    }
-    if (result.ar) {
-      const ar = result.ar;
-      document.getElementById('prod-name-ar').value = ar.name || '';
-      document.getElementById('prod-desc-ar').value = ar.description && ar.description !== '(no description)' ? ar.description : '';
-    }
+    const results = await aiCallTranslate([{ name, description: desc }], ['en','ru','ar']);
+    const result = Array.isArray(results) ? results[0] : results;
+    ['en','ru','ar'].forEach(l => {
+      if (!result[l]) return;
+      const ne = document.getElementById('prod-name-'+l); if (ne) ne.value = result[l].name || '';
+      const de = document.getElementById('prod-desc-'+l); if (de) de.value = result[l].description || '';
+    });
     const det = document.getElementById('prod-trans-details'); if (det) det.open = true;
-    toast('✅ Çeviri tamamlandı! Düzenleyebilir ve kaydedebilirsiniz.', 'success');
+    toast('✅ Çeviri tamamlandı! Düzenleyip kaydedebilirsiniz.', 'success');
   } catch(e) {
     toast('Çeviri başarısız: ' + e.message, 'error');
   } finally {
-    btn.disabled = false;
-    btnIcon.textContent = '✨';
-    btnText.textContent = 'Yapay Zeka ile Otomatik Çevir';
+    btn.disabled = false; btnIcon.textContent = '✨'; btnText.textContent = 'Yapay Zeka ile Otomatik Çevir';
   }
 }
 
@@ -2164,23 +2151,101 @@ async function aiTranslateCategory() {
   const btn = document.getElementById('ai-translate-cat-btn');
   const btnIcon = document.getElementById('ai-cat-btn-icon');
   const btnText = document.getElementById('ai-cat-btn-text');
-  btn.disabled = true;
-  btnIcon.textContent = '⏳';
-  btnText.textContent = 'Çevriliyor...';
+  btn.disabled = true; btnIcon.textContent = '⏳'; btnText.textContent = 'Çevriliyor...';
   try {
-    const result = await aiCallClaude(
-      `You are a professional menu translator. Translate the following Turkish menu category name into English, Russian, and Arabic. Return ONLY a valid JSON object with no extra text, no markdown fences. Format:\n{"en":"...","ru":"...","ar":"..."}\n\nTurkish category name: ${name}`
-    );
-    if (result.en) document.getElementById('cat-name-en').value = result.en;
-    if (result.ru) document.getElementById('cat-name-ru').value = result.ru;
-    if (result.ar) document.getElementById('cat-name-ar').value = result.ar;
+    const results = await aiCallTranslate([{ name, description: '' }], ['en','ru','ar']);
+    const result = Array.isArray(results) ? results[0] : results;
+    ['en','ru','ar'].forEach(l => {
+      const el = document.getElementById('cat-name-'+l);
+      if (el && result[l]) el.value = result[l].name || '';
+    });
     toast('✅ Kategori çevirisi tamamlandı!', 'success');
   } catch(e) {
     toast('Çeviri başarısız: ' + e.message, 'error');
   } finally {
+    btn.disabled = false; btnIcon.textContent = '✨'; btnText.textContent = 'Yapay Zeka ile Otomatik Çevir';
+  }
+}
+
+// Tüm ürünleri & kategorileri toplu çevir
+async function aiTranslateAll() {
+  const btn = document.getElementById('ai-translate-all-btn');
+  if (!btn) return;
+  const langs = ['en','ru','ar'].filter(l => document.getElementById('lang-cb-'+l)?.checked);
+  if (!langs.length) return toast('Önce çevrilecek dilleri seçin', 'error');
+
+  // Çevirisi olmayan ürün ve kategorileri bul
+  const toTranslateProds = products.filter(p => p.name && langs.some(l => !p.translations?.[l]?.name));
+  const toTranslateCats  = categories.filter(c => c.name && langs.some(l => !c.translations?.[l]));
+
+  if (!toTranslateProds.length && !toTranslateCats.length) {
+    return toast('Tüm içerikler zaten çevrilmiş ✅', 'info');
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Çevriliyor... (0/' + (toTranslateProds.length + toTranslateCats.length) + ')';
+
+  let done = 0;
+  const total = toTranslateProds.length + toTranslateCats.length;
+  const BATCH = 8; // her seferinde max 8 öğe
+
+  try {
+    // Ürünleri toplu çevir
+    for (let i = 0; i < toTranslateProds.length; i += BATCH) {
+      const batch = toTranslateProds.slice(i, i + BATCH);
+      const items = batch.map(p => ({ name: p.name, description: p.description || '' }));
+      const results = await aiCallTranslate(items, langs);
+      const arr = Array.isArray(results) ? results : [results];
+
+      for (let j = 0; j < batch.length; j++) {
+        const p = batch[j];
+        const tr = arr[j] || {};
+        // Sadece eksik çevirileri ekle, mevcut olanları koru
+        const newTrans = { ...(p.translations || {}) };
+        langs.forEach(l => {
+          if (!newTrans[l]?.name && tr[l]) newTrans[l] = { name: tr[l].name || '', description: tr[l].description || '' };
+        });
+        try {
+          const updated = await api('PUT', '/products/' + p.id, { ...p, translations: newTrans });
+          const idx = products.findIndex(x => x.id === p.id);
+          if (idx > -1) products[idx] = updated;
+        } catch {}
+        done++;
+        btn.innerHTML = '⏳ Çevriliyor... (' + done + '/' + total + ')';
+      }
+    }
+
+    // Kategorileri toplu çevir
+    for (let i = 0; i < toTranslateCats.length; i += BATCH) {
+      const batch = toTranslateCats.slice(i, i + BATCH);
+      const items = batch.map(c => ({ name: c.name, description: '' }));
+      const results = await aiCallTranslate(items, langs);
+      const arr = Array.isArray(results) ? results : [results];
+
+      for (let j = 0; j < batch.length; j++) {
+        const c = batch[j];
+        const tr = arr[j] || {};
+        const newTrans = { ...(c.translations || {}) };
+        langs.forEach(l => {
+          if (!newTrans[l] && tr[l]) newTrans[l] = tr[l].name || '';
+        });
+        try {
+          const updated = await api('PUT', '/categories/' + c.id, { name: c.name, is_visible: c.is_visible, translations: newTrans });
+          const idx = categories.findIndex(x => x.id === c.id);
+          if (idx > -1) categories[idx] = updated;
+        } catch {}
+        done++;
+        btn.innerHTML = '⏳ Çevriliyor... (' + done + '/' + total + ')';
+      }
+    }
+
+    renderProductList(); renderCatList(); updatePreview();
+    toast('✅ ' + done + ' öğe çevrildi! Menü tüm dillerde hazır.', 'success');
+  } catch(e) {
+    toast('Toplu çeviri hatası: ' + e.message, 'error');
+  } finally {
     btn.disabled = false;
-    btnIcon.textContent = '✨';
-    btnText.textContent = 'Yapay Zeka ile Otomatik Çevir';
+    btn.innerHTML = '🌐 ✨ Tüm İçerikleri Yapay Zeka ile Çevir';
   }
 }
 
@@ -2905,6 +2970,8 @@ function loadDesignFields(){
   document.getElementById('d-tagline').value=RESTAURANT.tagline||'';
   const sl=RESTAURANT.supported_languages||['tr'];
   ['en','ru','ar'].forEach(l=>{const cb=document.getElementById('lang-cb-'+l);if(cb)cb.checked=sl.includes(l);});
+  const allBtn=document.getElementById('ai-translate-all-btn');
+  if(allBtn) allBtn.style.display=sl.length>1?'flex':'none';
   if(RESTAURANT.logo_url){document.getElementById('logo-preview').innerHTML=`<img src="${RESTAURANT.logo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:11px">`;}
   document.getElementById('preview-theme-label').textContent=THEMES[currentTheme]?.name||'Klasik Açık';
   updatePreview();loadWorkingHours();

@@ -10,6 +10,38 @@ const QRCode = require('qrcode');
 const { v4: uuidv4 } = require('uuid');
 const WebSocket = require('ws');
 const http = require('http');
+const https = require('https');
+
+// Anthropic API helper - node-fetch gerektirmez
+function anthropicPost(apiKey, body) {
+  return new Promise((resolve) => {
+    const payload = JSON.stringify(body);
+    const req = https.request({
+      hostname: 'api.anthropic.com',
+      path: '/v1/messages',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(payload),
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      }
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (res.statusCode !== 200) parsed._err = parsed.error?.message || 'AI API hatası ' + res.statusCode;
+          resolve(parsed);
+        } catch(e) { resolve({ _err: 'AI yanıtı ayrıştırılamadı: ' + e.message }); }
+      });
+    });
+    req.on('error', e => resolve({ _err: 'AI bağlantı hatası: ' + e.message }));
+    req.write(payload);
+    req.end();
+  });
+}
 const { Resend } = require('resend');
 let rateLimit;
 try { rateLimit = require('express-rate-limit'); } catch(e) { console.warn('⚠️  express-rate-limit yüklü değil, rate limiting devre dışı'); }
@@ -973,7 +1005,10 @@ app.put('/api/restaurant/me', authMiddleware, async (req, res) => {
   const { name, brand_color, font_family, theme, card_style, wifi_name, wifi_password, instagram_url, facebook_url, google_maps_url, waiter_enabled, is_published, tagline, supported_languages } = req.body;
   try {
     const result = await pool.query(
-      `UPDATE restaurants SET name=$1, brand_color=$2, font_family=$3,
+      `UPDATE restaurants SET
+       name=COALESCE(NULLIF($1,''), name),
+       brand_color=COALESCE($2, brand_color),
+       font_family=COALESCE($3, font_family),
        wifi_name=$4, wifi_password=$5, instagram_url=$6, facebook_url=$7,
        waiter_enabled=COALESCE($8, waiter_enabled),
        is_published=COALESCE($9, is_published),
@@ -983,7 +1018,11 @@ app.put('/api/restaurant/me', authMiddleware, async (req, res) => {
        tagline=COALESCE($13, tagline),
        supported_languages=COALESCE($15::text[], supported_languages)
        WHERE id=$14 RETURNING *`,
-      [name, brand_color, font_family, wifi_name, wifi_password, instagram_url, facebook_url,
+      [name || null, brand_color || null, font_family || null,
+       wifi_name !== undefined ? wifi_name : null,
+       wifi_password !== undefined ? wifi_password : null,
+       instagram_url !== undefined ? instagram_url : null,
+       facebook_url !== undefined ? facebook_url : null,
        waiter_enabled !== undefined ? waiter_enabled : null,
        is_published !== undefined ? is_published : null,
        theme || null,
@@ -996,6 +1035,66 @@ app.put('/api/restaurant/me', authMiddleware, async (req, res) => {
     res.json(result.rows[0]);
   } catch(err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── AI ÇEVİRİ PROXY ENDPOINTİ ───────────────────────────────────────────────
+// ─── GOOGLE TRANSLATE (ücretsiz, API key gerektirmez) ────────────────────────
+function googleTranslateText(text, targetLang) {
+  return new Promise((resolve, reject) => {
+    if (!text || !text.trim()) return resolve('');
+    const encoded = encodeURIComponent(text);
+    const path = '/translate_a/single?client=gtx&sl=tr&tl=' + targetLang + '&dt=t&q=' + encoded;
+    const options = {
+      hostname: 'translate.googleapis.com',
+      path: path,
+      method: 'GET',
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    };
+    const req = https.request(options, (resHttp) => {
+      let data = '';
+      resHttp.on('data', chunk => data += chunk);
+      resHttp.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          const translated = parsed[0]
+            .filter(item => item && item[0])
+            .map(item => item[0])
+            .join('');
+          resolve(translated);
+        } catch(e) {
+          reject(new Error('Google Translate yaniti ayristirilamadi'));
+        }
+      });
+    });
+    req.on('error', e => reject(new Error('Google Translate baglanti hatasi: ' + e.message)));
+    req.end();
+  });
+}
+
+app.post('/api/translate', authMiddleware, async (req, res) => {
+  const { texts, targetLangs } = req.body;
+  if (!texts || !targetLangs || !targetLangs.length) {
+    return res.status(400).json({ error: 'texts ve targetLangs zorunludur' });
+  }
+  const validLangs = ['en', 'ru', 'ar'];
+  const langs = targetLangs.filter(l => validLangs.includes(l));
+  const items = Array.isArray(texts) ? texts : [texts];
+  try {
+    const results = await Promise.all(items.map(async (item) => {
+      const entry = {};
+      await Promise.all(langs.map(async (lang) => {
+        const [translatedName, translatedDesc] = await Promise.all([
+          googleTranslateText(item.name || '', lang),
+          googleTranslateText(item.description || '', lang)
+        ]);
+        entry[lang] = { name: translatedName, description: translatedDesc };
+      }));
+      return entry;
+    }));
+    res.json({ translations: results });
+  } catch(err) {
+    res.status(500).json({ error: 'Ceviri basarisiz: ' + err.message });
   }
 });
 
