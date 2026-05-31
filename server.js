@@ -1040,11 +1040,12 @@ app.put('/api/restaurant/me', authMiddleware, async (req, res) => {
 
 // ─── AI ÇEVİRİ PROXY ENDPOINTİ ───────────────────────────────────────────────
 // ─── GOOGLE TRANSLATE (ücretsiz, API key gerektirmez) ────────────────────────
-function googleTranslateText(text, targetLang) {
+function googleTranslateText(text, targetLang, sourceLang) {
   return new Promise((resolve, reject) => {
     if (!text || !text.trim()) return resolve('');
+    const sl = sourceLang || 'tr'; // menü çevirisi için tr, not çevirisi için auto
     const encoded = encodeURIComponent(text);
-    const path = '/translate_a/single?client=gtx&sl=tr&tl=' + targetLang + '&dt=t&q=' + encoded;
+    const path = '/translate_a/single?client=gtx&sl=' + sl + '&tl=' + targetLang + '&dt=t&q=' + encoded;
     const options = {
       hostname: 'translate.googleapis.com',
       path: path,
@@ -1608,7 +1609,7 @@ app.post('/api/waiter-call', async (req, res) => {
     let finalNote = note || null;
     if (note && note.trim()) {
       try {
-        const translated = await googleTranslateText(note.trim(), 'tr');
+        const translated = await googleTranslateText(note.trim(), 'tr', 'auto');
         if (translated && translated.trim()) finalNote = translated.trim();
       } catch(e) { /* çeviri başarısız, orijinal notu kullan */ }
     }
@@ -2817,17 +2818,14 @@ async function checkSubscriptionExpiry() {
 // ═══════════════════════════════
 // OTOMATİK YEDEKLEME — Her gün saat 03:00'da
 // ═══════════════════════════════
-// Eski garson çağrılarını temizle
+// Eski garson çağrılarını temizle — 2 günden eski tümü silinir
 async function cleanupWaiterCalls() {
   try {
-    const acked = await pool.query(
-      `DELETE FROM waiter_calls WHERE status='acked' AND called_at < NOW() - INTERVAL '24 hours'`
+    const result = await pool.query(
+      `DELETE FROM waiter_calls WHERE called_at < NOW() - INTERVAL '2 days'`
     );
-    const pending = await pool.query(
-      `DELETE FROM waiter_calls WHERE status='pending' AND called_at < NOW() - INTERVAL '7 days'`
-    );
-    const total = (acked.rowCount||0) + (pending.rowCount||0);
-    if (total > 0) console.log(`🧹 ${total} eski garson çağrısı temizlendi`);
+    const total = result.rowCount || 0;
+    if (total > 0) console.log(`🧹 ${total} eski garson çağrısı temizlendi (2 günden eski)`);
   } catch(err) { console.error('Garson temizleme hatası:', err.message); }
 }
 
@@ -2840,7 +2838,7 @@ function scheduleWaiterCallsCleanup() {
     await cleanupWaiterCalls();
     setInterval(cleanupWaiterCalls, 24 * 60 * 60 * 1000);
   }, next - now);
-  console.log(`🧹 Garson temizleme: her gece 04:00`);
+  console.log(`🧹 Garson temizleme: her gece 04:00 (2 günden eski kayıtlar)`);
 }
 
 function scheduleSubscriptionCheck() {
