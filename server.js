@@ -1426,7 +1426,7 @@ app.get('/api/menu/:slug', async (req, res) => {
     // Görselsiz ürünleri hızlıca döndür — görseller ayrı endpoint'ten lazy yüklenir
     const prodResult = await pool.query(
       `SELECT id, category_id, restaurant_id, name, description, price, emoji,
-              sort_order, is_visible
+              sort_order, is_visible, COALESCE(translations,'{}') as translations
        FROM products WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order`,
       [restaurant.id]
     );
