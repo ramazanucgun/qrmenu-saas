@@ -1215,14 +1215,19 @@ function mt(key) { return (MENU_STRINGS[_menuLang]||MENU_STRINGS.tr)[key] || MEN
 function trName(item) {
   if (!item) return '';
   const tr = item.translations;
-  if (tr && tr[_menuLang]) return (typeof tr[_menuLang]==='string' ? tr[_menuLang] : tr[_menuLang].name) || item.name || '';
+  if (!tr || !tr[_menuLang]) return item.name || '';
+  const t = tr[_menuLang];
+  if (typeof t === 'string') return t || item.name || '';   // kategori: { en: "Soups" }
+  if (typeof t === 'object') return t.name || item.name || ''; // ürün: { en: { name: "...", description: "..." } }
   return item.name || '';
 }
 function trDesc(item) {
   if (!item) return '';
   const tr = item.translations;
-  if (tr && tr[_menuLang] && typeof tr[_menuLang]==='object') return tr[_menuLang].description || item.description || '';
-  return item.description || '';
+  if (!tr || !tr[_menuLang]) return item.description || '';
+  const t = tr[_menuLang];
+  if (typeof t === 'object') return t.description || item.description || '';
+  return item.description || ''; // string format (kategoriler) - description yok
 }
 function detectBrowserLang(langs) {
   if (_autoLangDetected || localStorage.getItem('menu_lang')) return;
@@ -2227,7 +2232,10 @@ async function aiTranslateAll() {
         const tr = arr[j] || {};
         const newTrans = { ...(c.translations || {}) };
         langs.forEach(l => {
-          if (!newTrans[l] && tr[l]) newTrans[l] = tr[l].name || '';
+          if (!newTrans[l] && tr[l]) {
+            // Kategori çevirisi string format: { en: "İsim" }
+            newTrans[l] = tr[l].name || tr[l] || '';
+          }
         });
         try {
           const updated = await api('PUT', '/categories/' + c.id, { name: c.name, is_visible: c.is_visible, translations: newTrans });
@@ -2387,14 +2395,19 @@ async function saveProduct(){
   const imageFile=document.getElementById('prod-image').files[0];
   if(!name) return toast('Ürün adı zorunlu','error');
   if(!category_id) return toast('Kategori seçin','error');
-  let image_url=null;
+  let image_url=null; // null = yeni resim yok (mevcut korunacak)
   if(imageFile){
     document.getElementById('img-status').textContent='⏳ Yükleniyor...';
     try{
       const formData=new FormData(); formData.append('image',imageFile);
       const uploadRes=await fetch(API+'/upload/product-image',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN},body:formData});
       const uploadData=await uploadRes.json();
-      if(uploadData.imageUrl){image_url=uploadData.imageUrl;document.getElementById('img-status').textContent='✅ Yüklendi';}
+      if(uploadData.imageUrl){
+        image_url=uploadData.imageUrl;
+        document.getElementById('img-status').textContent='✅ Yüklendi';
+        // Önizlemeyi anında güncelle - sayfa yenileme gerekmez
+        document.getElementById('img-preview').innerHTML=`<img src="${image_url}" style="width:100%;height:100%;object-fit:cover;border-radius:7px">`;
+      }
     }catch{toast('Fotoğraf yüklenemedi','error');}
   }
   const existing=products.find(p=>p.id===editingProductId);
@@ -2405,7 +2418,8 @@ async function saveProduct(){
     if(n||d) prodTrans[l]={name:n||'',description:d||''};
   });
   const body={category_id,name,description,price,emoji,is_visible:existing?existing.is_visible:true};
-  if(image_url) body.image_url=image_url;
+  // Yeni resim yüklendiyse yenisini, yoksa mevcut olanı koru
+  body.image_url = image_url !== null ? image_url : (existing?.image_url || null);
   if(Object.keys(prodTrans).length) body.translations=prodTrans;
   try{
     let prod;
@@ -3064,7 +3078,7 @@ function updatePreview(){
   if(currentCardStyle==='list'){
     productsHtml=visProds.map(p=>`<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid ${t.border}">
       <div style="width:52px;height:52px;background:${t.bg2};border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;overflow:hidden">${p.image_url?`<img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`:(p.emoji||'🍽️')}</div>
-      <div style="flex:1"><div style="font-size:12px;font-weight:600;color:${t.text}">${trName(p)}</div><div style="font-size:11px;color:${t.text2};margin:2px 0 4px">${(p.description||'').slice(0,35)}</div><div style="font-size:12px;font-weight:700;color:${color}">₺${parseFloat(p.price).toFixed(2)}</div></div>
+      <div style="flex:1"><div style="font-size:12px;font-weight:600;color:${t.text}">${trName(p)}</div><div style="font-size:11px;color:${t.text2};margin:2px 0 4px">${(trDesc(p)||'').slice(0,35)}</div><div style="font-size:12px;font-weight:700;color:${color}">₺${parseFloat(p.price).toFixed(2)}</div></div>
     </div>`).join('');
   }else if(currentCardStyle==='card'){
     productsHtml=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${visProds.map(p=>`<div style="background:${t.bg2};border:1px solid ${t.border};border-radius:10px;overflow:hidden">
@@ -3073,7 +3087,7 @@ function updatePreview(){
     </div>`).join('')}</div>`;
   }else{
     productsHtml=visProds.map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid ${t.border}">
-      <div><div style="font-size:12px;font-weight:600;color:${t.text}">${trName(p)}</div><div style="font-size:10px;color:${t.text2}">${(p.description||'').slice(0,30)}</div></div>
+      <div><div style="font-size:12px;font-weight:600;color:${t.text}">${trName(p)}</div><div style="font-size:10px;color:${t.text2}">${(trDesc(p)||'').slice(0,30)}</div></div>
       <div style="font-size:12px;font-weight:700;color:${color};margin-left:8px">₺${parseFloat(p.price).toFixed(2)}</div>
     </div>`).join('');
   }
