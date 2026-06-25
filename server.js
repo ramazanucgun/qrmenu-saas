@@ -552,13 +552,39 @@ app.post('/api/auth/google', authLimiter, async (req, res) => {
   const { credential, restaurantName } = req.body;
   if (!credential) return res.status(400).json({ error: 'Google token zorunlu' });
   try {
-    // Google token doğrula
-    const ticket = await googleClient.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-    const payload = ticket.getPayload();
-    const { sub: googleId, email, name, picture } = payload;
+    // Google token doğrula — tokeninfo endpoint kullan (sertifika çekme sorunu yaşanmaz)
+    let googleId, email, name, picture;
+    try {
+      // Önce google-auth-library ile dene
+      const ticket = await googleClient.verifyIdToken({
+        idToken: credential,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      const p = ticket.getPayload();
+      googleId = p.sub; email = p.email; name = p.name; picture = p.picture;
+    } catch (certErr) {
+      console.warn('⚠️  verifyIdToken sertifika hatası, tokeninfo ile devam ediliyor:', certErr.message);
+      // Fallback: Google tokeninfo endpoint ile doğrula (sertifika gerektirmez)
+      const tokenInfoRes = await fetch(
+        `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`
+      );
+      if (!tokenInfoRes.ok) {
+        const errBody = await tokenInfoRes.text();
+        throw new Error('Google token doğrulanamadı: ' + errBody);
+      }
+      const tokenInfo = await tokenInfoRes.json();
+      // audience kontrolü
+      if (tokenInfo.aud !== process.env.GOOGLE_CLIENT_ID) {
+        throw new Error('Token audience uyuşmuyor');
+      }
+      if (tokenInfo.error_description) {
+        throw new Error(tokenInfo.error_description);
+      }
+      googleId = tokenInfo.sub;
+      email = tokenInfo.email;
+      name = tokenInfo.name;
+      picture = tokenInfo.picture;
+    }
 
     // Kullanıcı var mı kontrol et
     let userResult = await pool.query(
