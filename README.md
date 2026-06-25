@@ -1,13 +1,35 @@
 # qrmenu-saas
-QR Menu SaaS Platform
 
+CafeMenu — Dijital QR Menü SaaS Platformu
 
-value
-cfat_6VjGsrR3zuZzOCMDjzdYbs5tHE8yVxSlnX7y6Vmf68e42f70
- acces key id
-7752ac95164a89baed8c094104c77ad6
-secret acsey key
-66ebbcf4fc744603acf09d27a873fc6c6155a56d0dc43a5c27930845d3e9b387
+## Kurulum
 
-default
-https://6849b665eb6f7e1e23a79adc5c345092.r2.cloudflarestorage.com
+```bash
+npm install
+```
+
+## Çalıştırma
+
+```bash
+npm start       # production
+npm run dev     # development (nodemon)
+```
+
+## Gerekli Ortam Değişkenleri (.env)
+
+```
+DATABASE_URL=
+JWT_SECRET=
+GOOGLE_CLIENT_ID=
+RESEND_API_KEY=
+APP_URL=
+ALLOWED_ORIGINS=
+R2_ENDPOINT=
+R2_ACCESS_KEY=
+R2_SECRET_KEY=
+R2_BUCKET=
+IYZICO_API_KEY=
+IYZICO_SECRET_KEY=
+IYZICO_ENV=sandbox
+ADMIN_SECRET=
+```

@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const multer = require('multer');
 const path = require('path');
@@ -67,7 +68,6 @@ let compression;
 try { compression = require('compression'); } catch(e) { compression = null; }
 const { OAuth2Client } = require('google-auth-library');
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-require('dotenv').config();
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 // Resim sıkıştırma helper
@@ -2960,16 +2960,25 @@ async function runBackup() {
         backupData[table] = result.rows;
       } catch(e) { backupData[table] = []; }
     }
-    const fs = require('fs');
     const now = new Date();
     const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-    const backupDir = './backups';
-    if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir);
-    const filePath = `${backupDir}/${dateStr}.json`;
-    fs.writeFileSync(filePath, JSON.stringify(backupData, null, 2));
-    console.log(`✅ Yedek kaydedildi: ${filePath}`);
+    const fileName = `backups/${dateStr}.json`;
+    const jsonBuffer = Buffer.from(JSON.stringify(backupData, null, 2), 'utf-8');
+
+    // R2 yapilandirilmissa buluta yukle (Render ephemeral diske yazmak yerine)
+    if (process.env.R2_ENDPOINT && process.env.R2_ACCESS_KEY && process.env.R2_SECRET_KEY && process.env.R2_BUCKET) {
+      await s3.send(new PutObjectCommand({
+        Bucket: process.env.R2_BUCKET,
+        Key: fileName,
+        Body: jsonBuffer,
+        ContentType: 'application/json',
+      }));
+      console.log(`✅ Yedek R2ye yuklendi: ${fileName}`);
+    } else {
+      console.warn(`⚠️  R2 yapilandirilmamis - yedek atlandi (${fileName}). R2_BUCKET env degiskenini ekle.`);
+    }
   } catch(err) {
-    console.error('❌ Yedekleme hatası:', err.message);
+    console.error('❌ Yedekleme hatasi:', err.message);
   }
 }
 const PORT = process.env.PORT || 3000;
