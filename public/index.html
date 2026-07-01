@@ -1197,11 +1197,11 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
 
       <!-- SEKME 5: ETİKETLER -->
       <div class="prod-tab-panel" id="prod-tab-tags">
-        <label class="tag-chip" id="tag-chip-vegan"><input type="checkbox" id="prod-tag-vegan" onchange="syncTagChip(this)">🌱 Vegan</label>
-        <label class="tag-chip" id="tag-chip-vegetarian"><input type="checkbox" id="prod-tag-vegetarian" onchange="syncTagChip(this)">🥕 Vejetaryen</label>
-        <label class="tag-chip" id="tag-chip-glutenfree"><input type="checkbox" id="prod-tag-glutenfree" onchange="syncTagChip(this)">🌾 Glutensiz</label>
-        <label class="tag-chip" id="tag-chip-halal"><input type="checkbox" id="prod-tag-halal" onchange="syncTagChip(this)">🟢 Helal</label>
-        <label class="tag-chip" id="tag-chip-alcohol"><input type="checkbox" id="prod-tag-alcohol" onchange="syncTagChip(this)">🍷 Alkol İçerir</label>
+        <label class="tag-chip" id="tag-chip-vegan"><input type="checkbox" id="prod-tag-vegan" onchange="syncTagChip(this)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 C5 9 11 4 19 4 C19 12 14 19 5 19 Z"/><line x1="5" y1="19" x2="13" y2="11"/></svg> Vegan</label>
+        <label class="tag-chip" id="tag-chip-vegetarian"><input type="checkbox" id="prod-tag-vegetarian" onchange="syncTagChip(this)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="9,20 15,20 12,7"/><line x1="12" y1="7" x2="10" y2="3"/><line x1="12" y1="7" x2="12" y2="2"/><line x1="12" y1="7" x2="14" y2="3"/></svg> Vejetaryen</label>
+        <label class="tag-chip" id="tag-chip-glutenfree"><input type="checkbox" id="prod-tag-glutenfree" onchange="syncTagChip(this)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="3" x2="12" y2="21"/><line x1="12" y1="7" x2="8" y2="5"/><line x1="12" y1="7" x2="16" y2="5"/><line x1="12" y1="11" x2="8" y2="9"/><line x1="12" y1="11" x2="16" y2="9"/><line x1="12" y1="15" x2="8" y2="13"/><line x1="12" y1="15" x2="16" y2="13"/><line x1="4" y1="20" x2="20" y2="4" stroke-width="2.2"/></svg> Glutensiz</label>
+        <label class="tag-chip" id="tag-chip-halal"><input type="checkbox" id="prod-tag-halal" onchange="syncTagChip(this)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="7.5,12.5 10.5,15.5 16.5,8.5"/></svg> Helal</label>
+        <label class="tag-chip" id="tag-chip-alcohol"><input type="checkbox" id="prod-tag-alcohol" onchange="syncTagChip(this)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 H16 L15 10 A3 3 0 0 1 9 10 Z"/><line x1="12" y1="13" x2="12" y2="20"/><line x1="8" y1="20" x2="16" y2="20"/></svg> Alkol İçerir</label>
       </div>
     </div>
 
@@ -2687,6 +2687,46 @@ function previewCampImage(input){
 // ÜRÜN MODALI — SEKMELER / ALERJEN / ETİKET
 // ═══════════════════════════════
 
+// ═══════════════════════════════
+// SVG İKON SİSTEMİ — 14 alerjen + 5 etiket için modern, dark-mode uyumlu ikonlar
+// Tümü currentColor kullanır → tema rengine ve dark mode'a otomatik uyar, emoji'ye göre
+// platformlar arası tutarlı görünür (iOS/Android/Windows emoji render farkı olmaz).
+// ═══════════════════════════════
+const ICON_PATHS = {
+  // Alerjenler (allergens.key ile birebir eşleşir)
+  gluten:     '<line x1="12" y1="3" x2="12" y2="21"/><line x1="12" y1="7" x2="8" y2="5"/><line x1="12" y1="7" x2="16" y2="5"/><line x1="12" y1="11" x2="8" y2="9"/><line x1="12" y1="11" x2="16" y2="9"/><line x1="12" y1="15" x2="8" y2="13"/><line x1="12" y1="15" x2="16" y2="13"/>',
+  kabuklular: '<circle cx="10" cy="14" r="4"/><line x1="10" y1="10" x2="7" y2="5"/><line x1="10" y1="10" x2="13" y2="5"/><line x1="13" y1="16" x2="19" y2="18"/>',
+  yumurta:    '<ellipse cx="12" cy="13" rx="6" ry="8"/>',
+  balik:      '<polygon points="4,12 15,7 15,17"/><polyline points="15,8 20,4 20,20 15,16"/><circle cx="7.5" cy="12" r="0.8" fill="currentColor" stroke="none"/>',
+  yerfistigi: '<ellipse cx="9" cy="9" rx="5" ry="4"/><ellipse cx="15" cy="15" rx="5" ry="4"/>',
+  soya:       '<rect x="6" y="4" width="12" height="16" rx="8"/><circle cx="12" cy="9" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="13" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/>',
+  sut:        '<polygon points="7,8 12,3 17,8"/><rect x="7" y="8" width="10" height="12"/>',
+  sertkabuk:  '<circle cx="12" cy="14" r="6"/><line x1="12" y1="8" x2="12" y2="4"/><path d="M10 4 Q12 2 14 4"/>',
+  kereviz:    '<line x1="8" y1="20" x2="8" y2="7"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="16" y1="20" x2="16" y2="7"/><path d="M6 7 Q8 5 10 7"/><path d="M10 4 Q12 2 14 4"/><path d="M14 7 Q16 5 18 7"/>',
+  hardal:     '<rect x="7" y="9" width="10" height="11" rx="2"/><rect x="9" y="5" width="6" height="4" rx="1"/><circle cx="10" cy="14" r="0.8" fill="currentColor" stroke="none"/><circle cx="13" cy="16" r="0.8" fill="currentColor" stroke="none"/><circle cx="11" cy="17" r="0.8" fill="currentColor" stroke="none"/>',
+  susam:      '<ellipse cx="8" cy="10" rx="2" ry="1.2"/><ellipse cx="14" cy="8" rx="2" ry="1.2"/><ellipse cx="17" cy="14" rx="2" ry="1.2"/><ellipse cx="10" cy="16" rx="2" ry="1.2"/><ellipse cx="15" cy="18" rx="2" ry="1.2"/>',
+  sulfit:     '<polygon points="9,4 15,4 15,9 19,19 5,19 9,9"/>',
+  lupin:      '<circle cx="12" cy="12" r="2"/><circle cx="12" cy="6" r="2.4"/><circle cx="12" cy="18" r="2.4"/><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="12" r="2.4"/>',
+  yumusakca:  '<path d="M4 17 A8 8 0 0 1 20 17 Z"/><line x1="8" y1="17" x2="8" y2="12"/><line x1="12" y1="17" x2="12" y2="9"/><line x1="16" y1="17" x2="16" y2="12"/>',
+  // Etiketler
+  vegan:       '<path d="M5 19 C5 9 11 4 19 4 C19 12 14 19 5 19 Z"/><line x1="5" y1="19" x2="13" y2="11"/>',
+  vegetarian:  '<polygon points="9,20 15,20 12,7"/><line x1="12" y1="7" x2="10" y2="3"/><line x1="12" y1="7" x2="12" y2="2"/><line x1="12" y1="7" x2="14" y2="3"/>',
+  glutenfree:  '<line x1="12" y1="3" x2="12" y2="21"/><line x1="12" y1="7" x2="8" y2="5"/><line x1="12" y1="7" x2="16" y2="5"/><line x1="12" y1="11" x2="8" y2="9"/><line x1="12" y1="11" x2="16" y2="9"/><line x1="12" y1="15" x2="8" y2="13"/><line x1="12" y1="15" x2="16" y2="13"/><line x1="4" y1="20" x2="20" y2="4" stroke-width="2.2"/>',
+  halal:       '<circle cx="12" cy="12" r="9"/><polyline points="7.5,12.5 10.5,15.5 16.5,8.5"/>',
+  alcohol:     '<path d="M8 3 H16 L15 10 A3 3 0 0 1 9 10 Z"/><line x1="12" y1="13" x2="12" y2="20"/><line x1="8" y1="20" x2="16" y2="20"/>',
+  // Genel amaçlı
+  warning:     '<polygon points="12,3 21,19 3,19"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="16.5" r="0.9" fill="currentColor" stroke="none"/>',
+  clock:       '<circle cx="12" cy="12" r="9"/><line x1="12" y1="12" x2="12" y2="7"/><line x1="12" y1="12" x2="16" y2="14"/>',
+};
+
+// key: ICON_PATHS içindeki anahtar, size: px cinsinden ikon boyutu
+function svgIcon(key, size){
+  size = size || 16;
+  const d = ICON_PATHS[key];
+  if(!d) return '';
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:-3px">${d}</svg>`;
+}
+
 function switchProdTab(tab){
   document.querySelectorAll('#prod-tabs .prod-tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
   document.querySelectorAll('.prod-tab-panel').forEach(p=>p.classList.toggle('active', p.id==='prod-tab-'+tab));
@@ -2701,7 +2741,7 @@ function renderAllergenCheckboxes(selectedKeys){
   grid.innerHTML=allergensList.map(a=>`
     <label class="allergen-chip ${selected.has(a.key)?'checked':''}" id="allergen-chip-${a.key}">
       <input type="checkbox" value="${a.key}" ${selected.has(a.key)?'checked':''} onchange="syncAllergenChip(this)">
-      <span>${a.icon} ${a.name_tr}</span>
+      ${svgIcon(a.key,16)}<span>${a.name_tr}</span>
     </label>`).join('');
 }
 
@@ -4051,17 +4091,17 @@ function applyMenuVisibility(){
 function productTagBadges(p){
   const arr=[];
   if(p.calories) arr.push({icon:'🔥',text:`${p.calories} kcal`});
-  if(p.is_vegan) arr.push({icon:'🌱',text:'Vegan',good:true});
-  if(p.is_vegetarian) arr.push({icon:'🥕',text:'Vejetaryen',good:true});
-  if(p.is_gluten_free) arr.push({icon:'🌾',text:'Glutensiz',good:true});
-  if(p.is_halal) arr.push({icon:'🟢',text:'Helal',good:true});
-  if(p.contains_alcohol) arr.push({icon:'🍷',text:'Alkol içerir',warn:true});
-  if(p.preparation_time) arr.push({icon:'⏱',text:`${p.preparation_time} dk`});
+  if(p.is_vegan) arr.push({svgKey:'vegan',text:'Vegan',good:true});
+  if(p.is_vegetarian) arr.push({svgKey:'vegetarian',text:'Vejetaryen',good:true});
+  if(p.is_gluten_free) arr.push({svgKey:'glutenfree',text:'Glutensiz',good:true});
+  if(p.is_halal) arr.push({svgKey:'halal',text:'Helal',good:true});
+  if(p.contains_alcohol) arr.push({svgKey:'alcohol',text:'Alkol içerir',warn:true});
+  if(p.preparation_time) arr.push({svgKey:'clock',text:`${p.preparation_time} dk`});
   return arr;
 }
 
 function badgesHtml(list){
-  return list.map(b=>`<span class="m-badge ${b.warn?'b-warn':(b.good?'b-good':'')}">${b.icon} ${b.text}</span>`).join('');
+  return list.map(b=>`<span class="m-badge ${b.warn?'b-warn':(b.good?'b-good':'')}">${b.svgKey?svgIcon(b.svgKey,13):b.icon} ${b.text}</span>`).join('');
 }
 
 // Kartlarda (menü listesinde) "ilk bakışta" görünen kompakt badge satırı.
@@ -4069,10 +4109,10 @@ function badgesHtml(list){
 function cardMiniBadgesHtml(p){
   const badges=[];
   if(p.calories) badges.push({icon:'🔥',text:`${p.calories} kcal`});
-  if(p.allergens && p.allergens.length) badges.push({icon:'⚠️',text:`${p.allergens.length} alerjen`,warn:true});
-  if(p.is_vegan) badges.push({icon:'🌱',text:'Vegan',good:true});
-  if(p.is_gluten_free) badges.push({icon:'🌾',text:'Glutensiz',good:true});
-  if(p.is_halal) badges.push({icon:'🟢',text:'Helal',good:true});
+  if(p.allergens && p.allergens.length) badges.push({svgKey:'warning',text:`${p.allergens.length} alerjen`,warn:true});
+  if(p.is_vegan) badges.push({svgKey:'vegan',text:'Vegan',good:true});
+  if(p.is_gluten_free) badges.push({svgKey:'glutenfree',text:'Glutensiz',good:true});
+  if(p.is_halal) badges.push({svgKey:'halal',text:'Helal',good:true});
   if(!badges.length) return '';
   const shown=badges.slice(0,3);
   const extra=badges.length-shown.length;
@@ -4118,7 +4158,7 @@ function showProdDetail(prodId,catId){
   // Alerjen Uyarısı — kullanıcı ilk bakışta görebilsin diye vurgulu kutu
   const allergenSection=document.getElementById('prod-detail-allergen-section');
   if(p.allergens && p.allergens.length){
-    document.getElementById('prod-detail-allergens').innerHTML = p.allergens.map(a=>`<span class="m-badge b-warn">${a.icon} ${a.name_tr}</span>`).join('');
+    document.getElementById('prod-detail-allergens').innerHTML = p.allergens.map(a=>`<span class="m-badge b-warn">${svgIcon(a.key,13)} ${a.name_tr}</span>`).join('');
     allergenSection.style.display='block';
   } else {
     allergenSection.style.display='none';
