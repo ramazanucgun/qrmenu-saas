@@ -1422,6 +1422,15 @@ app.patch('/api/products/reorder', authMiddleware, async (req, res) => {
   }
 });
 
+// Kalori/hazırlama süresi gibi opsiyonel integer alanları güvenle dönüştürür.
+// null, undefined, '' VE geçersiz sayı (örn. "abc") durumlarının hepsini null'a çevirir —
+// parseInt(null) gibi NaN üreten durumların Postgres'e "NaN" string'i olarak gitmesini engeller.
+function toIntOrNull(v) {
+  if (v === undefined || v === null || v === '') return null;
+  const n = parseInt(v, 10);
+  return Number.isNaN(n) ? null : n;
+}
+
 // ═══════════════════════════════
 // ÜRÜNLER
 // ═══════════════════════════════
@@ -1472,11 +1481,11 @@ app.post('/api/products', authMiddleware, async (req, res) => {
         category_id, req.user.restaurantId, name, description, price, emoji || '🍽️',
         JSON.stringify(variants || []), translations ? JSON.stringify(translations) : '{}',
         ingredients || null,
-        calories !== undefined && calories !== '' ? parseInt(calories) : null,
+        toIntOrNull(calories),
         portion || null,
         nutrition_note || null,
         !!is_vegan, !!is_vegetarian, !!is_gluten_free, !!is_halal, !!contains_alcohol,
-        preparation_time !== undefined && preparation_time !== '' ? parseInt(preparation_time) : null
+        toIntOrNull(preparation_time)
       ]
     );
     const product = result.rows[0];
@@ -1542,7 +1551,7 @@ app.put('/api/products/:id', authMiddleware, async (req, res) => {
         req.user.restaurantId,
         translations ? JSON.stringify(translations) : null,
         ingredients !== undefined ? (ingredients || null) : current.ingredients,
-        calories !== undefined ? (calories !== '' ? parseInt(calories) : null) : current.calories,
+        calories !== undefined ? toIntOrNull(calories) : current.calories,
         portion !== undefined ? (portion || null) : current.portion,
         nutrition_note !== undefined ? (nutrition_note || null) : current.nutrition_note,
         is_vegan !== undefined ? !!is_vegan : current.is_vegan,
@@ -1550,7 +1559,7 @@ app.put('/api/products/:id', authMiddleware, async (req, res) => {
         is_gluten_free !== undefined ? !!is_gluten_free : current.is_gluten_free,
         is_halal !== undefined ? !!is_halal : current.is_halal,
         contains_alcohol !== undefined ? !!contains_alcohol : current.contains_alcohol,
-        preparation_time !== undefined ? (preparation_time !== '' ? parseInt(preparation_time) : null) : current.preparation_time
+        preparation_time !== undefined ? toIntOrNull(preparation_time) : current.preparation_time
       ]
     );
     const product = result.rows[0];
@@ -2985,10 +2994,10 @@ app.post('/api/products/import', authMiddleware, uploadExcel.single('file'), asy
         // Yeni: içerik / besin / alerjen / etiket kolonları (opsiyonel, yoksa boş kalır)
         const ingredients = row['İçindekiler'] || row['ingredients'] || row['Ingredients'] || null;
         const caloriesRaw = row['Kalori'] || row['calories'] || row['Calories'];
-        const calories = caloriesRaw !== undefined && caloriesRaw !== '' ? parseInt(caloriesRaw) : null;
+        const calories = toIntOrNull(caloriesRaw);
         const portion = row['Porsiyon'] || row['portion'] || row['Portion'] || null;
         const prepTimeRaw = row['Hazırlama Süresi'] || row['preparation_time'] || row['Preparation Time'];
-        const preparation_time = prepTimeRaw !== undefined && prepTimeRaw !== '' ? parseInt(prepTimeRaw) : null;
+        const preparation_time = toIntOrNull(prepTimeRaw);
         const allergenNames = row['Alerjenler'] || row['allergens'] || row['Allergens'];
         const is_vegan = parseBool(row['Vegan'] || row['vegan']);
         const is_vegetarian = parseBool(row['Vejetaryen'] || row['vegetarian']);
