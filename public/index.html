@@ -1099,11 +1099,11 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
 
 <!-- MODALLER -->
 <div class="modal-overlay" id="prod-modal">
-  <div class="modal" style="width:480px;max-width:94vw;max-height:88vh;display:flex;flex-direction:column;padding:0">
-    <div class="modal-head" style="padding:22px 24px 0"><span class="modal-title" id="prod-modal-title">Ürün Ekle</span><button class="modal-close" onclick="closeModal('prod-modal')">✕</button></div>
+  <div class="modal" style="width:480px;max-width:94vw;max-height:88vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
+    <div class="modal-head" style="padding:22px 24px 0;flex-shrink:0;min-width:0"><span class="modal-title" id="prod-modal-title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Ürün Ekle</span><button class="modal-close" onclick="closeModal('prod-modal')">✕</button></div>
 
     <!-- Sekmeler -->
-    <div id="prod-tabs" style="display:flex;gap:2px;margin:16px 20px 0;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none">
+    <div id="prod-tabs" style="display:flex;gap:2px;margin:16px 20px 0;border-bottom:1px solid var(--border);overflow-x:auto;overflow-y:hidden;scrollbar-width:none;flex-shrink:0">
       <button type="button" class="prod-tab-btn active" data-tab="general" onclick="switchProdTab('general')">📋 Genel</button>
       <button type="button" class="prod-tab-btn" data-tab="content" onclick="switchProdTab('content')">🧾 İçerik</button>
       <button type="button" class="prod-tab-btn" data-tab="nutrition" onclick="switchProdTab('nutrition')">🔥 Besin</button>
@@ -1111,50 +1111,55 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
       <button type="button" class="prod-tab-btn" data-tab="tags" onclick="switchProdTab('tags')">🏷️ Etiketler</button>
     </div>
     <style>
-      .prod-tab-btn{background:none;border:none;color:var(--text2);font-size:12.5px;font-weight:600;padding:10px 12px;cursor:pointer;font-family:var(--sans);border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s}
+      /* #prod-modal .modal ID+class özgüllüğü, genel .modal{padding:16px!important} mobil kuralını ezer
+         — sekmeli modal kendi iç padding'lerini yönetiyor, dıştan padding gelirse çift boşluk/taşma olur */
+      #prod-modal .modal{padding:0!important}
+      @media(max-width:480px){#prod-modal .modal{max-height:92dvh!important}}
+      .prod-tab-btn{background:none;border:none;color:var(--text2);font-size:12.5px;font-weight:600;padding:10px 12px;cursor:pointer;font-family:var(--sans);border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s;flex-shrink:0}
       .prod-tab-btn:hover{color:var(--text)}
       .prod-tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
-      .prod-tab-panel{display:none}
+      .prod-tab-panel{display:none;min-width:0}
       .prod-tab-panel.active{display:block}
       .allergen-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-      .allergen-chip{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:9px 12px;cursor:pointer;transition:all .15s;font-size:12.5px}
+      .allergen-chip{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:9px 12px;cursor:pointer;transition:all .15s;font-size:12.5px;min-width:0}
+      .allergen-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
       .allergen-chip:hover{border-color:rgba(255,255,255,.2)}
       .allergen-chip.checked{border-color:var(--accent);background:rgba(232,197,71,.08)}
       .allergen-chip input{accent-color:var(--accent);width:15px;height:15px;flex-shrink:0}
-      .tag-chip{display:flex;align-items:center;gap:10px;background:var(--bg3);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 14px;cursor:pointer;transition:all .15s;margin-bottom:8px}
+      .tag-chip{display:flex;align-items:center;gap:10px;background:var(--bg3);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 14px;cursor:pointer;transition:all .15s;margin-bottom:8px;min-width:0}
       .tag-chip:hover{border-color:rgba(255,255,255,.2)}
       .tag-chip.checked{border-color:var(--accent);background:rgba(232,197,71,.08)}
-      .tag-chip input{accent-color:var(--accent);width:16px;height:16px}
+      .tag-chip input{accent-color:var(--accent);width:16px;height:16px;flex-shrink:0}
       @media(max-width:520px){.allergen-grid{grid-template-columns:1fr}}
     </style>
 
-    <div style="padding:16px 24px 0;overflow-y:auto;flex:1">
+    <div style="padding:16px 24px 0;overflow-y:auto;overflow-x:hidden;flex:1;min-height:0;min-width:0">
       <!-- SEKME 1: GENEL BİLGİLER -->
       <div class="prod-tab-panel active" id="prod-tab-general">
-        <div class="form-group"><label class="form-label">KATEGORİ</label><select class="form-input" id="prod-cat-select"></select></div>
+        <div class="form-group"><label class="form-label">KATEGORİ</label><select class="form-input" id="prod-cat-select" style="max-width:100%"></select></div>
         <div class="form-group"><label class="form-label">ÜRÜN ADI <span style="color:var(--text3);font-weight:400">(Türkçe)</span></label><input class="form-input" id="prod-name" placeholder="örn. Mercimek Çorbası"></div>
         <div class="form-group"><label class="form-label">AÇIKLAMA <span style="color:var(--text3);font-weight:400">(Türkçe)</span></label><textarea class="form-input" id="prod-desc" placeholder="Kısa açıklama..."></textarea></div>
         <details id="prod-trans-details" style="margin-bottom:12px;min-width:0;overflow:hidden">
           <summary style="cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.06em;padding:8px 0;user-select:none">🌐 ÇEVİRİLER</summary>
-          <div style="margin-top:8px;padding:12px;background:var(--bg3);border-radius:10px;display:flex;flex-direction:column;gap:10px">
+          <div style="margin-top:8px;padding:12px;background:var(--bg3);border-radius:10px;display:flex;flex-direction:column;gap:10px;min-width:0">
             <button type="button" id="ai-translate-prod-btn" onclick="aiTranslateProduct()" style="width:100%;background:linear-gradient(135deg,rgba(232,197,71,.15),rgba(232,197,71,.05));border:1px solid rgba(232,197,71,.4);border-radius:8px;color:var(--accent);font-size:12px;font-weight:600;padding:9px 14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s;font-family:var(--sans)">
               <span id="ai-prod-btn-icon">✨</span> <span id="ai-prod-btn-text">Yapay Zeka ile Otomatik Çevir</span>
             </button>
-            <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇬🇧 English</div><input class="form-input" id="prod-name-en" placeholder="Product name" style="margin-bottom:6px"><textarea class="form-input" id="prod-desc-en" placeholder="Description" style="height:52px"></textarea></div>
-            <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇷🇺 Русский</div><input class="form-input" id="prod-name-ru" placeholder="Название" style="margin-bottom:6px"><textarea class="form-input" id="prod-desc-ru" placeholder="Описание" style="height:52px"></textarea></div>
-            <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇸🇦 العربية</div><input class="form-input" id="prod-name-ar" placeholder="الاسم" dir="rtl" style="margin-bottom:6px;text-align:right"><textarea class="form-input" id="prod-desc-ar" placeholder="الوصف" dir="rtl" style="height:52px;text-align:right"></textarea></div>
+            <div style="min-width:0"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇬🇧 English</div><input class="form-input" id="prod-name-en" placeholder="Product name" style="margin-bottom:6px"><textarea class="form-input" id="prod-desc-en" placeholder="Description" style="height:52px"></textarea></div>
+            <div style="min-width:0"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇷🇺 Русский</div><input class="form-input" id="prod-name-ru" placeholder="Название" style="margin-bottom:6px"><textarea class="form-input" id="prod-desc-ru" placeholder="Описание" style="height:52px"></textarea></div>
+            <div style="min-width:0"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇸🇦 العربية</div><input class="form-input" id="prod-name-ar" placeholder="الاسم" dir="rtl" style="margin-bottom:6px;text-align:right"><textarea class="form-input" id="prod-desc-ar" placeholder="الوصف" dir="rtl" style="height:52px;text-align:right"></textarea></div>
           </div>
         </details>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="form-group"><label class="form-label">FİYAT (₺)</label><input class="form-input" id="prod-price" type="number" min="0" step="0.01" placeholder="0.00"></div>
-          <div class="form-group"><label class="form-label">EMOJİ</label><input class="form-input" id="prod-emoji" placeholder="🍽️" maxlength="4"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;min-width:0">
+          <div class="form-group" style="min-width:0"><label class="form-label">FİYAT (₺)</label><input class="form-input" id="prod-price" type="number" min="0" step="0.01" placeholder="0.00" style="min-width:0"></div>
+          <div class="form-group" style="min-width:0"><label class="form-label">EMOJİ</label><input class="form-input" id="prod-emoji" placeholder="🍽️" maxlength="4" style="min-width:0"></div>
         </div>
         <div class="form-group">
           <label class="form-label">FOTOĞRAF (opsiyonel)</label>
           <div class="img-upload-area">
             <div class="img-upload-row">
               <div class="img-preview-box" id="img-preview">📷</div>
-              <div class="img-upload-info">
+              <div class="img-upload-info" style="min-width:0">
                 <input type="file" id="prod-image" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="previewImage(this)">
                 <button class="btn-sm" onclick="document.getElementById('prod-image').click()" type="button">📁 Fotoğraf Seç</button>
                 <p>JPG, PNG veya WebP — maks 5MB</p>
@@ -1176,9 +1181,9 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
 
       <!-- SEKME 3: BESİN BİLGİSİ -->
       <div class="prod-tab-panel" id="prod-tab-nutrition">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="form-group"><label class="form-label">KALORİ (kcal)</label><input class="form-input" id="prod-calories" type="number" min="0" step="1" placeholder="örn. 420"></div>
-          <div class="form-group"><label class="form-label">HAZIRLAMA SÜRESİ (dk)</label><input class="form-input" id="prod-prep-time" type="number" min="0" step="1" placeholder="örn. 15"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;min-width:0">
+          <div class="form-group" style="min-width:0"><label class="form-label">KALORİ (kcal)</label><input class="form-input" id="prod-calories" type="number" min="0" step="1" placeholder="örn. 420" style="min-width:0"></div>
+          <div class="form-group" style="min-width:0"><label class="form-label">HAZIRLAMA SÜRESİ (dk)</label><input class="form-input" id="prod-prep-time" type="number" min="0" step="1" placeholder="örn. 15" style="min-width:0"></div>
         </div>
         <div class="form-group"><label class="form-label">PORSİYON</label><input class="form-input" id="prod-portion" placeholder="örn. 1 kişilik / 250g"></div>
         <div class="form-group"><label class="form-label">EK BESİN NOTU <span style="color:var(--text3);font-weight:400">(opsiyonel)</span></label><textarea class="form-input" id="prod-nutrition-note" placeholder="örn. Protein: 18g, Karbonhidrat: 32g, Yağ: 14g" style="min-height:70px"></textarea></div>
@@ -1200,7 +1205,7 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
       </div>
     </div>
 
-    <div class="modal-footer" style="margin:0;padding:16px 24px 22px;border-top:1px solid var(--border)">
+    <div class="modal-footer" style="margin:0;padding:16px 24px 22px;border-top:1px solid var(--border);flex-shrink:0">
       <button class="btn-sm" onclick="closeModal('prod-modal')">İptal</button>
       <button class="btn-sm btn-accent" onclick="saveProduct()">Kaydet</button>
     </div>
