@@ -44,8 +44,112 @@ function anthropicPost(apiKey, body) {
   });
 }
 const { Resend } = require('resend');
-// Ürün içerik / alerjen / besin bilgisi servis katmanı (modüler — lib/allergenService.js)
-const allergenService = require('./lib/allergenService');
+
+// ═══════════════════════════════════════════════════════════════
+// ALLERGEN SERVICE — Ürün içeriği / alerjen / besin bilgisi katmanı
+// ═══════════════════════════════════════════════════════════════
+// NOT: Bu kod önceden ayrı bir lib/allergenService.js dosyasındaydı; deploy
+// sürecinde yeni dosyaların bazen sunucuya taşınmaması riskini tamamen
+// ortadan kaldırmak için server.js'e taşındı (projenin zaten tek-dosya
+// mimarisiyle tutarlı). Test dosyası (tests/allergenService.test.js) hâlâ
+// ayrı lib/allergenService.js'i kullanıyor — orada mantık birebir aynı tutuldu.
+//  - Alerjen mantığı tek yerde toplanır (DRY)
+//  - N+1 query problemi engellenir (batch/eager loading)
+// ═══════════════════════════════════════════════════════════════
+const allergenService = (() => {
+  let _allergenCache = null;
+  let _allergenCacheAt = 0;
+  const CACHE_TTL_MS = 5 * 60 * 1000;
+
+  async function getAllAllergens(pool) {
+    const now = Date.now();
+    if (_allergenCache && (now - _allergenCacheAt) < CACHE_TTL_MS) return _allergenCache;
+    const result = await pool.query('SELECT id, key, name_tr, name_en, icon, sort_order FROM allergens ORDER BY sort_order ASC');
+    _allergenCache = result.rows;
+    _allergenCacheAt = now;
+    return _allergenCache;
+  }
+
+  function invalidateAllergenCache() {
+    _allergenCache = null;
+  }
+
+  // Birden fazla ürünün alerjenlerini TEK sorguda çeker (N+1 önleme / eager loading)
+  async function getAllergensForProducts(pool, productIds) {
+    if (!productIds || !productIds.length) return {};
+    const result = await pool.query(
+      `SELECT pa.product_id, a.id, a.key, a.name_tr, a.name_en, a.icon, a.sort_order
+       FROM product_allergens pa
+       JOIN allergens a ON a.id = pa.allergen_id
+       WHERE pa.product_id = ANY($1::uuid[])
+       ORDER BY a.sort_order ASC`,
+      [productIds]
+    );
+    const map = {};
+    for (const row of result.rows) {
+      if (!map[row.product_id]) map[row.product_id] = [];
+      map[row.product_id].push({
+        id: row.id, key: row.key, name_tr: row.name_tr, name_en: row.name_en, icon: row.icon
+      });
+    }
+    return map;
+  }
+
+  async function getAllergensForProduct(pool, productId) {
+    const map = await getAllergensForProducts(pool, [productId]);
+    return map[productId] || [];
+  }
+
+  // Bir ürünün alerjen listesini TAMAMEN değiştirir (replace-all pattern)
+  async function setProductAllergens(pool, productId, allergenKeys) {
+    await pool.query('DELETE FROM product_allergens WHERE product_id=$1', [productId]);
+    if (!Array.isArray(allergenKeys) || !allergenKeys.length) return;
+    await pool.query(
+      `INSERT INTO product_allergens (product_id, allergen_id)
+       SELECT $1, a.id FROM allergens a WHERE a.key = ANY($2::text[])
+       ON CONFLICT DO NOTHING`,
+      [productId, allergenKeys]
+    );
+  }
+
+  // Ürün nesnesine yeni alanları normalize eder (eski kayıtlarda null olabilir)
+  function normalizeProductNutrition(product) {
+    return {
+      ...product,
+      ingredients: product.ingredients || null,
+      calories: product.calories !== null && product.calories !== undefined ? Number(product.calories) : null,
+      portion: product.portion || null,
+      nutrition_note: product.nutrition_note || null,
+      preparation_time: product.preparation_time !== null && product.preparation_time !== undefined ? Number(product.preparation_time) : null,
+      is_vegan: !!product.is_vegan,
+      is_vegetarian: !!product.is_vegetarian,
+      is_gluten_free: !!product.is_gluten_free,
+      is_halal: !!product.is_halal,
+      contains_alcohol: !!product.contains_alcohol,
+    };
+  }
+
+  // Bir ürün listesine (menü veya admin panel) toplu şekilde alerjen bilgisi ekler
+  async function attachAllergensToProducts(pool, products) {
+    if (!products.length) return products;
+    const ids = products.map(p => p.id);
+    const allergenMap = await getAllergensForProducts(pool, ids);
+    return products.map(p => ({
+      ...normalizeProductNutrition(p),
+      allergens: allergenMap[p.id] || []
+    }));
+  }
+
+  return {
+    getAllAllergens,
+    invalidateAllergenCache,
+    getAllergensForProducts,
+    getAllergensForProduct,
+    setProductAllergens,
+    normalizeProductNutrition,
+    attachAllergensToProducts,
+  };
+})();
 let rateLimit;
 try { rateLimit = require('express-rate-limit'); } catch(e) { console.warn('⚠️  express-rate-limit yüklü değil, rate limiting devre dışı'); }
 let Iyzipay;
@@ -1333,117 +1437,132 @@ app.get('/api/allergens', async (req, res) => {
 });
 
 app.get('/api/products', authMiddleware, async (req, res) => {
-  const { categoryId } = req.query;
-  let query = 'SELECT *, COALESCE(translations,\'{}\') as translations FROM products WHERE restaurant_id=$1';
-  const params = [req.user.restaurantId];
-  if (categoryId) { query += ' AND category_id=$2'; params.push(categoryId); }
-  query += ' ORDER BY sort_order ASC';
-  const result = await pool.query(query, params);
-  // Alerjenleri tek sorguda ekle (N+1 yok) — admin panel yeni sekmeler bu veriyi kullanır
-  const withAllergens = await allergenService.attachAllergensToProducts(pool, result.rows);
-  res.json(withAllergens);
+  try {
+    const { categoryId } = req.query;
+    let query = 'SELECT *, COALESCE(translations,\'{}\') as translations FROM products WHERE restaurant_id=$1';
+    const params = [req.user.restaurantId];
+    if (categoryId) { query += ' AND category_id=$2'; params.push(categoryId); }
+    query += ' ORDER BY sort_order ASC';
+    const result = await pool.query(query, params);
+    // Alerjenleri tek sorguda ekle (N+1 yok) — admin panel yeni sekmeler bu veriyi kullanır
+    const withAllergens = await allergenService.attachAllergensToProducts(pool, result.rows);
+    res.json(withAllergens);
+  } catch (err) {
+    console.error('GET /api/products hatası:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.post('/api/products', authMiddleware, async (req, res) => {
-  const {
-    category_id, name, description, price, emoji, variants, translations,
-    ingredients, calories, portion, nutrition_note,
-    is_vegan, is_vegetarian, is_gluten_free, is_halal, contains_alcohol,
-    preparation_time, allergens
-  } = req.body;
-  const result = await pool.query(
-    `INSERT INTO products (
-       category_id, restaurant_id, name, description, price, emoji, variants, translations,
-       ingredients, calories, portion, nutrition_note,
-       is_vegan, is_vegetarian, is_gluten_free, is_halal, contains_alcohol, preparation_time
-     )
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING *`,
-    [
-      category_id, req.user.restaurantId, name, description, price, emoji || '🍽️',
-      JSON.stringify(variants || []), translations ? JSON.stringify(translations) : '{}',
-      ingredients || null,
-      calories !== undefined && calories !== '' ? parseInt(calories) : null,
-      portion || null,
-      nutrition_note || null,
-      !!is_vegan, !!is_vegetarian, !!is_gluten_free, !!is_halal, !!contains_alcohol,
-      preparation_time !== undefined && preparation_time !== '' ? parseInt(preparation_time) : null
-    ]
-  );
-  const product = result.rows[0];
-  if (Array.isArray(allergens)) {
-    await allergenService.setProductAllergens(pool, product.id, allergens);
+  try {
+    const {
+      category_id, name, description, price, emoji, variants, translations,
+      ingredients, calories, portion, nutrition_note,
+      is_vegan, is_vegetarian, is_gluten_free, is_halal, contains_alcohol,
+      preparation_time, allergens
+    } = req.body;
+    const result = await pool.query(
+      `INSERT INTO products (
+         category_id, restaurant_id, name, description, price, emoji, variants, translations,
+         ingredients, calories, portion, nutrition_note,
+         is_vegan, is_vegetarian, is_gluten_free, is_halal, contains_alcohol, preparation_time
+       )
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING *`,
+      [
+        category_id, req.user.restaurantId, name, description, price, emoji || '🍽️',
+        JSON.stringify(variants || []), translations ? JSON.stringify(translations) : '{}',
+        ingredients || null,
+        calories !== undefined && calories !== '' ? parseInt(calories) : null,
+        portion || null,
+        nutrition_note || null,
+        !!is_vegan, !!is_vegetarian, !!is_gluten_free, !!is_halal, !!contains_alcohol,
+        preparation_time !== undefined && preparation_time !== '' ? parseInt(preparation_time) : null
+      ]
+    );
+    const product = result.rows[0];
+    if (Array.isArray(allergens)) {
+      await allergenService.setProductAllergens(pool, product.id, allergens);
+    }
+    const [withAllergens] = await allergenService.attachAllergensToProducts(pool, [product]);
+    res.json(withAllergens);
+  } catch (err) {
+    console.error('POST /api/products hatası:', err);
+    res.status(500).json({ error: err.message });
   }
-  const [withAllergens] = await allergenService.attachAllergensToProducts(pool, [product]);
-  res.json(withAllergens);
 });
 
 app.put('/api/products/:id', authMiddleware, async (req, res) => {
-  const {
-    name, description, price, emoji, is_visible, category_id, image_url, translations,
-    ingredients, calories, portion, nutrition_note,
-    is_vegan, is_vegetarian, is_gluten_free, is_halal, contains_alcohol,
-    preparation_time, allergens
-  } = req.body;
-  
-  // Mevcut ürünü al
-  const existing = await pool.query(
-    'SELECT * FROM products WHERE id=$1 AND restaurant_id=$2',
-    [req.params.id, req.user.restaurantId]
-  );
-  if (!existing.rows[0]) return res.status(404).json({ error: 'Ürün bulunamadı' });
-  
-  const current = existing.rows[0];
-  
-  const result = await pool.query(
-    `UPDATE products SET 
-      name=$1, 
-      description=$2, 
-      price=$3, 
-      emoji=$4,
-      is_visible=$5, 
-      category_id=$6,
-      image_url=$7,
-      translations=COALESCE($10::jsonb,translations),
-      ingredients=$11,
-      calories=$12,
-      portion=$13,
-      nutrition_note=$14,
-      is_vegan=$15,
-      is_vegetarian=$16,
-      is_gluten_free=$17,
-      is_halal=$18,
-      contains_alcohol=$19,
-      preparation_time=$20
-     WHERE id=$8 AND restaurant_id=$9 RETURNING *`,
-    [
-      name || current.name,
-      description !== undefined ? description : current.description,
-      price || current.price,
-      emoji || current.emoji,
-      is_visible !== undefined ? is_visible : current.is_visible,
-      category_id || current.category_id,
-      image_url !== undefined ? image_url : current.image_url,
-      req.params.id,
-      req.user.restaurantId,
-      translations ? JSON.stringify(translations) : null,
-      ingredients !== undefined ? (ingredients || null) : current.ingredients,
-      calories !== undefined ? (calories !== '' ? parseInt(calories) : null) : current.calories,
-      portion !== undefined ? (portion || null) : current.portion,
-      nutrition_note !== undefined ? (nutrition_note || null) : current.nutrition_note,
-      is_vegan !== undefined ? !!is_vegan : current.is_vegan,
-      is_vegetarian !== undefined ? !!is_vegetarian : current.is_vegetarian,
-      is_gluten_free !== undefined ? !!is_gluten_free : current.is_gluten_free,
-      is_halal !== undefined ? !!is_halal : current.is_halal,
-      contains_alcohol !== undefined ? !!contains_alcohol : current.contains_alcohol,
-      preparation_time !== undefined ? (preparation_time !== '' ? parseInt(preparation_time) : null) : current.preparation_time
-    ]
-  );
-  const product = result.rows[0];
-  if (Array.isArray(allergens)) {
-    await allergenService.setProductAllergens(pool, product.id, allergens);
+  try {
+    const {
+      name, description, price, emoji, is_visible, category_id, image_url, translations,
+      ingredients, calories, portion, nutrition_note,
+      is_vegan, is_vegetarian, is_gluten_free, is_halal, contains_alcohol,
+      preparation_time, allergens
+    } = req.body;
+
+    // Mevcut ürünü al
+    const existing = await pool.query(
+      'SELECT * FROM products WHERE id=$1 AND restaurant_id=$2',
+      [req.params.id, req.user.restaurantId]
+    );
+    if (!existing.rows[0]) return res.status(404).json({ error: 'Ürün bulunamadı' });
+
+    const current = existing.rows[0];
+
+    const result = await pool.query(
+      `UPDATE products SET 
+        name=$1, 
+        description=$2, 
+        price=$3, 
+        emoji=$4,
+        is_visible=$5, 
+        category_id=$6,
+        image_url=$7,
+        translations=COALESCE($10::jsonb,translations),
+        ingredients=$11,
+        calories=$12,
+        portion=$13,
+        nutrition_note=$14,
+        is_vegan=$15,
+        is_vegetarian=$16,
+        is_gluten_free=$17,
+        is_halal=$18,
+        contains_alcohol=$19,
+        preparation_time=$20
+       WHERE id=$8 AND restaurant_id=$9 RETURNING *`,
+      [
+        name || current.name,
+        description !== undefined ? description : current.description,
+        price || current.price,
+        emoji || current.emoji,
+        is_visible !== undefined ? is_visible : current.is_visible,
+        category_id || current.category_id,
+        image_url !== undefined ? image_url : current.image_url,
+        req.params.id,
+        req.user.restaurantId,
+        translations ? JSON.stringify(translations) : null,
+        ingredients !== undefined ? (ingredients || null) : current.ingredients,
+        calories !== undefined ? (calories !== '' ? parseInt(calories) : null) : current.calories,
+        portion !== undefined ? (portion || null) : current.portion,
+        nutrition_note !== undefined ? (nutrition_note || null) : current.nutrition_note,
+        is_vegan !== undefined ? !!is_vegan : current.is_vegan,
+        is_vegetarian !== undefined ? !!is_vegetarian : current.is_vegetarian,
+        is_gluten_free !== undefined ? !!is_gluten_free : current.is_gluten_free,
+        is_halal !== undefined ? !!is_halal : current.is_halal,
+        contains_alcohol !== undefined ? !!contains_alcohol : current.contains_alcohol,
+        preparation_time !== undefined ? (preparation_time !== '' ? parseInt(preparation_time) : null) : current.preparation_time
+      ]
+    );
+    const product = result.rows[0];
+    if (Array.isArray(allergens)) {
+      await allergenService.setProductAllergens(pool, product.id, allergens);
+    }
+    const [withAllergens] = await allergenService.attachAllergensToProducts(pool, [product]);
+    res.json(withAllergens);
+  } catch (err) {
+    console.error('PUT /api/products/:id hatası:', err);
+    res.status(500).json({ error: err.message });
   }
-  const [withAllergens] = await allergenService.attachAllergensToProducts(pool, [product]);
-  res.json(withAllergens);
 });
 
 app.delete('/api/products/:id', authMiddleware, async (req, res) => {
