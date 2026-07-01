@@ -248,6 +248,19 @@ textarea.form-input{resize:vertical;min-height:80px}
 .prod-detail-name{font-size:1.3rem;font-weight:700;margin-bottom:8px}
 .prod-detail-desc{font-size:14px;line-height:1.6;opacity:.7;margin-bottom:16px}
 .prod-detail-price{font-size:1.5rem;font-weight:700}
+.pd-section-title{font-size:12px;font-weight:700;letter-spacing:.03em;margin-bottom:6px;opacity:.85}
+.pd-section-text{font-size:13.5px;line-height:1.6;opacity:.75}
+.m-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:600;background:rgba(120,120,120,.12);white-space:nowrap}
+.m-badge.b-warn{background:rgba(232,71,71,.12);color:#e84747}
+.m-badge.b-good{background:rgba(71,201,126,.14);color:#2f9e5f}
+.m-filter-bar{display:flex;gap:8px;overflow-x:auto;padding:0 14px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.m-filter-bar::-webkit-scrollbar{display:none}
+.m-filter-chip{flex-shrink:0;display:flex;align-items:center;gap:5px;padding:7px 13px;border-radius:20px;font-size:12.5px;font-weight:600;cursor:pointer;border:1.5px solid;transition:all .15s;white-space:nowrap;user-select:none}
+.m-filter-more{flex-shrink:0;display:flex;align-items:center;gap:5px;padding:7px 13px;border-radius:20px;font-size:12.5px;font-weight:600;cursor:pointer;border:1.5px solid;white-space:nowrap}
+.m-filter-panel{margin:0 14px 12px;padding:14px;border-radius:14px;border:1px solid;display:none}
+.m-filter-panel.open{display:block}
+.m-filter-range-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:12.5px}
+.m-filter-range-row:last-child{margin-bottom:0}
 
 .camp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:400;display:none;align-items:center;justify-content:center;padding:0}
 .camp-overlay.open{display:flex}
@@ -1022,6 +1035,23 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
       <div class="prod-detail-name" id="prod-detail-name"></div>
       <div class="prod-detail-desc" id="prod-detail-desc"></div>
       <div class="prod-detail-price" id="prod-detail-price"></div>
+      <!-- Etiket/kalori/hazırlama süresi badge şeridi — 🔥 420 kcal · 🌱 Vegan · ⏱ 15 dk -->
+      <div id="prod-detail-badges" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px"></div>
+      <!-- İçindekiler -->
+      <div id="prod-detail-ingredients-section" style="display:none;margin-top:16px">
+        <div class="pd-section-title">📋 İçindekiler</div>
+        <div id="prod-detail-ingredients" class="pd-section-text"></div>
+      </div>
+      <!-- Beslenme Bilgisi -->
+      <div id="prod-detail-nutrition-section" style="display:none;margin-top:16px">
+        <div class="pd-section-title">🔥 Beslenme Bilgisi</div>
+        <div id="prod-detail-nutrition" class="pd-section-text"></div>
+      </div>
+      <!-- Alerjen Uyarısı — dikkat çekmesi için görsel olarak vurgulu -->
+      <div id="prod-detail-allergen-section" style="display:none;margin-top:16px;padding:12px 14px;background:rgba(232,71,71,.08);border:1px solid rgba(232,71,71,.25);border-radius:12px">
+        <div class="pd-section-title" style="color:#e84747">⚠️ Alerjen Uyarısı</div>
+        <div id="prod-detail-allergens" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+      </div>
       <div style="margin-top:16px">
         <button onclick="document.getElementById('prod-detail-overlay').classList.remove('open')" id="prod-detail-close-btn" style="width:100%;padding:13px;border-radius:10px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);background:#f5f5f5;color:#111">Kapat</button>
       </div>
@@ -1069,41 +1099,108 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
 
 <!-- MODALLER -->
 <div class="modal-overlay" id="prod-modal">
-  <div class="modal">
-    <div class="modal-head"><span class="modal-title" id="prod-modal-title">Ürün Ekle</span><button class="modal-close" onclick="closeModal('prod-modal')">✕</button></div>
-    <div class="form-group"><label class="form-label">KATEGORİ</label><select class="form-input" id="prod-cat-select"></select></div>
-    <div class="form-group"><label class="form-label">ÜRÜN ADI <span style="color:var(--text3);font-weight:400">(Türkçe)</span></label><input class="form-input" id="prod-name" placeholder="örn. Mercimek Çorbası"></div>
-    <div class="form-group"><label class="form-label">AÇIKLAMA <span style="color:var(--text3);font-weight:400">(Türkçe)</span></label><textarea class="form-input" id="prod-desc" placeholder="Kısa açıklama..."></textarea></div>
-    <details id="prod-trans-details" style="margin-bottom:12px;min-width:0;overflow:hidden">
-      <summary style="cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.06em;padding:8px 0;user-select:none">🌐 ÇEVİRİLER</summary>
-      <div style="margin-top:8px;padding:12px;background:var(--bg3);border-radius:10px;display:flex;flex-direction:column;gap:10px">
-        <button type="button" id="ai-translate-prod-btn" onclick="aiTranslateProduct()" style="width:100%;background:linear-gradient(135deg,rgba(232,197,71,.15),rgba(232,197,71,.05));border:1px solid rgba(232,197,71,.4);border-radius:8px;color:var(--accent);font-size:12px;font-weight:600;padding:9px 14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s;font-family:var(--sans)">
-          <span id="ai-prod-btn-icon">✨</span> <span id="ai-prod-btn-text">Yapay Zeka ile Otomatik Çevir</span>
-        </button>
-        <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇬🇧 English</div><input class="form-input" id="prod-name-en" placeholder="Product name" style="margin-bottom:6px"><textarea class="form-input" id="prod-desc-en" placeholder="Description" style="height:52px"></textarea></div>
-        <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇷🇺 Русский</div><input class="form-input" id="prod-name-ru" placeholder="Название" style="margin-bottom:6px"><textarea class="form-input" id="prod-desc-ru" placeholder="Описание" style="height:52px"></textarea></div>
-        <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇸🇦 العربية</div><input class="form-input" id="prod-name-ar" placeholder="الاسم" dir="rtl" style="margin-bottom:6px;text-align:right"><textarea class="form-input" id="prod-desc-ar" placeholder="الوصف" dir="rtl" style="height:52px;text-align:right"></textarea></div>
-      </div>
-    </details>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="form-group"><label class="form-label">FİYAT (₺)</label><input class="form-input" id="prod-price" type="number" min="0" step="0.01" placeholder="0.00"></div>
-      <div class="form-group"><label class="form-label">EMOJİ</label><input class="form-input" id="prod-emoji" placeholder="🍽️" maxlength="4"></div>
+  <div class="modal" style="width:480px;max-width:94vw;max-height:88vh;display:flex;flex-direction:column;padding:0">
+    <div class="modal-head" style="padding:22px 24px 0"><span class="modal-title" id="prod-modal-title">Ürün Ekle</span><button class="modal-close" onclick="closeModal('prod-modal')">✕</button></div>
+
+    <!-- Sekmeler -->
+    <div id="prod-tabs" style="display:flex;gap:2px;margin:16px 20px 0;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none">
+      <button type="button" class="prod-tab-btn active" data-tab="general" onclick="switchProdTab('general')">📋 Genel</button>
+      <button type="button" class="prod-tab-btn" data-tab="content" onclick="switchProdTab('content')">🧾 İçerik</button>
+      <button type="button" class="prod-tab-btn" data-tab="nutrition" onclick="switchProdTab('nutrition')">🔥 Besin</button>
+      <button type="button" class="prod-tab-btn" data-tab="allergens" onclick="switchProdTab('allergens')">⚠️ Alerjenler</button>
+      <button type="button" class="prod-tab-btn" data-tab="tags" onclick="switchProdTab('tags')">🏷️ Etiketler</button>
     </div>
-    <div class="form-group">
-      <label class="form-label">FOTOĞRAF (opsiyonel)</label>
-      <div class="img-upload-area">
-        <div class="img-upload-row">
-          <div class="img-preview-box" id="img-preview">📷</div>
-          <div class="img-upload-info">
-            <input type="file" id="prod-image" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="previewImage(this)">
-            <button class="btn-sm" onclick="document.getElementById('prod-image').click()" type="button">📁 Fotoğraf Seç</button>
-            <p>JPG, PNG veya WebP — maks 5MB</p>
-            <span id="img-status" style="font-size:11px;color:var(--green)"></span>
+    <style>
+      .prod-tab-btn{background:none;border:none;color:var(--text2);font-size:12.5px;font-weight:600;padding:10px 12px;cursor:pointer;font-family:var(--sans);border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s}
+      .prod-tab-btn:hover{color:var(--text)}
+      .prod-tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+      .prod-tab-panel{display:none}
+      .prod-tab-panel.active{display:block}
+      .allergen-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+      .allergen-chip{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:9px 12px;cursor:pointer;transition:all .15s;font-size:12.5px}
+      .allergen-chip:hover{border-color:rgba(255,255,255,.2)}
+      .allergen-chip.checked{border-color:var(--accent);background:rgba(232,197,71,.08)}
+      .allergen-chip input{accent-color:var(--accent);width:15px;height:15px;flex-shrink:0}
+      .tag-chip{display:flex;align-items:center;gap:10px;background:var(--bg3);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 14px;cursor:pointer;transition:all .15s;margin-bottom:8px}
+      .tag-chip:hover{border-color:rgba(255,255,255,.2)}
+      .tag-chip.checked{border-color:var(--accent);background:rgba(232,197,71,.08)}
+      .tag-chip input{accent-color:var(--accent);width:16px;height:16px}
+      @media(max-width:520px){.allergen-grid{grid-template-columns:1fr}}
+    </style>
+
+    <div style="padding:16px 24px 0;overflow-y:auto;flex:1">
+      <!-- SEKME 1: GENEL BİLGİLER -->
+      <div class="prod-tab-panel active" id="prod-tab-general">
+        <div class="form-group"><label class="form-label">KATEGORİ</label><select class="form-input" id="prod-cat-select"></select></div>
+        <div class="form-group"><label class="form-label">ÜRÜN ADI <span style="color:var(--text3);font-weight:400">(Türkçe)</span></label><input class="form-input" id="prod-name" placeholder="örn. Mercimek Çorbası"></div>
+        <div class="form-group"><label class="form-label">AÇIKLAMA <span style="color:var(--text3);font-weight:400">(Türkçe)</span></label><textarea class="form-input" id="prod-desc" placeholder="Kısa açıklama..."></textarea></div>
+        <details id="prod-trans-details" style="margin-bottom:12px;min-width:0;overflow:hidden">
+          <summary style="cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.06em;padding:8px 0;user-select:none">🌐 ÇEVİRİLER</summary>
+          <div style="margin-top:8px;padding:12px;background:var(--bg3);border-radius:10px;display:flex;flex-direction:column;gap:10px">
+            <button type="button" id="ai-translate-prod-btn" onclick="aiTranslateProduct()" style="width:100%;background:linear-gradient(135deg,rgba(232,197,71,.15),rgba(232,197,71,.05));border:1px solid rgba(232,197,71,.4);border-radius:8px;color:var(--accent);font-size:12px;font-weight:600;padding:9px 14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s;font-family:var(--sans)">
+              <span id="ai-prod-btn-icon">✨</span> <span id="ai-prod-btn-text">Yapay Zeka ile Otomatik Çevir</span>
+            </button>
+            <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇬🇧 English</div><input class="form-input" id="prod-name-en" placeholder="Product name" style="margin-bottom:6px"><textarea class="form-input" id="prod-desc-en" placeholder="Description" style="height:52px"></textarea></div>
+            <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇷🇺 Русский</div><input class="form-input" id="prod-name-ru" placeholder="Название" style="margin-bottom:6px"><textarea class="form-input" id="prod-desc-ru" placeholder="Описание" style="height:52px"></textarea></div>
+            <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px">🇸🇦 العربية</div><input class="form-input" id="prod-name-ar" placeholder="الاسم" dir="rtl" style="margin-bottom:6px;text-align:right"><textarea class="form-input" id="prod-desc-ar" placeholder="الوصف" dir="rtl" style="height:52px;text-align:right"></textarea></div>
+          </div>
+        </details>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group"><label class="form-label">FİYAT (₺)</label><input class="form-input" id="prod-price" type="number" min="0" step="0.01" placeholder="0.00"></div>
+          <div class="form-group"><label class="form-label">EMOJİ</label><input class="form-input" id="prod-emoji" placeholder="🍽️" maxlength="4"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">FOTOĞRAF (opsiyonel)</label>
+          <div class="img-upload-area">
+            <div class="img-upload-row">
+              <div class="img-preview-box" id="img-preview">📷</div>
+              <div class="img-upload-info">
+                <input type="file" id="prod-image" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="previewImage(this)">
+                <button class="btn-sm" onclick="document.getElementById('prod-image').click()" type="button">📁 Fotoğraf Seç</button>
+                <p>JPG, PNG veya WebP — maks 5MB</p>
+                <span id="img-status" style="font-size:11px;color:var(--green)"></span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      <!-- SEKME 2: İÇERİK -->
+      <div class="prod-tab-panel" id="prod-tab-content">
+        <div class="form-group">
+          <label class="form-label">MALZEMELER / İÇİNDEKİLER</label>
+          <textarea class="form-input" id="prod-ingredients" placeholder="örn. Un, yumurta, süt, tereyağı, tuz..." style="min-height:160px"></textarea>
+          <p style="font-size:11px;color:var(--text3);margin-top:6px">Müşteriye ürün detayında gösterilir. Yasal içerik bilgisi zorunluluğu için doğru ve güncel tutun.</p>
+        </div>
+      </div>
+
+      <!-- SEKME 3: BESİN BİLGİSİ -->
+      <div class="prod-tab-panel" id="prod-tab-nutrition">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group"><label class="form-label">KALORİ (kcal)</label><input class="form-input" id="prod-calories" type="number" min="0" step="1" placeholder="örn. 420"></div>
+          <div class="form-group"><label class="form-label">HAZIRLAMA SÜRESİ (dk)</label><input class="form-input" id="prod-prep-time" type="number" min="0" step="1" placeholder="örn. 15"></div>
+        </div>
+        <div class="form-group"><label class="form-label">PORSİYON</label><input class="form-input" id="prod-portion" placeholder="örn. 1 kişilik / 250g"></div>
+        <div class="form-group"><label class="form-label">EK BESİN NOTU <span style="color:var(--text3);font-weight:400">(opsiyonel)</span></label><textarea class="form-input" id="prod-nutrition-note" placeholder="örn. Protein: 18g, Karbonhidrat: 32g, Yağ: 14g" style="min-height:70px"></textarea></div>
+      </div>
+
+      <!-- SEKME 4: ALERJENLER -->
+      <div class="prod-tab-panel" id="prod-tab-allergens">
+        <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Bu üründe bulunan resmi alerjenleri işaretleyin. Müşteri menüsünde uyarı olarak gösterilir.</p>
+        <div class="allergen-grid" id="allergen-checkbox-grid"><div class="empty" style="padding:16px">Yükleniyor...</div></div>
+      </div>
+
+      <!-- SEKME 5: ETİKETLER -->
+      <div class="prod-tab-panel" id="prod-tab-tags">
+        <label class="tag-chip" id="tag-chip-vegan"><input type="checkbox" id="prod-tag-vegan" onchange="syncTagChip(this)">🌱 Vegan</label>
+        <label class="tag-chip" id="tag-chip-vegetarian"><input type="checkbox" id="prod-tag-vegetarian" onchange="syncTagChip(this)">🥕 Vejetaryen</label>
+        <label class="tag-chip" id="tag-chip-glutenfree"><input type="checkbox" id="prod-tag-glutenfree" onchange="syncTagChip(this)">🌾 Glutensiz</label>
+        <label class="tag-chip" id="tag-chip-halal"><input type="checkbox" id="prod-tag-halal" onchange="syncTagChip(this)">🟢 Helal</label>
+        <label class="tag-chip" id="tag-chip-alcohol"><input type="checkbox" id="prod-tag-alcohol" onchange="syncTagChip(this)">🍷 Alkol İçerir</label>
+      </div>
     </div>
-    <div class="modal-footer">
+
+    <div class="modal-footer" style="margin:0;padding:16px 24px 22px;border-top:1px solid var(--border)">
       <button class="btn-sm" onclick="closeModal('prod-modal')">İptal</button>
       <button class="btn-sm btn-accent" onclick="saveProduct()">Kaydet</button>
     </div>
@@ -1272,6 +1369,8 @@ function exitImpersonate() {
 let categories = [], products = [], feedbacks = [], calls = [], campaigns = [];
 let activeCatId = null, fbFilter = 'all', fbType = 'praise', fbRating = 5;
 let editingProductId = null, ws = null;
+// 14 resmi alerjen listesi — sunucudan bir kez çekilir, admin panel checkbox'ları ve menü filtreleri için kullanılır
+let allergensList = [];
 let currentTheme = localStorage.getItem('qrmenu_theme') || 'classic';
 let currentCardStyle = localStorage.getItem('qrmenu_cardstyle') || 'list';
 
@@ -1687,7 +1786,7 @@ async function loadApp() {
   document.getElementById('menu-link').textContent=menuUrl;
   document.getElementById('qr-url').textContent=menuUrl;
   document.getElementById('menu-topbar-url').textContent=menuUrl;
-  await Promise.all([loadCategories(),loadProducts(),loadCalls(),loadFeedback(),loadCampaigns()]);
+  await Promise.all([loadCategories(),loadProducts(),loadCalls(),loadFeedback(),loadCampaigns(),loadAllergens()]);
   updateStats(); loadQR(); loadDesignFields(); connectWS(); initHomeToggles();
   preloadWaiterSound(); // async, arka planda yükle
   loadNotifications(); // nav badge için
@@ -1820,6 +1919,8 @@ async function playWaiterSoundSafe() {
 }
 
 async function loadCategories(){ try{categories=await api('GET','/categories');}catch{categories=[];} renderCatList(); populateCatSelects(); }
+// Alerjen listesi nadiren değişir — token gerekmez, herkese açık referans verisidir
+async function loadAllergens(){ try{allergensList=await api('GET','/allergens');}catch{allergensList=[];} renderAllergenCheckboxes(); }
 async function loadProducts(){ try{products=await api('GET','/products');}catch{products=[];} if(activeCatId) renderProductList(); updatePreview(); }
 async function loadCalls(){ try{calls=await api('GET','/waiter-calls');}catch{calls=[];} updateNotifBadge(); renderCalls(); renderHomeCalls(); }
 
@@ -2533,7 +2634,7 @@ function closeModal(id){
   if(id==='prod-modal'){
     editingProductId=null;
     document.getElementById('prod-modal-title').textContent='Ürün Ekle';
-    ['prod-name','prod-desc','prod-price','prod-emoji'].forEach(x=>{const e=document.getElementById(x);if(e)e.value='';});
+    ['prod-name','prod-desc','prod-price','prod-emoji','prod-ingredients','prod-calories','prod-portion','prod-prep-time','prod-nutrition-note'].forEach(x=>{const e=document.getElementById(x);if(e)e.value='';});
     document.getElementById('prod-image').value='';
     document.getElementById('img-preview').innerHTML='📷';
     document.getElementById('img-status').textContent='';
@@ -2542,6 +2643,14 @@ function closeModal(id){
       const d=document.getElementById('prod-desc-'+l);if(d)d.value='';
     });
     const det=document.getElementById('prod-trans-details');if(det)det.open=false;
+    // Alerjen checkbox'larını temizle
+    document.querySelectorAll('#allergen-checkbox-grid input[type=checkbox]').forEach(cb=>{cb.checked=false;cb.closest('.allergen-chip')?.classList.remove('checked');});
+    // Etiket checkbox'larını temizle
+    ['vegan','vegetarian','glutenfree','halal','alcohol'].forEach(k=>{
+      const cb=document.getElementById('prod-tag-'+k);
+      if(cb){cb.checked=false;document.getElementById('tag-chip-'+k)?.classList.remove('checked');}
+    });
+    switchProdTab('general');
   }
   if(id==='camp-modal'){
     editingCampaignId=null;
@@ -2569,6 +2678,43 @@ function previewCampImage(input){
   reader.readAsDataURL(file);
 }
 
+// ═══════════════════════════════
+// ÜRÜN MODALI — SEKMELER / ALERJEN / ETİKET
+// ═══════════════════════════════
+
+function switchProdTab(tab){
+  document.querySelectorAll('#prod-tabs .prod-tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('.prod-tab-panel').forEach(p=>p.classList.toggle('active', p.id==='prod-tab-'+tab));
+}
+
+// 14 resmi alerjeni checkbox grid olarak çizer (allergensList sunucudan yüklenir)
+function renderAllergenCheckboxes(selectedKeys){
+  const grid=document.getElementById('allergen-checkbox-grid');
+  if(!grid) return;
+  if(!allergensList.length){ grid.innerHTML='<div class="empty" style="padding:16px">Alerjen listesi yüklenemedi</div>'; return; }
+  const selected=new Set(selectedKeys||[]);
+  grid.innerHTML=allergensList.map(a=>`
+    <label class="allergen-chip ${selected.has(a.key)?'checked':''}" id="allergen-chip-${a.key}">
+      <input type="checkbox" value="${a.key}" ${selected.has(a.key)?'checked':''} onchange="syncAllergenChip(this)">
+      <span>${a.icon} ${a.name_tr}</span>
+    </label>`).join('');
+}
+
+function syncAllergenChip(cb){
+  const chip=cb.closest('.allergen-chip');
+  if(chip) chip.classList.toggle('checked', cb.checked);
+}
+
+function syncTagChip(cb){
+  const key=cb.id.replace('prod-tag-','');
+  const chip=document.getElementById('tag-chip-'+key);
+  if(chip) chip.classList.toggle('checked', cb.checked);
+}
+
+function getCheckedAllergenKeys(){
+  return [...document.querySelectorAll('#allergen-checkbox-grid input[type=checkbox]:checked')].map(cb=>cb.value);
+}
+
 function previewImage(input){
   const file=input.files[0]; if(!file) return;
   const reader=new FileReader();
@@ -2594,6 +2740,22 @@ function editProduct(id){
   document.getElementById('prod-price').value=p.price;
   document.getElementById('prod-emoji').value=p.emoji||'';
   if(p.image_url){document.getElementById('img-preview').innerHTML=`<img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover;border-radius:7px">`;document.getElementById('img-status').textContent='Mevcut fotoğraf';}
+  // İçerik
+  document.getElementById('prod-ingredients').value=p.ingredients||'';
+  // Besin bilgisi
+  document.getElementById('prod-calories').value=p.calories??'';
+  document.getElementById('prod-portion').value=p.portion||'';
+  document.getElementById('prod-prep-time').value=p.preparation_time??'';
+  document.getElementById('prod-nutrition-note').value=p.nutrition_note||'';
+  // Alerjenler
+  renderAllergenCheckboxes((p.allergens||[]).map(a=>a.key));
+  // Etiketler
+  const tagMap={vegan:p.is_vegan,vegetarian:p.is_vegetarian,glutenfree:p.is_gluten_free,halal:p.is_halal,alcohol:p.contains_alcohol};
+  Object.entries(tagMap).forEach(([key,val])=>{
+    const cb=document.getElementById('prod-tag-'+key);
+    if(cb){cb.checked=!!val;document.getElementById('tag-chip-'+key)?.classList.toggle('checked',!!val);}
+  });
+  switchProdTab('general');
   openModal('prod-modal');
 }
 
@@ -2632,6 +2794,22 @@ async function saveProduct(){
   // Yeni resim yüklendiyse yenisini, yoksa mevcut olanı koru
   body.image_url = image_url !== null ? image_url : (existing?.image_url || null);
   if(Object.keys(prodTrans).length) body.translations=prodTrans;
+  // İçerik + Besin Bilgisi
+  body.ingredients = document.getElementById('prod-ingredients').value.trim() || null;
+  const caloriesVal = document.getElementById('prod-calories').value;
+  body.calories = caloriesVal!=='' ? parseInt(caloriesVal) : null;
+  body.portion = document.getElementById('prod-portion').value.trim() || null;
+  const prepVal = document.getElementById('prod-prep-time').value;
+  body.preparation_time = prepVal!=='' ? parseInt(prepVal) : null;
+  body.nutrition_note = document.getElementById('prod-nutrition-note').value.trim() || null;
+  // Etiketler
+  body.is_vegan = document.getElementById('prod-tag-vegan').checked;
+  body.is_vegetarian = document.getElementById('prod-tag-vegetarian').checked;
+  body.is_gluten_free = document.getElementById('prod-tag-glutenfree').checked;
+  body.is_halal = document.getElementById('prod-tag-halal').checked;
+  body.contains_alcohol = document.getElementById('prod-tag-alcohol').checked;
+  // Alerjenler (key dizisi)
+  body.allergens = getCheckedAllergenKeys();
   try{
     let prod;
     if(editingProductId){prod=await api('PUT','/products/'+editingProductId,body);const idx=products.findIndex(p=>p.id===editingProductId);if(idx>-1)products[idx]=prod;toast(`"${prod.name}" güncellendi`,'success');}
@@ -3602,6 +3780,31 @@ function renderPublicMenu(data){
     <input class="m-search" id="menu-search-input" placeholder="${mt('search')}" style="background:${t.searchBg};border:1px solid ${t.searchBorder};color:${t.searchColor};border-radius:10px" oninput="searchMenu(this.value)" autocomplete="off" autocorrect="off" spellcheck="false">
   </div>`;
 
+  // FİLTRELER — vegan/vejetaryen/glutensiz/helal/alerjensiz + kalori & hazırlama süresi aralığı
+  const filterChips = [
+    { key: 'vegan', icon: '🌱', label: 'Vegan' },
+    { key: 'vegetarian', icon: '🥕', label: 'Vejetaryen' },
+    { key: 'glutenfree', icon: '🌾', label: 'Glutensiz' },
+    { key: 'halal', icon: '🟢', label: 'Helal' },
+    { key: 'noAllergen', icon: '✅', label: 'Alerjen İçermeyen' },
+  ];
+  const filterBar = `<div class="m-filter-bar" style="background:${t.bg}">
+    ${filterChips.map(f => `<div class="m-filter-chip" id="filter-chip-${f.key}" data-filter="${f.key}" onclick="toggleMenuFilter('${f.key}')" style="border-color:${t.searchBorder};color:${t.text2};background:${t.searchBg}">${f.icon} ${f.label}</div>`).join('')}
+    <div class="m-filter-more" id="filter-more-btn" onclick="toggleFilterPanel()" style="border-color:${t.searchBorder};color:${t.text2};background:${t.searchBg}">⚙️ Kalori / Süre</div>
+  </div>
+  <div class="m-filter-panel" id="menu-filter-panel" style="border-color:${t.searchBorder};background:${t.bg2}">
+    <div class="m-filter-range-row">
+      <span style="width:112px;flex-shrink:0;color:${t.text2}">🔥 Maks. Kalori</span>
+      <input type="range" min="0" max="1500" step="50" value="1500" id="filter-max-calories" oninput="onFilterRangeChange()" style="flex:1;accent-color:${color}">
+      <span id="filter-max-calories-label" style="width:64px;text-align:right;color:${t.text};font-weight:600">Sınırsız</span>
+    </div>
+    <div class="m-filter-range-row">
+      <span style="width:112px;flex-shrink:0;color:${t.text2}">⏱ Maks. Süre</span>
+      <input type="range" min="0" max="60" step="5" value="60" id="filter-max-preptime" oninput="onFilterRangeChange()" style="flex:1;accent-color:${color}">
+      <span id="filter-max-preptime-label" style="width:64px;text-align:right;color:${t.text};font-weight:600">Sınırsız</span>
+    </div>
+  </div>`;
+
   const nav=`<div class="sticky-nav" style="background:${t.navBg};border-color:${t.border};display:flex;align-items:stretch">
     <div style="display:flex;flex:1;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch">
     ${cats.map((c,i)=>`<div class="snav-item ${i===0?'active':''}" style="color:${i===0?color:t.text2};${i===0?`border-color:${color}`:''}" onclick="scrollToSec('${c.id}',this,'${color}','${t.text2}')">${trName(c)}</div>`).join('')}
@@ -3626,6 +3829,7 @@ function renderPublicMenu(data){
           <div class="m-prod-body">
             <div class="m-prod-name" style="color:${t.text}">${trName(p)}</div>
             <div class="m-prod-desc" style="color:${t.text2};max-height:1.4em;overflow:hidden">${trDesc(p)}</div>
+            ${cardMiniBadgesHtml(p)}
             <div class="m-prod-price" style="color:${color}">₺${parseFloat(p.price).toFixed(2)}</div>
           </div>
         </div>`).join('')}
@@ -3635,15 +3839,17 @@ function renderPublicMenu(data){
         <div class="m-prod-left">
           <div class="m-prod-name" style="color:${t.text}">${trName(p)}</div>
           <div class="m-prod-desc" style="color:${t.text2};max-height:1.4em;overflow:hidden">${trDesc(p)}</div>
+          ${cardMiniBadgesHtml(p)}
         </div>
         <div class="m-prod-price" style="color:${color}">₺${parseFloat(p.price).toFixed(2)}</div>
       </div>`).join('');
     }else{
       prodsHtml=cat.products.map(p=>`<div class="m-product style-list" data-prod-id="${p.id}" style="border-color:${t.border}" onclick="showProdDetail('${p.id}','${cat.id}')">
         <div class="m-prod-img" style="background:${t.bg2};border-radius:10px"><span class="m-prod-img-placeholder">${p.emoji||'🍽️'}</span></div>
-        <div style="flex:1">
+        <div style="flex:1;min-width:0">
           <div class="m-prod-name" style="color:${t.text}">${trName(p)}</div>
           <div class="m-prod-desc" style="color:${t.text2};max-height:1.4em;overflow:hidden">${trDesc(p)}</div>
+          ${cardMiniBadgesHtml(p)}
           <div class="m-prod-price" style="color:${color}">₺${parseFloat(p.price).toFixed(2)}</div>
         </div>
       </div>`).join('');
@@ -3675,8 +3881,11 @@ function renderPublicMenu(data){
     <div style="font-size:16px;font-weight:600;margin-bottom:6px" id="no-result-title">Sonuç bulunamadı</div>
     <div style="font-size:13px;opacity:.6" id="no-result-sub">Farklı bir kelime deneyin</div>
   </div>`;
-  el.innerHTML=hero+search+nav+sections+noResult+wifiHtml+footer;
+  el.innerHTML=hero+search+filterBar+nav+sections+noResult+wifiHtml+footer;
   window._menuData=data;
+  // Filtre + arama sırasında her karta tekrar tekrar DOM'dan veri çekmemek için düz (flat) map
+  window._menuProductsFlat={};
+  data.categories.forEach(c=>c.products.forEach(p=>{window._menuProductsFlat[p.id]=p;}));
   updateMenuStaticStrings();
   // Dil değişince yeniden render sonrası resimleri anında uygula
   setTimeout(applyMenuImages, 50);
@@ -3732,30 +3941,90 @@ function initMenuScrollSpy(color, textColor) {
   window._menuScrollObserver = observer;
 }
 
-function searchMenu(q){
-  if(!window._menuData) return;
-  const query = q.toLowerCase().trim();
+// Aktif filtre durumu — chip tıklamaları ve range input'lar bunu günceller
+window._menuFilters = { vegan:false, vegetarian:false, glutenfree:false, halal:false, noAllergen:false, maxCalories:null, maxPrepTime:null };
+window._menuSearchQuery = '';
 
-  // Tüm ürün ve section'ları gizle/göster — re-render YOK
+function searchMenu(q){
+  window._menuSearchQuery = (q||'').toLowerCase().trim();
+  applyMenuVisibility();
+}
+
+function toggleMenuFilter(key){
+  window._menuFilters[key] = !window._menuFilters[key];
+  const chip = document.getElementById('filter-chip-'+key);
+  const color = window._currentColor || '#c0a020';
+  const t = window._currentTheme || THEMES.classic;
+  if(chip){
+    const active = window._menuFilters[key];
+    chip.style.borderColor = active ? color : t.searchBorder;
+    chip.style.background = active ? color : t.searchBg;
+    chip.style.color = active ? '#111' : t.text2;
+  }
+  applyMenuVisibility();
+}
+
+function toggleFilterPanel(){
+  document.getElementById('menu-filter-panel')?.classList.toggle('open');
+}
+
+function onFilterRangeChange(){
+  const cal = document.getElementById('filter-max-calories');
+  const prep = document.getElementById('filter-max-preptime');
+  const calLabel = document.getElementById('filter-max-calories-label');
+  const prepLabel = document.getElementById('filter-max-preptime-label');
+  const calVal = parseInt(cal.value);
+  const prepVal = parseInt(prep.value);
+  window._menuFilters.maxCalories = calVal >= 1500 ? null : calVal;
+  window._menuFilters.maxPrepTime = prepVal >= 60 ? null : prepVal;
+  if(calLabel) calLabel.textContent = window._menuFilters.maxCalories===null ? 'Sınırsız' : `${calVal} kcal`;
+  if(prepLabel) prepLabel.textContent = window._menuFilters.maxPrepTime===null ? 'Sınırsız' : `${prepVal} dk`;
+  applyMenuVisibility();
+}
+
+// Bir ürünün aktif filtrelere uyup uymadığını kontrol eder
+function productMatchesFilters(p){
+  const f = window._menuFilters;
+  if(f.vegan && !p.is_vegan) return false;
+  if(f.vegetarian && !p.is_vegetarian) return false;
+  if(f.glutenfree && !p.is_gluten_free) return false;
+  if(f.halal && !p.is_halal) return false;
+  if(f.noAllergen && p.allergens && p.allergens.length) return false;
+  if(f.maxCalories !== null && (p.calories === null || p.calories === undefined || p.calories > f.maxCalories)) return false;
+  if(f.maxPrepTime !== null && (p.preparation_time === null || p.preparation_time === undefined || p.preparation_time > f.maxPrepTime)) return false;
+  return true;
+}
+
+// Bir ürünün arama sorgusuna uyup uymadığını kontrol eder — ürün adı, içerik VE alerjenlerde arar
+function productMatchesSearch(p, query){
+  if(!query) return true;
+  const name = (trName(p)||'').toLowerCase();
+  const desc = (trDesc(p)||'').toLowerCase();
+  const ingredients = (p.ingredients||'').toLowerCase();
+  const allergenNames = (p.allergens||[]).map(a=>a.name_tr.toLowerCase()).join(' ');
+  return name.includes(query) || desc.includes(query) || ingredients.includes(query) || allergenNames.includes(query);
+}
+
+// Arama + filtreleri BİRLİKTE uygular, tek DOM geçişinde (re-render yok, performanslı)
+function applyMenuVisibility(){
+  if(!window._menuData) return;
+  const query = window._menuSearchQuery;
+  const anyFilterActive = Object.entries(window._menuFilters).some(([k,v]) => v !== false && v !== null);
+
   document.querySelectorAll('.m-section').forEach(sec => {
     let sectionVisible = false;
-    sec.querySelectorAll('.m-product').forEach(prod => {
-      if(!query){
-        prod.style.display = '';
-        sectionVisible = true;
-      } else {
-        const name = (prod.querySelector('.m-prod-name')?.textContent || '').toLowerCase();
-        const desc = (prod.querySelector('.m-prod-desc')?.textContent || '').toLowerCase();
-        const match = name.includes(query) || desc.includes(query);
-        prod.style.display = match ? '' : 'none';
-        if(match) sectionVisible = true;
-      }
+    sec.querySelectorAll('.m-product').forEach(prodEl => {
+      const pid = prodEl.getAttribute('data-prod-id');
+      const p = window._menuProductsFlat?.[pid];
+      const match = p ? (productMatchesSearch(p, query) && productMatchesFilters(p)) : true;
+      prodEl.style.display = match ? '' : 'none';
+      if(match) sectionVisible = true;
     });
     sec.style.display = sectionVisible ? '' : 'none';
   });
 
-  // Sticky nav'ı da güncelle — görünür section'lar aktif olsun
-  if(!query){
+  // Sticky nav'ı sıfırla (arama/filtre yokken ilk section aktif görünsün)
+  if(!query && !anyFilterActive){
     document.querySelectorAll('.snav-item').forEach((item,i) => {
       const color = window._currentColor || '#c0a020';
       const t = window._currentTheme || THEMES.classic;
@@ -3766,7 +4035,43 @@ function searchMenu(q){
   // Sonuç yok mesajı
   const noResult = document.getElementById('search-no-result');
   const allHidden = [...document.querySelectorAll('.m-section')].every(s => s.style.display === 'none');
-  if(noResult) noResult.style.display = (query && allHidden) ? 'block' : 'none';
+  if(noResult) noResult.style.display = ((query || anyFilterActive) && allHidden) ? 'block' : 'none';
+}
+
+// ═══════════════════════════════
+// BADGE SİSTEMİ — kalori / etiket / alerjen ikonları
+// ═══════════════════════════════
+
+// Ürünün etiket + kalori + hazırlama süresi badge'lerini döner (detay modalı için tam liste)
+function productTagBadges(p){
+  const arr=[];
+  if(p.calories) arr.push({icon:'🔥',text:`${p.calories} kcal`});
+  if(p.is_vegan) arr.push({icon:'🌱',text:'Vegan',good:true});
+  if(p.is_vegetarian) arr.push({icon:'🥕',text:'Vejetaryen',good:true});
+  if(p.is_gluten_free) arr.push({icon:'🌾',text:'Glutensiz',good:true});
+  if(p.is_halal) arr.push({icon:'🟢',text:'Helal',good:true});
+  if(p.contains_alcohol) arr.push({icon:'🍷',text:'Alkol içerir',warn:true});
+  if(p.preparation_time) arr.push({icon:'⏱',text:`${p.preparation_time} dk`});
+  return arr;
+}
+
+function badgesHtml(list){
+  return list.map(b=>`<span class="m-badge ${b.warn?'b-warn':(b.good?'b-good':'')}">${b.icon} ${b.text}</span>`).join('');
+}
+
+// Kartlarda (menü listesinde) "ilk bakışta" görünen kompakt badge satırı.
+// Taşmayı önlemek için en fazla 3 badge gösterilir, fazlası "+N" ile özetlenir.
+function cardMiniBadgesHtml(p){
+  const badges=[];
+  if(p.calories) badges.push({icon:'🔥',text:`${p.calories} kcal`});
+  if(p.allergens && p.allergens.length) badges.push({icon:'⚠️',text:`${p.allergens.length} alerjen`,warn:true});
+  if(p.is_vegan) badges.push({icon:'🌱',text:'Vegan',good:true});
+  if(p.is_gluten_free) badges.push({icon:'🌾',text:'Glutensiz',good:true});
+  if(p.is_halal) badges.push({icon:'🟢',text:'Helal',good:true});
+  if(!badges.length) return '';
+  const shown=badges.slice(0,3);
+  const extra=badges.length-shown.length;
+  return `<div class="m-mini-badges" style="display:flex;flex-wrap:wrap;gap:4px;margin:2px 0 4px">${badgesHtml(shown)}${extra>0?`<span class="m-badge">+${extra}</span>`:''}</div>`;
 }
 
 function showProdDetail(prodId,catId){
@@ -3786,6 +4091,34 @@ function showProdDetail(prodId,catId){
   document.getElementById('prod-detail-desc').textContent=trDesc(p);
   document.getElementById('prod-detail-price').style.color=color;
   document.getElementById('prod-detail-price').textContent=`₺${parseFloat(p.price).toFixed(2)}`;
+
+  // Badge şeridi (kalori / etiketler / hazırlama süresi)
+  document.getElementById('prod-detail-badges').innerHTML = badgesHtml(productTagBadges(p));
+
+  // İçindekiler
+  const ingSection=document.getElementById('prod-detail-ingredients-section');
+  if(p.ingredients){ document.getElementById('prod-detail-ingredients').textContent=p.ingredients; ingSection.style.display='block'; }
+  else { ingSection.style.display='none'; }
+
+  // Beslenme Bilgisi
+  const nutriLines=[];
+  if(p.calories) nutriLines.push(`Kalori: ${p.calories} kcal`);
+  if(p.portion) nutriLines.push(`Porsiyon: ${p.portion}`);
+  if(p.preparation_time) nutriLines.push(`Hazırlama Süresi: ${p.preparation_time} dk`);
+  if(p.nutrition_note) nutriLines.push(p.nutrition_note);
+  const nutriSection=document.getElementById('prod-detail-nutrition-section');
+  if(nutriLines.length){ document.getElementById('prod-detail-nutrition').innerHTML=nutriLines.map(l=>`<div>${l}</div>`).join(''); nutriSection.style.display='block'; }
+  else { nutriSection.style.display='none'; }
+
+  // Alerjen Uyarısı — kullanıcı ilk bakışta görebilsin diye vurgulu kutu
+  const allergenSection=document.getElementById('prod-detail-allergen-section');
+  if(p.allergens && p.allergens.length){
+    document.getElementById('prod-detail-allergens').innerHTML = p.allergens.map(a=>`<span class="m-badge b-warn">${a.icon} ${a.name_tr}</span>`).join('');
+    allergenSection.style.display='block';
+  } else {
+    allergenSection.style.display='none';
+  }
+
   document.getElementById('prod-detail-overlay').classList.add('open');
 }
 

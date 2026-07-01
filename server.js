@@ -44,6 +44,8 @@ function anthropicPost(apiKey, body) {
   });
 }
 const { Resend } = require('resend');
+// Ürün içerik / alerjen / besin bilgisi servis katmanı (modüler — lib/allergenService.js)
+const allergenService = require('./lib/allergenService');
 let rateLimit;
 try { rateLimit = require('express-rate-limit'); } catch(e) { console.warn('⚠️  express-rate-limit yüklü değil, rate limiting devre dışı'); }
 let Iyzipay;
@@ -446,6 +448,90 @@ CREATE TABLE IF NOT EXISTS password_resets (
   await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS link_category_id UUID`).catch(()=>{});
   await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS link_url TEXT`).catch(()=>{});
 
+  // ═══════════════════════════════
+  // ÜRÜN İÇERİK / ALERJEN / BESİN BİLGİSİ
+  // Türkiye'deki yasal zorunluluk (ürün içeriği, alerjen, kalori bilgisi) için.
+  // Tamamı additive — mevcut veriyi bozmaz, tüm yeni kolonlar opsiyoneldir.
+  // ═══════════════════════════════
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS ingredients TEXT`).catch(()=>{});
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS calories INTEGER`).catch(()=>{});
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS portion VARCHAR(50)`).catch(()=>{});
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS nutrition_note TEXT`).catch(()=>{});
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_vegan BOOLEAN DEFAULT false`).catch(()=>{});
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_vegetarian BOOLEAN DEFAULT false`).catch(()=>{});
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_gluten_free BOOLEAN DEFAULT false`).catch(()=>{});
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_halal BOOLEAN DEFAULT false`).catch(()=>{});
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS contains_alcohol BOOLEAN DEFAULT false`).catch(()=>{});
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS preparation_time INTEGER`).catch(()=>{});
+
+  // 14 resmi alerjen — sabit referans tablosu (key değişmez, isimler/ikonlar güncellenebilir)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS allergens (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      key VARCHAR(30) UNIQUE NOT NULL,
+      name_tr VARCHAR(50) NOT NULL,
+      name_en VARCHAR(50) NOT NULL,
+      icon VARCHAR(10) NOT NULL,
+      sort_order INTEGER DEFAULT 0
+    )
+  `).catch(()=>{});
+
+  // Ürün ↔ Alerjen many-to-many pivot
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS product_allergens (
+      product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+      allergen_id UUID REFERENCES allergens(id) ON DELETE CASCADE,
+      PRIMARY KEY (product_id, allergen_id)
+    )
+  `).catch(()=>{});
+
+  // 14 resmi alerjeni seed et — zaten varsa dokunmaz (key üzerinden ON CONFLICT)
+  const OFFICIAL_ALLERGENS = [
+    ['gluten',    'Gluten',            'Gluten',           '🌾', 1],
+    ['kabuklular','Kabuklular',        'Crustaceans',      '🦐', 2],
+    ['yumurta',   'Yumurta',           'Eggs',             '🥚', 3],
+    ['balik',     'Balık',             'Fish',             '🐟', 4],
+    ['yerfistigi','Yer Fıstığı',       'Peanuts',          '🥜', 5],
+    ['soya',      'Soya',              'Soybeans',         '🫘', 6],
+    ['sut',       'Süt',               'Milk',             '🥛', 7],
+    ['sertkabuk', 'Sert Kabuklu Yemişler', 'Tree Nuts',    '🌰', 8],
+    ['kereviz',   'Kereviz',           'Celery',           '🥬', 9],
+    ['hardal',    'Hardal',            'Mustard',          '🟡', 10],
+    ['susam',     'Susam',             'Sesame',           '⚪', 11],
+    ['sulfit',    'Sülfit',            'Sulphites',        '🧪', 12],
+    ['lupin',     'Lupin',             'Lupin',            '🫛', 13],
+    ['yumusakca', 'Yumuşakçalar',      'Molluscs',         '🐚', 14],
+  ];
+  for (const [key, name_tr, name_en, icon, sort_order] of OFFICIAL_ALLERGENS) {
+    await pool.query(
+      `INSERT INTO allergens (key, name_tr, name_en, icon, sort_order)
+       VALUES ($1,$2,$3,$4,$5)
+       ON CONFLICT (key) DO UPDATE SET name_tr=$2, name_en=$3, icon=$4, sort_order=$5`,
+      [key, name_tr, name_en, icon, sort_order]
+    ).catch(()=>{});
+  }
+
+  // Geleceğe hazırlık: etiket sistemi (vegan/vejetaryen/glutensiz/helal dışında,
+  // ileride "acılı", "şeker içermez" gibi serbest etiketler eklenebilsin diye).
+  // Şimdilik boş kalabilir, product_tags pivot ile genişletilebilir mimari.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS product_tags (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      restaurant_id UUID REFERENCES restaurants(id) ON DELETE CASCADE,
+      key VARCHAR(50) NOT NULL,
+      label VARCHAR(50) NOT NULL,
+      icon VARCHAR(10) DEFAULT '🏷️',
+      UNIQUE(restaurant_id, key)
+    )
+  `).catch(()=>{});
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS product_tag_links (
+      product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+      tag_id UUID REFERENCES product_tags(id) ON DELETE CASCADE,
+      PRIMARY KEY (product_id, tag_id)
+    )
+  `).catch(()=>{});
+
   // Duyurular tablosu (admin → tüm kullanıcılar)
   await pool.query(`CREATE TABLE IF NOT EXISTS announcements (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -489,6 +575,11 @@ CREATE TABLE IF NOT EXISTS password_resets (
     `CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON system_notifications(user_id)`,
     // subscriptions.ends_at — aktif, bitiş tarihi olan aboneliklerde günlük cron sorgusu
     `CREATE INDEX IF NOT EXISTS idx_subscriptions_ends_at ON subscriptions(ends_at) WHERE status = 'active' AND ends_at IS NOT NULL`,
+    // product_allergens — ürün detayı çekilirken alerjen join'i her seferinde çalışır
+    `CREATE INDEX IF NOT EXISTS idx_product_allergens_product_id ON product_allergens(product_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_product_allergens_allergen_id ON product_allergens(allergen_id)`,
+    // products — filtre sorguları (vegan/vejetaryen/glutensiz/helal) sık kullanılacak
+    `CREATE INDEX IF NOT EXISTS idx_products_tags ON products(restaurant_id, is_vegan, is_vegetarian, is_gluten_free, is_halal)`,
   ];
 
   for (const sql of indexes) {
@@ -1231,6 +1322,16 @@ app.patch('/api/products/reorder', authMiddleware, async (req, res) => {
 // ÜRÜNLER
 // ═══════════════════════════════
 
+// 14 resmi alerjen listesi — admin panel checkbox'ları ve menü filtreleri için
+app.get('/api/allergens', async (req, res) => {
+  try {
+    const allergens = await allergenService.getAllAllergens(pool);
+    res.json(allergens);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/products', authMiddleware, async (req, res) => {
   const { categoryId } = req.query;
   let query = 'SELECT *, COALESCE(translations,\'{}\') as translations FROM products WHERE restaurant_id=$1';
@@ -1238,22 +1339,51 @@ app.get('/api/products', authMiddleware, async (req, res) => {
   if (categoryId) { query += ' AND category_id=$2'; params.push(categoryId); }
   query += ' ORDER BY sort_order ASC';
   const result = await pool.query(query, params);
-  res.json(result.rows);
+  // Alerjenleri tek sorguda ekle (N+1 yok) — admin panel yeni sekmeler bu veriyi kullanır
+  const withAllergens = await allergenService.attachAllergensToProducts(pool, result.rows);
+  res.json(withAllergens);
 });
 
 app.post('/api/products', authMiddleware, async (req, res) => {
-  const { category_id, name, description, price, emoji, variants, translations } = req.body;
+  const {
+    category_id, name, description, price, emoji, variants, translations,
+    ingredients, calories, portion, nutrition_note,
+    is_vegan, is_vegetarian, is_gluten_free, is_halal, contains_alcohol,
+    preparation_time, allergens
+  } = req.body;
   const result = await pool.query(
-    `INSERT INTO products (category_id, restaurant_id, name, description, price, emoji, variants, translations)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-    [category_id, req.user.restaurantId, name, description, price, emoji || '🍽️',
-     JSON.stringify(variants || []), translations ? JSON.stringify(translations) : '{}']
+    `INSERT INTO products (
+       category_id, restaurant_id, name, description, price, emoji, variants, translations,
+       ingredients, calories, portion, nutrition_note,
+       is_vegan, is_vegetarian, is_gluten_free, is_halal, contains_alcohol, preparation_time
+     )
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING *`,
+    [
+      category_id, req.user.restaurantId, name, description, price, emoji || '🍽️',
+      JSON.stringify(variants || []), translations ? JSON.stringify(translations) : '{}',
+      ingredients || null,
+      calories !== undefined && calories !== '' ? parseInt(calories) : null,
+      portion || null,
+      nutrition_note || null,
+      !!is_vegan, !!is_vegetarian, !!is_gluten_free, !!is_halal, !!contains_alcohol,
+      preparation_time !== undefined && preparation_time !== '' ? parseInt(preparation_time) : null
+    ]
   );
-  res.json(result.rows[0]);
+  const product = result.rows[0];
+  if (Array.isArray(allergens)) {
+    await allergenService.setProductAllergens(pool, product.id, allergens);
+  }
+  const [withAllergens] = await allergenService.attachAllergensToProducts(pool, [product]);
+  res.json(withAllergens);
 });
 
 app.put('/api/products/:id', authMiddleware, async (req, res) => {
-  const { name, description, price, emoji, is_visible, category_id, image_url, translations } = req.body;
+  const {
+    name, description, price, emoji, is_visible, category_id, image_url, translations,
+    ingredients, calories, portion, nutrition_note,
+    is_vegan, is_vegetarian, is_gluten_free, is_halal, contains_alcohol,
+    preparation_time, allergens
+  } = req.body;
   
   // Mevcut ürünü al
   const existing = await pool.query(
@@ -1273,7 +1403,17 @@ app.put('/api/products/:id', authMiddleware, async (req, res) => {
       is_visible=$5, 
       category_id=$6,
       image_url=$7,
-      translations=COALESCE($10::jsonb,translations)
+      translations=COALESCE($10::jsonb,translations),
+      ingredients=$11,
+      calories=$12,
+      portion=$13,
+      nutrition_note=$14,
+      is_vegan=$15,
+      is_vegetarian=$16,
+      is_gluten_free=$17,
+      is_halal=$18,
+      contains_alcohol=$19,
+      preparation_time=$20
      WHERE id=$8 AND restaurant_id=$9 RETURNING *`,
     [
       name || current.name,
@@ -1285,10 +1425,25 @@ app.put('/api/products/:id', authMiddleware, async (req, res) => {
       image_url !== undefined ? image_url : current.image_url,
       req.params.id,
       req.user.restaurantId,
-      translations ? JSON.stringify(translations) : null
+      translations ? JSON.stringify(translations) : null,
+      ingredients !== undefined ? (ingredients || null) : current.ingredients,
+      calories !== undefined ? (calories !== '' ? parseInt(calories) : null) : current.calories,
+      portion !== undefined ? (portion || null) : current.portion,
+      nutrition_note !== undefined ? (nutrition_note || null) : current.nutrition_note,
+      is_vegan !== undefined ? !!is_vegan : current.is_vegan,
+      is_vegetarian !== undefined ? !!is_vegetarian : current.is_vegetarian,
+      is_gluten_free !== undefined ? !!is_gluten_free : current.is_gluten_free,
+      is_halal !== undefined ? !!is_halal : current.is_halal,
+      contains_alcohol !== undefined ? !!contains_alcohol : current.contains_alcohol,
+      preparation_time !== undefined ? (preparation_time !== '' ? parseInt(preparation_time) : null) : current.preparation_time
     ]
   );
-  res.json(result.rows[0]);
+  const product = result.rows[0];
+  if (Array.isArray(allergens)) {
+    await allergenService.setProductAllergens(pool, product.id, allergens);
+  }
+  const [withAllergens] = await allergenService.attachAllergensToProducts(pool, [product]);
+  res.json(withAllergens);
 });
 
 app.delete('/api/products/:id', authMiddleware, async (req, res) => {
@@ -1460,12 +1615,18 @@ app.get('/api/menu/:slug', async (req, res) => {
     );
 
     // Görselsiz ürünleri hızlıca döndür — görseller ayrı endpoint'ten lazy yüklenir
+    // Not: yeni alanlar (ingredients, calories, ...) eklendi ama mevcut alanlar aynı kaldı
+    // → eski istemciler (varsa) hâlâ çalışır, backward compatibility korunur.
     const prodResult = await pool.query(
       `SELECT id, category_id, restaurant_id, name, description, price, emoji,
-              sort_order, is_visible, COALESCE(translations,'{}') as translations
+              sort_order, is_visible, COALESCE(translations,'{}') as translations,
+              ingredients, calories, portion, nutrition_note, preparation_time,
+              is_vegan, is_vegetarian, is_gluten_free, is_halal, contains_alcohol
        FROM products WHERE restaurant_id=$1 AND is_visible=true ORDER BY sort_order`,
       [restaurant.id]
     );
+    // Alerjenleri tüm ürünler için TEK sorguda ekle (N+1 önleme, eager loading)
+    const productsWithAllergens = await allergenService.attachAllergensToProducts(pool, prodResult.rows);
 const hoursResult = await pool.query(
   'SELECT * FROM working_hours WHERE restaurant_id=$1 ORDER BY day_of_week',
   [restaurant.id]
@@ -1485,7 +1646,7 @@ const hoursResult = await pool.query(
 
     const categories = catResult.rows.map(cat => ({
       ...cat,
-      products: prodResult.rows.filter(p => p.category_id === cat.id)
+      products: productsWithAllergens.filter(p => p.category_id === cat.id)
     }));
 
     // Bugün açık mı hesapla — Türkiye saatiyle (UTC+3)
@@ -2674,6 +2835,25 @@ app.post('/api/products/import', authMiddleware, uploadExcel.single('file'), asy
     let imported = 0;
     let errors = [];
 
+    // Excel'deki serbest metin alerjen isimlerini allergens.key'e eşlemek için
+    const allergenLookup = await allergenService.getAllAllergens(pool);
+    const parseBool = (v) => {
+      if (v === undefined || v === null || v === '') return false;
+      const s = v.toString().trim().toLowerCase();
+      return s === '1' || s === 'evet' || s === 'yes' || s === 'true' || s === 'x';
+    };
+    const parseAllergenNames = (v) => {
+      if (!v) return [];
+      return v.toString().split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
+        .map(name => {
+          const found = allergenLookup.find(a =>
+            a.key === name || a.name_tr.toLowerCase() === name || a.name_en.toLowerCase() === name
+          );
+          return found ? found.key : null;
+        })
+        .filter(Boolean);
+    };
+
     for (const row of rows) {
       try {
         // Kolon adlarını esnek oku
@@ -2682,6 +2862,20 @@ app.post('/api/products/import', authMiddleware, uploadExcel.single('file'), asy
         const description = row['Açıklama'] || row['aciklama'] || row['Description'] || '';
         const price = parseFloat(row['Fiyat'] || row['fiyat'] || row['Price'] || 0);
         const emoji = row['Emoji'] || row['emoji'] || '🍽️';
+
+        // Yeni: içerik / besin / alerjen / etiket kolonları (opsiyonel, yoksa boş kalır)
+        const ingredients = row['İçindekiler'] || row['ingredients'] || row['Ingredients'] || null;
+        const caloriesRaw = row['Kalori'] || row['calories'] || row['Calories'];
+        const calories = caloriesRaw !== undefined && caloriesRaw !== '' ? parseInt(caloriesRaw) : null;
+        const portion = row['Porsiyon'] || row['portion'] || row['Portion'] || null;
+        const prepTimeRaw = row['Hazırlama Süresi'] || row['preparation_time'] || row['Preparation Time'];
+        const preparation_time = prepTimeRaw !== undefined && prepTimeRaw !== '' ? parseInt(prepTimeRaw) : null;
+        const allergenNames = row['Alerjenler'] || row['allergens'] || row['Allergens'];
+        const is_vegan = parseBool(row['Vegan'] || row['vegan']);
+        const is_vegetarian = parseBool(row['Vejetaryen'] || row['vegetarian']);
+        const is_gluten_free = parseBool(row['Glutensiz'] || row['gluten_free']);
+        const is_halal = parseBool(row['Helal'] || row['halal']);
+        const contains_alcohol = parseBool(row['Alkol İçerir'] || row['contains_alcohol']);
 
         if (!name) continue;
 
@@ -2703,10 +2897,22 @@ app.post('/api/products/import', authMiddleware, uploadExcel.single('file'), asy
         }
 
         // Ürünü ekle
-        await pool.query(
-          'INSERT INTO products (category_id, restaurant_id, name, description, price, emoji) VALUES ($1,$2,$3,$4,$5,$6)',
-          [categoryId, req.user.restaurantId, name, description, price, emoji]
+        const inserted = await pool.query(
+          `INSERT INTO products (
+             category_id, restaurant_id, name, description, price, emoji,
+             ingredients, calories, portion, preparation_time,
+             is_vegan, is_vegetarian, is_gluten_free, is_halal, contains_alcohol
+           ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING id`,
+          [
+            categoryId, req.user.restaurantId, name, description, price, emoji,
+            ingredients, calories, portion, preparation_time,
+            is_vegan, is_vegetarian, is_gluten_free, is_halal, contains_alcohol
+          ]
         );
+        const allergenKeys = parseAllergenNames(allergenNames);
+        if (allergenKeys.length) {
+          await allergenService.setProductAllergens(pool, inserted.rows[0].id, allergenKeys);
+        }
         imported++;
       } catch(e) {
         errors.push(`Satır hatası: ${e.message}`);
@@ -2727,20 +2933,91 @@ app.post('/api/products/import', authMiddleware, uploadExcel.single('file'), asy
 // Excel şablon indir
 app.get('/api/products/import/template', (req, res) => {
   const wb = XLSX.utils.book_new();
+  const headers = [
+    'Kategori', 'Ürün Adı', 'Açıklama', 'Fiyat', 'Emoji',
+    'İçindekiler', 'Kalori', 'Porsiyon', 'Hazırlama Süresi',
+    'Alerjenler', 'Vegan', 'Vejetaryen', 'Glutensiz', 'Helal', 'Alkol İçerir'
+  ];
   const data = [
-    ['Kategori', 'Ürün Adı', 'Açıklama', 'Fiyat', 'Emoji'],
-    ['Kahvaltı', 'Serpme Kahvaltı', '2 kişilik zengin kahvaltı', 320, '🍳'],
-    ['Kahvaltı', 'Menemen', 'Domates ve biberli yumurta', 120, '🥚'],
-    ['İçecekler', 'Türk Kahvesi', 'Geleneksel Türk kahvesi', 45, '☕'],
-    ['İçecekler', 'Çay', 'Demlik çay', 20, '🍵'],
+    headers,
+    ['Kahvaltı', 'Serpme Kahvaltı', '2 kişilik zengin kahvaltı', 320, '🍳',
+     'Yumurta, peynir, zeytin, reçel, tereyağı', 850, '2 kişilik', 20,
+     'Yumurta, Süt, Gluten', 'Hayır', 'Evet', 'Hayır', 'Evet', 'Hayır'],
+    ['Kahvaltı', 'Menemen', 'Domates ve biberli yumurta', 120, '🥚',
+     'Yumurta, domates, biber, tereyağı', 320, '1 tabak', 15,
+     'Yumurta, Süt', 'Hayır', 'Evet', 'Evet', 'Evet', 'Hayır'],
+    ['İçecekler', 'Türk Kahvesi', 'Geleneksel Türk kahvesi', 45, '☕',
+     'Kahve, su', 5, '1 fincan', 8, '', 'Evet', 'Evet', 'Evet', 'Evet', 'Hayır'],
+    ['İçecekler', 'Çay', 'Demlik çay', 20, '🍵',
+     'Çay yaprağı, su', 2, '1 bardak', 5, '', 'Evet', 'Evet', 'Evet', 'Evet', 'Hayır'],
   ];
   const ws = XLSX.utils.aoa_to_sheet(data);
-  ws['!cols'] = [{ wch: 15 }, { wch: 25 }, { wch: 35 }, { wch: 10 }, { wch: 8 }];
+  ws['!cols'] = [
+    { wch: 15 }, { wch: 25 }, { wch: 35 }, { wch: 10 }, { wch: 8 },
+    { wch: 40 }, { wch: 10 }, { wch: 14 }, { wch: 16 },
+    { wch: 30 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 8 }, { wch: 12 }
+  ];
   XLSX.utils.book_append_sheet(wb, ws, 'Menü');
   const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', 'attachment; filename="menu-sablonu.xlsx"');
   res.send(buffer);
+});
+
+// Excel'e TÜM ürünleri içerik/alerjen/besin bilgisiyle dışa aktar
+app.get('/api/products/export', authMiddleware, async (req, res, next) => {
+  // window.open ile header gönderilemediği için query token desteği (price-template ile aynı desen)
+  if (req.query.token && !req.headers.authorization) {
+    req.headers.authorization = 'Bearer ' + req.query.token;
+  }
+  next();
+}, authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT p.*, c.name as category_name
+       FROM products p
+       LEFT JOIN categories c ON c.id = p.category_id
+       WHERE p.restaurant_id=$1 ORDER BY c.sort_order, p.sort_order`,
+      [req.user.restaurantId]
+    );
+    const withAllergens = await allergenService.attachAllergensToProducts(pool, result.rows);
+
+    const boolTr = (v) => v ? 'Evet' : 'Hayır';
+    const data = withAllergens.map(p => ({
+      'ID': p.id,
+      'Kategori': p.category_name || '',
+      'Ürün Adı': p.name,
+      'Açıklama': p.description || '',
+      'Fiyat': parseFloat(p.price),
+      'Emoji': p.emoji || '',
+      'İçindekiler': p.ingredients || '',
+      'Kalori': p.calories ?? '',
+      'Porsiyon': p.portion || '',
+      'Hazırlama Süresi': p.preparation_time ?? '',
+      'Alerjenler': (p.allergens || []).map(a => a.name_tr).join(', '),
+      'Vegan': boolTr(p.is_vegan),
+      'Vejetaryen': boolTr(p.is_vegetarian),
+      'Glutensiz': boolTr(p.is_gluten_free),
+      'Helal': boolTr(p.is_halal),
+      'Alkol İçerir': boolTr(p.contains_alcohol),
+      'Görünür': boolTr(p.is_visible),
+    }));
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws['!cols'] = [
+      { wch: 38 }, { wch: 15 }, { wch: 25 }, { wch: 35 }, { wch: 10 }, { wch: 8 },
+      { wch: 40 }, { wch: 10 }, { wch: 14 }, { wch: 16 },
+      { wch: 30 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 8 }, { wch: 12 }, { wch: 9 }
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, 'Menü');
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="menu-export.xlsx"');
+    res.send(buffer);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ═══════════════════════════════
