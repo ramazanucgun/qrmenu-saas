@@ -1181,6 +1181,29 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
 
       <!-- SEKME 3: BESİN BİLGİSİ -->
       <div class="prod-tab-panel" id="prod-tab-nutrition">
+        <!-- Ücretsiz veritabanı arama (OpenFoodFacts + USDA) — sadece ÖNERİ, otomatik kaydetmez -->
+        <div class="form-group" style="margin-top:0">
+          <button type="button" class="btn-sm" onclick="toggleNutritionSearch()" style="width:100%;justify-content:center;display:flex;align-items:center;gap:6px">
+            🔍 Veritabanından Kalori Bul <span style="color:var(--text3);font-weight:400">(ücretsiz)</span>
+          </button>
+          <div id="nutrition-search-panel" style="display:none;margin-top:10px;padding:12px;background:var(--bg3);border-radius:10px">
+            <div style="display:flex;gap:8px;margin-bottom:8px">
+              <input class="form-input" id="nutrition-search-input" placeholder="örn. tavuk göğsü, kola, un..." style="flex:1;margin-bottom:0" onkeydown="if(event.key==='Enter'){event.preventDefault();searchNutritionDB();}">
+              <button type="button" class="btn-sm btn-accent" onclick="searchNutritionDB()" style="flex-shrink:0">Ara</button>
+            </div>
+            <div id="nutrition-search-results"></div>
+            <!-- ONAY UYARISI — yasal doğruluk gerektiren bir alan olduğu için zorunlu -->
+            <div style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;padding:9px 11px;background:rgba(232,197,71,.08);border:1px solid rgba(232,197,71,.25);border-radius:8px">
+              <span style="flex-shrink:0;font-size:14px">⚠️</span>
+              <p style="font-size:11px;color:var(--text2);line-height:1.5;margin:0">
+                Bu sonuçlar OpenFoodFacts/USDA açık veritabanlarından otomatik getirilir ve <b>hatalı, eksik veya yanıltıcı olabilir</b> —
+                özellikle geleneksel/ev yapımı yemeklerde. Seçtiğiniz değer sadece formu doldurur, <b>hiçbir şey otomatik kaydedilmez</b>.
+                Kaydetmeden önce mutlaka kendiniz kontrol edip gerekirse düzeltin. Menüde yayınlanan kalori/alerjen bilgisinin
+                doğruluğundan <b>ürünü ekleyen/onaylayan kişi</b> sorumludur.
+              </p>
+            </div>
+          </div>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;min-width:0">
           <div class="form-group" style="min-width:0"><label class="form-label">KALORİ (kcal)</label><input class="form-input" id="prod-calories" type="number" min="0" step="1" placeholder="örn. 420" style="min-width:0"></div>
           <div class="form-group" style="min-width:0"><label class="form-label">HAZIRLAMA SÜRESİ (dk)</label><input class="form-input" id="prod-prep-time" type="number" min="0" step="1" placeholder="örn. 15" style="min-width:0"></div>
@@ -2655,6 +2678,14 @@ function closeModal(id){
       const cb=document.getElementById('prod-tag-'+k);
       if(cb){cb.checked=false;document.getElementById('tag-chip-'+k)?.classList.remove('checked');}
     });
+    // Besin veritabanı arama panelini sıfırla
+    const nutritionPanel=document.getElementById('nutrition-search-panel');
+    if(nutritionPanel) nutritionPanel.style.display='none';
+    const nutritionInput=document.getElementById('nutrition-search-input');
+    if(nutritionInput) nutritionInput.value='';
+    const nutritionResults=document.getElementById('nutrition-search-results');
+    if(nutritionResults) nutritionResults.innerHTML='';
+    _nutritionSearchResults=[];
     switchProdTab('general');
   }
   if(id==='camp-modal'){
@@ -2758,6 +2789,51 @@ function syncTagChip(cb){
 
 function getCheckedAllergenKeys(){
   return [...document.querySelectorAll('#allergen-checkbox-grid input[type=checkbox]:checked')].map(cb=>cb.value);
+}
+
+// ═══════════════════════════════
+// BESİN VERİTABANI ARAMA (OpenFoodFacts + USDA, ücretsiz) — ÖNERİ + ONAY akışı
+// Seçilen sonuç sadece formu doldurur, hiçbir şey otomatik kaydedilmez.
+// ═══════════════════════════════
+
+function toggleNutritionSearch(){
+  const panel=document.getElementById('nutrition-search-panel');
+  const isOpen=panel.style.display!=='none';
+  panel.style.display=isOpen?'none':'block';
+  if(!isOpen) setTimeout(()=>document.getElementById('nutrition-search-input')?.focus(),50);
+}
+
+let _nutritionSearchResults=[];
+
+async function searchNutritionDB(){
+  const q=document.getElementById('nutrition-search-input').value.trim();
+  const resultsEl=document.getElementById('nutrition-search-results');
+  if(q.length<2){ resultsEl.innerHTML='<div style="font-size:12px;color:var(--text3);padding:6px 0">En az 2 karakter girin</div>'; return; }
+  resultsEl.innerHTML='<div style="font-size:12px;color:var(--text3);padding:6px 0">⏳ Aranıyor...</div>';
+  try{
+    const data=await api('GET','/nutrition/lookup?q='+encodeURIComponent(q));
+    _nutritionSearchResults=data.results||[];
+    if(!_nutritionSearchResults.length){
+      resultsEl.innerHTML='<div style="font-size:12px;color:var(--text3);padding:6px 0">Sonuç bulunamadı — elle girmeniz gerekebilir (özellikle geleneksel yemeklerde veritabanı kapsamı sınırlıdır)</div>';
+      return;
+    }
+    resultsEl.innerHTML=_nutritionSearchResults.map((r,i)=>`
+      <div class="nutrition-result-item" onclick="applyNutritionResult(${i})" style="padding:9px 12px;background:var(--bg2);border-radius:8px;margin-bottom:6px;cursor:pointer;border:1px solid transparent;transition:all .15s">
+        <div style="font-size:12.5px;font-weight:600;color:var(--text)">${r.name}${r.brand?` <span style="font-weight:400;color:var(--text3)">(${r.brand})</span>`:''}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">🔥 ${r.calories_per_100g} kcal/100g · <span style="opacity:.65">${r.source==='usda'?'USDA':'OpenFoodFacts'}</span></div>
+      </div>`).join('');
+  }catch(e){
+    resultsEl.innerHTML='<div style="font-size:12px;color:var(--red)">Arama başarısız: '+e.message+'</div>';
+  }
+}
+
+function applyNutritionResult(idx){
+  const r=_nutritionSearchResults[idx];
+  if(!r) return;
+  document.getElementById('prod-calories').value=r.calories_per_100g;
+  if(!document.getElementById('prod-portion').value.trim()) document.getElementById('prod-portion').value='100g';
+  // Bilinçli olarak otomatik Kaydet ÇAĞRILMIYOR — kullanıcı gözden geçirip kendi onaylamalı
+  toast('Kalori dolduruldu — gözden geçirip doğruluğunu onayladıktan sonra Kaydet\'e basın','success');
 }
 
 function previewImage(input){

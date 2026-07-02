@@ -1435,7 +1435,83 @@ function toIntOrNull(v) {
 // ÜRÜNLER
 // ═══════════════════════════════
 
-// 14 resmi alerjen listesi — admin panel checkbox'ları ve menü filtreleri için
+// ═══════════════════════════════
+// BESİN VERİTABANI ARAMA — OpenFoodFacts + USDA FoodData Central (ikisi de ücretsiz, key gerektirmez/opsiyonel)
+// ⚠️ ÖNEMLİ: Bu endpoint sadece ÖNERİ döner. Hiçbir veri otomatik kaydedilmez — admin panelde
+// sonuca tıklandığında sadece form alanı doldurulur, ürün "Kaydet" butonuna basılana kadar
+// değişmez. Dış veritabanları (özellikle Türk mutfağı yemekleri için) hatalı/eksik/yanıltıcı
+// sonuç verebilir — bu yüzden onay adımı asla atlanmamalı.
+// ═══════════════════════════════
+async function fetchWithTimeout(url, options, ms) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms || 5000);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+app.get('/api/nutrition/lookup', authMiddleware, async (req, res) => {
+  const q = (req.query.q || '').toString().trim();
+  if (q.length < 2) return res.status(400).json({ error: 'En az 2 karakter girin' });
+  const results = [];
+
+  // OpenFoodFacts — tamamen ücretsiz, açık veritabanı, key gerekmez. Paketli/markalı
+  // ürünlerde (içecek, atıştırmalık vb.) güçlü, ev yapımı/geleneksel yemeklerde zayıf.
+  try {
+    const offUrl = `https://world.openfoodfacts.org/api/v2/search?search_terms=${encodeURIComponent(q)}&fields=product_name,product_name_tr,nutriments,quantity,brands&page_size=5`;
+    const offRes = await fetchWithTimeout(offUrl, { headers: { 'User-Agent': 'CafeMenuQR/1.0 (+https://app.cafemenu.com.tr)' } }, 5000);
+    if (offRes.ok) {
+      const offData = await offRes.json();
+      (offData.products || []).forEach(p => {
+        const kcal = p.nutriments && p.nutriments['energy-kcal_100g'];
+        if (kcal) {
+          results.push({
+            source: 'openfoodfacts',
+            name: p.product_name_tr || p.product_name || q,
+            brand: p.brands || null,
+            calories_per_100g: Math.round(kcal),
+            portion_hint: p.quantity || null,
+          });
+        }
+      });
+    }
+  } catch (e) {
+    console.error('OpenFoodFacts arama hatası:', e.message);
+  }
+
+  // USDA FoodData Central — ücretsiz, API key ile daha yüksek limit (USDA_API_KEY .env'e
+  // eklenebilir, opsiyoneldir). Key yoksa herkese açık DEMO_KEY ile düşük limitli çalışır.
+  // Veritabanı ABD merkezli — ham malzeme (tavuk, un, süt vb.) seviyesinde faydalı,
+  // Türk yemek isimlerinde sonuç bulunamayabilir.
+  try {
+    const usdaKey = process.env.USDA_API_KEY || 'DEMO_KEY';
+    const usdaUrl = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${usdaKey}&query=${encodeURIComponent(q)}&pageSize=5&dataType=Foundation,SR%20Legacy`;
+    const usdaRes = await fetchWithTimeout(usdaUrl, {}, 5000);
+    if (usdaRes.ok) {
+      const usdaData = await usdaRes.json();
+      (usdaData.foods || []).forEach(f => {
+        const energy = (f.foodNutrients || []).find(n => n.nutrientName === 'Energy' && n.unitName === 'KCAL');
+        if (energy) {
+          results.push({
+            source: 'usda',
+            name: f.description,
+            brand: f.brandOwner || null,
+            calories_per_100g: Math.round(energy.value),
+            portion_hint: null,
+          });
+        }
+      });
+    }
+  } catch (e) {
+    console.error('USDA arama hatası:', e.message);
+  }
+
+  res.json({ query: q, results: results.slice(0, 10) });
+});
+
+
 app.get('/api/allergens', async (req, res) => {
   try {
     const allergens = await allergenService.getAllAllergens(pool);
