@@ -217,20 +217,20 @@ textarea.form-input{resize:vertical;min-height:88px}
 .menu-topbar-admin{background:#111;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .menu-back{background:rgba(255,255,255,.1);border:none;color:#aaa;font-size:12px;padding:5px 12px;border-radius:6px;cursor:pointer}
 .menu-public{flex:1;max-width:500px;margin:0 auto;width:100%;min-height:100vh;box-shadow:0 0 40px rgba(0,0,0,.15);overflow-x:clip;box-sizing:border-box}
-#menu-public{overflow-x:clip;width:100%;max-width:100vw;background:var(--m-bg);color:var(--m-text)}
+#menu-public{overflow-x:clip;width:100%;max-width:100vw;background:var(--m-bg);color:var(--m-text);padding-bottom:calc(var(--touch-min) + var(--space-8) + env(safe-area-inset-bottom,0px))}
+#menu-public.no-waiter-bar{padding-bottom:0}
 
 /* Müşteri menüsü genel stiller — renkler tema class'ından (CSS custom properties) gelir */
-/* HERO — düz (flat) yüzey, net görsel hiyerarşi: Logo → İsim → Tagline → Durum → Aksiyonlar */
-.m-hero{padding:var(--space-8) var(--space-5) var(--space-7);padding-top:calc(var(--space-8) + env(safe-area-inset-top,0px));text-align:center;position:relative;overflow:hidden;box-sizing:border-box;width:100%;background:var(--m-hero-from)}
+/* HERO — kompakt, düz (flat) yüzey, net görsel hiyerarşi: Logo → İsim → Tagline → Dil → Sosyal → Durum → Feedback */
+.m-hero{padding:var(--space-5) var(--space-5) var(--space-4);padding-top:calc(var(--space-5) + env(safe-area-inset-top,0px));text-align:center;position:relative;overflow:hidden;box-sizing:border-box;width:100%;background:var(--m-hero-from)}
 .m-hero-bg{position:absolute;inset:0;opacity:.6}
 
-/* Logo — büyütme değil; ince kenarlık + yumuşak gölge ile premium his */
-.m-logo{width:80px;height:80px;border-radius:var(--radius-lg);object-fit:cover;border:1px solid var(--m-border);box-shadow:var(--shadow-sm);margin-bottom:var(--space-4)}
-.m-logo-placeholder{width:80px;height:80px;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;line-height:1;margin:0 auto var(--space-4);border:1px solid var(--m-border);box-shadow:var(--shadow-sm);background:var(--m-bg2)}
+/* Logo — kompakt; ince kenarlık + yumuşak gölge ile premium his */
+.m-logo{width:64px;height:64px;border-radius:var(--radius-md);object-fit:cover;border:1px solid var(--m-border);box-shadow:var(--shadow-sm);margin-bottom:var(--space-3)}
+.m-logo-placeholder{width:64px;height:64px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;line-height:1;margin:0 auto var(--space-3);border:1px solid var(--m-border);box-shadow:var(--shadow-sm);background:var(--m-bg2)}
 
-/* Restoran adı — güçlü tipografik ağırlık */
 /* Restoran adı — güçlü tipografik ağırlık, uzun/2 satırlık isimlerde bozulmaz */
-.m-rest-name{font-size:1.75rem;font-weight:600;line-height:1.25;letter-spacing:-.01em;margin-bottom:var(--space-2);color:var(--m-text);font-synthesis:none;overflow-wrap:break-word;max-width:100%}
+.m-rest-name{font-size:1.5rem;font-weight:600;line-height:1.25;letter-spacing:-.01em;margin-bottom:var(--space-1);color:var(--m-text);font-synthesis:none;overflow-wrap:break-word;max-width:100%}
 /* Fallback Typography System — <link> ile yüklenen 4 font ailesinin GERÇEKTEN sahip olduğu
    en kalın ağırlığa göre ayarlanır (yüklenmeyen bir ağırlık istenirse tarayıcı "sahte kalın"
    üretip metni bozar — font-synthesis:none bunu engeller, aşağıdaki kurallar da doğru
@@ -240,20 +240,41 @@ textarea.form-input{resize:vertical;min-height:88px}
 .m-rest-name[style*="Space Grotesk"]{font-weight:600;letter-spacing:-.02em} /* geometrik sans, sıkı aralık kaldırır */
 .m-rest-name[style*="Georgia"]{font-weight:700;letter-spacing:0} /* sistem fontu, gerçek 700 var */
 /* Tagline — isimden belirgin şekilde daha hafif, ikinci plan (opacity DEĞİL — WCAG AA kontrastı bozar) */
-.m-tag{font-size:13px;font-weight:400;line-height:1.4;margin-bottom:var(--space-5);color:var(--m-text2)}
+.m-tag{font-size:13px;font-weight:400;line-height:1.4;margin-bottom:var(--space-3);color:var(--m-text2)}
 
-.m-pills{display:flex;justify-content:center;gap:var(--space-3);flex-wrap:wrap;position:relative;margin-top:var(--space-2)}
-/* Secondary Action — Feedback: hafif, düşük vurgu */
-.m-pill{display:flex;align-items:center;justify-content:center;gap:var(--space-2);min-height:var(--touch-min);font-size:14px;font-weight:600;border-radius:var(--radius-md);padding:var(--space-3) var(--space-5);cursor:pointer;border:1px solid;font-family:var(--sans);transition:transform var(--dur-fast) var(--ease-standard),background var(--dur-base) var(--ease-standard);background:var(--m-pill-bg);color:var(--m-pill-color);border-color:var(--m-pill-border)}
+/* Dil seçici — dropdown (eski büyük buton satırı yerine) */
+.m-lang-dropdown{position:relative;display:inline-block;margin:0 auto var(--space-3)}
+.m-lang-trigger{min-height:40px;display:inline-flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-4);border-radius:var(--radius-md);border:1px solid var(--m-border);background:var(--m-bg2);color:var(--m-text);font-size:13px;font-weight:500;font-family:var(--sans);cursor:pointer;transition:border-color var(--dur-base) var(--ease-standard)}
+.m-lang-trigger:hover{border-color:var(--m-accent)}
+.m-lang-chevron{font-size:10px;color:var(--m-text2);transition:transform var(--dur-base) var(--ease-standard)}
+.m-lang-dropdown.open .m-lang-chevron{transform:rotate(180deg)}
+.m-lang-menu{position:absolute;top:calc(100% + var(--space-2));left:50%;transform:translateX(-50%) translateY(-6px);min-width:170px;background:var(--m-bg2);border:1px solid var(--m-border);border-radius:var(--radius-md);box-shadow:var(--shadow-md);padding:var(--space-2);display:flex;flex-direction:column;gap:2px;opacity:0;pointer-events:none;transition:opacity var(--dur-base) var(--ease-standard),transform var(--dur-base) var(--ease-standard);z-index:30}
+.m-lang-dropdown.open .m-lang-menu{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0)}
+.m-lang-option{min-height:40px;display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-3);border-radius:var(--radius-sm);border:none;background:transparent;color:var(--m-text2);font-size:13px;font-family:var(--sans);text-align:left;cursor:pointer;transition:background var(--dur-base) var(--ease-standard)}
+.m-lang-option:hover{background:var(--m-bg)}
+.m-lang-option.active{color:var(--m-accent);font-weight:600;background:var(--m-pill-bg)}
+.m-lang-trigger:focus-visible,.m-lang-option:focus-visible{outline:2px solid var(--m-accent);outline-offset:2px}
+
+/* Sosyal medya ikonları — Instagram / Facebook / Konum, birebir aynı boyut */
+.m-social-row{display:flex;justify-content:center;gap:var(--space-3);margin-bottom:var(--space-3)}
+.m-social-icon{width:56px;height:56px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid var(--m-border);box-shadow:var(--shadow-sm);transition:transform var(--dur-base) var(--ease-standard),box-shadow var(--dur-base) var(--ease-standard)}
+.m-social-icon.maps{background:#fff}
+.m-social-icon:active{transform:scale(.94)}
+@media(hover:hover){.m-social-icon:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}}
+
+.m-pills{display:flex;justify-content:center;gap:var(--space-3);flex-wrap:wrap;position:relative;margin-top:var(--space-1)}
+/* Feedback artık tek hero aksiyonu — Ghost/Secondary, küçük */
+.m-pill{display:flex;align-items:center;justify-content:center;gap:var(--space-2);min-height:44px;font-size:13px;font-weight:500;border-radius:var(--radius-md);padding:var(--space-2) var(--space-4);cursor:pointer;border:1px solid;font-family:var(--sans);transition:transform var(--dur-fast) var(--ease-standard),background var(--dur-base) var(--ease-standard);background:var(--m-pill-bg);color:var(--m-pill-color);border-color:var(--m-pill-border)}
 .m-pill:active{transform:scale(.96)}
 @media(hover:hover){.m-pill:hover{filter:brightness(1.05)}}
-/* Primary Action — Garson Çağır: dolu, en yüksek vurgu */
-.m-pill.m-pill-primary{background:var(--m-accent);color:#111;border-color:var(--m-accent);font-weight:700}
+/* Ghost/Secondary — dolgu yok, ince kenarlık, düşük vurgu */
+.m-pill.m-pill-ghost{background:transparent;color:var(--m-text2);font-weight:500}
 
-
-/* Arama */
-.m-search-wrap{padding:12px 16px;box-sizing:border-box;width:100%;background:var(--m-bg)}
-.m-search{width:100%;padding:10px 14px 10px 36px;border-radius:10px;font-size:14px;font-family:var(--sans);outline:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23999' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:10px center;background-color:var(--m-bg2);border:1px solid var(--m-border);color:var(--m-text)}
+/* Arama — premium: 44px+ dokunmatik, net focus halkası */
+.m-search-wrap{padding:var(--space-3) var(--space-4);box-sizing:border-box;width:100%;background:var(--m-bg)}
+.m-search{width:100%;min-height:44px;box-sizing:border-box;padding:var(--space-2) var(--space-4) var(--space-2) 40px;border-radius:var(--radius-md);font-size:14px;font-family:var(--sans);outline:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23999' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:14px center;background-color:var(--m-bg2);border:1px solid var(--m-border);color:var(--m-text);transition:border-color var(--dur-base) var(--ease-standard),box-shadow var(--dur-base) var(--ease-standard)}
+.m-search:focus{border-color:var(--m-accent);box-shadow:0 0 0 3px var(--m-pill-bg)}
+@media(prefers-reduced-motion:reduce){.m-lang-chevron,.m-lang-menu,.m-social-icon,.m-pill,.m-waiter-bar-btn,.m-search,.m-lang-trigger{transition:none}.m-social-icon:hover,.m-waiter-bar-btn:active,.m-pill:active,.m-social-icon:active{transform:none}}
 
 /* STICKY CATEGORY NAV — sayfa arka planıyla aynı yüzey, ince alt kenarlık, hafif gölge */
 .sticky-nav{position:sticky;top:0;display:flex;align-items:center;z-index:10;background:var(--m-bg);border-bottom:1px solid var(--m-border);box-shadow:var(--shadow-sm);padding:var(--space-2) var(--space-3)}
@@ -305,9 +326,11 @@ textarea.form-input{resize:vertical;min-height:88px}
 .m-product:focus-visible{outline:2px solid var(--m-accent);outline-offset:2px}
 @media(prefers-reduced-motion:reduce){.style-list .m-product,.style-card .m-product,.style-compact .m-product{transition:none}.style-list .m-product:hover,.style-card .m-product:hover{transform:none}}
 
-.m-footer{padding:28px 20px;border-top:1px solid;text-align:center;padding-bottom:max(28px,env(safe-area-inset-bottom));background:var(--m-bg2);border-color:var(--m-border)}
-.waiter-btn{color:#fff;border:none;border-radius:12px;padding:13px 28px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;margin:0 auto 16px;cursor:pointer;transition:all .15s;font-family:var(--sans);background:var(--m-accent)}
-.waiter-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.m-waiter-bar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;justify-content:center;background:var(--m-bg);border-top:1px solid var(--m-border);box-shadow:0 -4px 16px rgba(0,0,0,.08);padding:var(--space-3) var(--space-4);padding-bottom:calc(var(--space-3) + env(safe-area-inset-bottom,0px))}
+.m-waiter-bar-btn{width:100%;max-width:460px;color:var(--m-accent-contrast);border:none;border-radius:var(--radius-md);min-height:var(--touch-min);padding:var(--space-3) var(--space-6);font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:var(--space-2);cursor:pointer;font-family:var(--sans);background:var(--m-accent);transition:transform var(--dur-fast) var(--ease-standard),box-shadow var(--dur-base) var(--ease-standard)}
+.m-waiter-bar-btn:active{transform:scale(.98)}
+@media(hover:hover){.m-waiter-bar-btn:hover{box-shadow:var(--shadow-sm)}}
+.m-waiter-bar-btn:focus-visible{outline:2px solid var(--m-accent);outline-offset:2px}
 .wifi-card{border:1px solid;border-radius:12px;padding:14px;display:inline-flex;gap:12px;align-items:center;text-align:left;margin-bottom:14px;background:var(--m-bg2);border-color:var(--m-border)}
 .wifi-name-text{font-size:12px;font-weight:600;margin-bottom:2px;color:var(--m-text)}
 .wifi-pass-text{font-family:monospace;font-size:12px;opacity:.7;color:var(--m-text2)}
@@ -334,7 +357,7 @@ textarea.form-input{resize:vertical;min-height:88px}
 .m-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:600;background:rgba(120,120,120,.12);white-space:nowrap}
 .m-badge.b-warn{background:rgba(184,52,42,.9);color:#ffffff}
 .m-badge.b-good{background:rgba(22,102,56,.9);color:#ffffff}
-.m-filter-bar{display:flex;gap:8px;overflow-x:auto;padding:0 14px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch;background:var(--m-bg)}
+.m-filter-bar{display:flex;gap:var(--space-2);overflow-x:auto;padding:0 var(--space-4) var(--space-3);scrollbar-width:none;-webkit-overflow-scrolling:touch;background:var(--m-bg)}
 .m-filter-bar::-webkit-scrollbar{display:none}
 .m-filter-chip{flex-shrink:0;display:flex;align-items:center;gap:5px;padding:7px 13px;border-radius:20px;font-size:12.5px;font-weight:600;cursor:pointer;border:1.5px solid;transition:all .15s;white-space:nowrap;user-select:none;background:var(--m-bg2);border-color:var(--m-border);color:var(--m-text2)}
 .m-filter-chip.active{background:var(--m-accent);border-color:var(--m-accent);color:#111}
@@ -349,13 +372,9 @@ textarea.form-input{resize:vertical;min-height:88px}
 .m-no-result{text-align:center;padding:48px 24px;color:var(--m-text2)}
 .m-wifi-icon{width:36px;height:36px;border-radius:8px;background:var(--m-bg);border:1px solid var(--m-border);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
 .m-wifi-copy-btn{flex-shrink:0;padding:6px 10px;border-radius:8px;border:1px solid var(--m-border);background:var(--m-bg);color:var(--m-text2);font-size:11px;cursor:pointer;font-family:var(--sans)}
-.m-hours-badge{display:inline-flex;align-items:center;gap:var(--space-2);border-radius:var(--radius-md);padding:var(--space-2) var(--space-4);font-size:12.5px;font-weight:600;margin-bottom:var(--space-4);border:1px solid}
+.m-hours-badge{display:inline-flex;align-items:center;gap:var(--space-1);border-radius:var(--radius-sm);padding:var(--space-1) var(--space-3);font-size:11.5px;font-weight:600;margin-bottom:var(--space-2);border:1px solid}
 .m-hours-badge.open{background:rgba(71,201,126,.1);border-color:rgba(71,201,126,.3);color:#47c97e}
 .m-hours-badge.closed{background:rgba(232,71,71,.1);border-color:rgba(232,71,71,.3);color:#e84747}
-.m-lang-row{display:flex;justify-content:center;flex-wrap:wrap;gap:var(--space-2);margin-bottom:var(--space-5)}
-.m-lang-btn{min-height:var(--touch-min);padding:var(--space-2) var(--space-4);border-radius:var(--radius-md);border:1px solid var(--m-border);background:var(--m-bg2);color:var(--m-text2);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--sans);transition:transform var(--dur-fast) var(--ease-standard),background var(--dur-base) var(--ease-standard),border-color var(--dur-base) var(--ease-standard)}
-.m-lang-btn:active{transform:scale(.96)}
-.m-lang-btn.active{border-color:var(--m-accent);background:color-mix(in srgb,var(--m-accent) 15%,transparent);color:var(--m-text);font-weight:700}
 .m-nav-lang-wrap{display:flex;align-items:center;gap:3px;padding:0 8px;flex-shrink:0;border-left:1px solid var(--m-border)}
 .m-nav-lang-btn{padding:3px 6px;border-radius:14px;border:1.5px solid transparent;background:transparent;font-size:16px;cursor:pointer;line-height:1;transition:all .2s}
 .m-nav-lang-btn.active{border-color:var(--m-accent);background:color-mix(in srgb,var(--m-accent) 15%,transparent)}
@@ -3998,7 +4017,7 @@ function renderPublicMenu(data){
   const color = restaurant.brand_color||t.accent; // özel marka rengi varsa onu kullan
   const font = restaurant.font_family||'DM Serif Display';
   const el = document.getElementById('menu-public');
-  el.className = 'menu-public theme-'+themeKey;
+  el.className = 'menu-public theme-'+themeKey+(restaurant.waiter_enabled===false?' no-waiter-bar':'');
   el.setAttribute('dir',_menuLang==='ar'?'rtl':'ltr');
   // Restoran özel bir marka rengi seçtiyse sadece o TEK değişkeni override et
   // (paletin tamamını değil) — tema class'ı yine tüm diğer renkleri yönetir.
@@ -4011,7 +4030,7 @@ function renderPublicMenu(data){
 
   // Sosyal medya ikonları — hero içinde tagline'ın hemen altında
   // Instagram: gradient arka plan, detaylı resmi ikon
-  const igSvg = `<svg width='22' height='22' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+  const igSvg = `<svg width='28' height='28' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
     <defs>
       <radialGradient id='ig-rg' cx='30%' cy='107%' r='150%'>
         <stop offset='0%' stop-color='#fdf497'/>
@@ -4028,13 +4047,13 @@ function renderPublicMenu(data){
   </svg>`;
 
   // Facebook: resmi mavi + beyaz f harfi
-  const fbSvg = `<svg width='22' height='22' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+  const fbSvg = `<svg width='28' height='28' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
     <rect width='24' height='24' rx='5.5' fill='#1877F2'/>
     <path d='M15.5 7H13.5C12.95 7 12.5 7.45 12.5 8V10H15.5L15 13H12.5V20H9.5V13H7.5V10H9.5V8C9.5 5.79 11.29 4 13.5 4H15.5V7Z' fill='white'/>
   </svg>`;
 
   // Google Maps: resmi G harfi + pin şekli
-  const mapsSvg = `<svg width='22' height='22' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+  const mapsSvg = `<svg width='28' height='28' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
     <rect width='24' height='24' rx='5.5' fill='white'/>
     <path d='M12 2C8.686 2 6 4.686 6 8c0 5.25 6 14 6 14s6-8.75 6-14c0-3.314-2.686-6-6-6z' fill='#EA4335'/>
     <path d='M12 2C8.686 2 6 4.686 6 8c0 1.2.35 2.32.95 3.27L12 2z' fill='#FBBC04'/>
@@ -4047,14 +4066,23 @@ function renderPublicMenu(data){
   detectBrowserLang(supportedLangs);
   if (!supportedLangs.includes(_menuLang)) _menuLang = supportedLangs[0] || 'tr';
 
-  // Hero'daki büyük dil seçici (2+ dil seçilmişse göster) — renkler CSS değişkeninden
+  // Hero'daki dil seçici — artık dropdown (aktif dil üstte, tıklayınca açılır/kapanır)
   const langSwitcherHtml = supportedLangs.length > 1
-    ? ('<div class="m-lang-row">'
-      + supportedLangs.map(function(l) {
-          var active = l === _menuLang;
-          var cls = active ? 'm-lang-btn active' : 'm-lang-btn';
+    ? (function() {
+        var ordered = [_menuLang].concat(supportedLangs.filter(function(l){ return l !== _menuLang; }));
+        var active = LANG_META[_menuLang];
+        var options = ordered.map(function(l) {
+          var isActive = l === _menuLang;
+          var cls = isActive ? 'm-lang-option active' : 'm-lang-option';
           return '<button class="'+cls+'" onclick="switchMenuLang(\'' + l + '\')">' + LANG_META[l].flag + ' ' + LANG_META[l].label + '</button>';
-        }).join('') + '</div>')
+        }).join('');
+        return '<div class="m-lang-dropdown">'
+          + '<button class="m-lang-trigger" onclick="this.parentElement.classList.toggle(\'open\')">'
+          + '<span>🌍 ' + active.label + '</span><span class="m-lang-chevron">▾</span>'
+          + '</button>'
+          + '<div class="m-lang-menu">' + options + '</div>'
+          + '</div>';
+      })()
     : '';
 
   // Sticky nav sağına eklenecek kompakt bayrak butonları (2+ dil varsa)
@@ -4068,10 +4096,10 @@ function renderPublicMenu(data){
     : '';
 
   const socialIconsHtml = (restaurant.instagram_url || restaurant.facebook_url || restaurant.google_maps_url) ? `
-    <div style="display:flex;justify-content:center;gap:10px;margin-bottom:16px">
-      ${restaurant.instagram_url ? `<a href="https://instagram.com/${restaurant.instagram_url.replace('@','')}" target="_blank" style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.15)" title="Instagram">${igSvg}</a>` : ''}
-      ${restaurant.facebook_url ? `<a href="https://facebook.com/${restaurant.facebook_url}" target="_blank" style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.15)" title="Facebook">${fbSvg}</a>` : ''}
-      ${restaurant.google_maps_url ? `<a href="${restaurant.google_maps_url}" target="_blank" style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.15);background:white" title="Google Harita">${mapsSvg}</a>` : ''}
+    <div class="m-social-row">
+      ${restaurant.instagram_url ? `<a href="https://instagram.com/${restaurant.instagram_url.replace('@','')}" target="_blank" class="m-social-icon" title="Instagram">${igSvg}</a>` : ''}
+      ${restaurant.facebook_url ? `<a href="https://facebook.com/${restaurant.facebook_url}" target="_blank" class="m-social-icon" title="Facebook">${fbSvg}</a>` : ''}
+      ${restaurant.google_maps_url ? `<a href="${restaurant.google_maps_url}" target="_blank" class="m-social-icon maps" title="Google Harita">${mapsSvg}</a>` : ''}
     </div>` : '';
 
   const hero=`<div class="m-hero">
@@ -4082,8 +4110,7 @@ function renderPublicMenu(data){
     ${socialIconsHtml}
     ${today_hours&&!today_hours.is_closed?`<div class="m-hours-badge ${is_open?'open':'closed'}">${is_open?mt('open'):mt('closed')} · ${today_hours.opens_at} - ${today_hours.closes_at}</div>`:''}
     <div class="m-pills">
-      <button class="m-pill" onclick="document.getElementById('fb-modal').classList.add('open')">${mt('feedback')}</button>
-      ${restaurant.waiter_enabled !== false ? `<button class="m-pill m-pill-primary" onclick="callWaiter('${restaurant.id}')">${mt('waiter')}</button>` : ''}
+      <button class="m-pill m-pill-ghost" onclick="document.getElementById('fb-modal').classList.add('open')">${mt('feedback')}</button>
     </div>
   </div>`;
 
@@ -4183,16 +4210,16 @@ function renderPublicMenu(data){
       ${restaurant.wifi_password ? `<button class="m-wifi-copy-btn" onclick="navigator.clipboard?.writeText('${restaurant.wifi_password}').then(()=>toast(mt('wifiCopied'),'success'))">${mt('wifiCopy')}</button>` : ''}
     </div>` : '';
 
-  const footer=`<div class="m-footer">
-    ${restaurant.waiter_enabled !== false ? `<button class="waiter-btn" onclick="callWaiter('${restaurant.id}')">${mt('waiter')}</button>` : ''}
-  </div>`;
+  const waiterBar = restaurant.waiter_enabled !== false ? `<div class="m-waiter-bar">
+    <button class="m-waiter-bar-btn" onclick="callWaiter('${restaurant.id}')">${mt('waiter')}</button>
+  </div>` : '';
 
   const noResult = `<div id="search-no-result" class="m-no-result" style="display:none">
     <div style="font-size:48px;margin-bottom:12px">🔍</div>
     <div style="font-size:16px;font-weight:600;margin-bottom:6px" id="no-result-title">Sonuç bulunamadı</div>
     <div style="font-size:13px;opacity:.6" id="no-result-sub">Farklı bir kelime deneyin</div>
   </div>`;
-  el.innerHTML=hero+search+filterBar+nav+sections+noResult+wifiHtml+footer;
+  el.innerHTML=hero+nav+search+filterBar+sections+noResult+wifiHtml+waiterBar;
   window._menuData=data;
   // Filtre + arama sırasında her karta tekrar tekrar DOM'dan veri çekmemek için düz (flat) map
   window._menuProductsFlat={};
