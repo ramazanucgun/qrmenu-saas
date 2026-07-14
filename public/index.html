@@ -242,39 +242,20 @@ textarea.form-input{resize:vertical;min-height:88px}
 /* Tagline — isimden belirgin şekilde daha hafif, ikinci plan (opacity DEĞİL — WCAG AA kontrastı bozar) */
 .m-tag{font-size:13px;font-weight:400;line-height:1.4;margin-bottom:var(--space-3);color:var(--m-text2)}
 
-/* Dil seçici — dropdown (eski büyük buton satırı yerine) */
-.m-lang-dropdown{position:relative;display:inline-block;margin:0 auto var(--space-3)}
-.m-lang-trigger{min-height:40px;display:inline-flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-4);border-radius:var(--radius-md);border:1px solid var(--m-border);background:var(--m-bg2);color:var(--m-text);font-size:13px;font-weight:500;font-family:var(--sans);cursor:pointer;transition:border-color var(--dur-base) var(--ease-standard)}
-.m-lang-trigger:hover{border-color:var(--m-accent)}
-.m-lang-chevron{font-size:10px;color:var(--m-text2);transition:transform var(--dur-base) var(--ease-standard)}
-.m-lang-dropdown.open .m-lang-chevron{transform:rotate(180deg)}
-.m-lang-menu{position:absolute;top:calc(100% + var(--space-2));left:50%;transform:translateX(-50%) translateY(-6px);min-width:170px;background:var(--m-bg2);border:1px solid var(--m-border);border-radius:var(--radius-md);box-shadow:var(--shadow-md);padding:var(--space-2);display:flex;flex-direction:column;gap:2px;opacity:0;pointer-events:none;transition:opacity var(--dur-base) var(--ease-standard),transform var(--dur-base) var(--ease-standard);z-index:30}
-.m-lang-dropdown.open .m-lang-menu{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0)}
-.m-lang-option{min-height:40px;display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-3);border-radius:var(--radius-sm);border:none;background:transparent;color:var(--m-text2);font-size:13px;font-family:var(--sans);text-align:left;cursor:pointer;transition:background var(--dur-base) var(--ease-standard)}
-.m-lang-option:hover{background:var(--m-bg)}
-.m-lang-option.active{color:var(--m-accent);font-weight:600;background:var(--m-pill-bg)}
-.m-lang-trigger:focus-visible,.m-lang-option:focus-visible{outline:2px solid var(--m-accent);outline-offset:2px}
-
-/* Sosyal medya ikonları — Instagram / Facebook / Konum, birebir aynı boyut */
+/* Sosyal/aksiyon satırı — Instagram / Google Reviews / Feedback, birebir aynı boyut */
 .m-social-row{display:flex;justify-content:center;gap:var(--space-3);margin-bottom:var(--space-3)}
-.m-social-icon{width:56px;height:56px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid var(--m-border);box-shadow:var(--shadow-sm);transition:transform var(--dur-base) var(--ease-standard),box-shadow var(--dur-base) var(--ease-standard)}
-.m-social-icon.maps{background:#fff}
+.m-social-icon{width:56px;height:56px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid var(--m-border);box-shadow:var(--shadow-sm);cursor:pointer;transition:transform var(--dur-base) var(--ease-standard),box-shadow var(--dur-base) var(--ease-standard)}
+.m-social-icon.reviews{background:#fff}
+.m-social-icon.feedback{background:var(--m-bg2)}
 .m-social-icon:active{transform:scale(.94)}
 @media(hover:hover){.m-social-icon:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}}
-
-.m-pills{display:flex;justify-content:center;gap:var(--space-3);flex-wrap:wrap;position:relative;margin-top:var(--space-1)}
-/* Feedback artık tek hero aksiyonu — Ghost/Secondary, küçük */
-.m-pill{display:flex;align-items:center;justify-content:center;gap:var(--space-2);min-height:44px;font-size:13px;font-weight:500;border-radius:var(--radius-md);padding:var(--space-2) var(--space-4);cursor:pointer;border:1px solid;font-family:var(--sans);transition:transform var(--dur-fast) var(--ease-standard),background var(--dur-base) var(--ease-standard);background:var(--m-pill-bg);color:var(--m-pill-color);border-color:var(--m-pill-border)}
-.m-pill:active{transform:scale(.96)}
-@media(hover:hover){.m-pill:hover{filter:brightness(1.05)}}
-/* Ghost/Secondary — dolgu yok, ince kenarlık, düşük vurgu */
-.m-pill.m-pill-ghost{background:transparent;color:var(--m-text2);font-weight:500}
+.m-social-icon:focus-visible{outline:2px solid var(--m-accent);outline-offset:2px}
 
 /* Arama — premium: 44px+ dokunmatik, net focus halkası */
 .m-search-wrap{padding:var(--space-3) var(--space-4);box-sizing:border-box;width:100%;background:var(--m-bg)}
 .m-search{width:100%;min-height:44px;box-sizing:border-box;padding:var(--space-2) var(--space-4) var(--space-2) 40px;border-radius:var(--radius-md);font-size:14px;font-family:var(--sans);outline:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23999' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:14px center;background-color:var(--m-bg2);border:1px solid var(--m-border);color:var(--m-text);transition:border-color var(--dur-base) var(--ease-standard),box-shadow var(--dur-base) var(--ease-standard)}
 .m-search:focus{border-color:var(--m-accent);box-shadow:0 0 0 3px var(--m-pill-bg)}
-@media(prefers-reduced-motion:reduce){.m-lang-chevron,.m-lang-menu,.m-social-icon,.m-pill,.m-waiter-bar-btn,.m-search,.m-lang-trigger{transition:none}.m-social-icon:hover,.m-waiter-bar-btn:active,.m-pill:active,.m-social-icon:active{transform:none}}
+@media(prefers-reduced-motion:reduce){.m-social-icon,.m-waiter-bar-btn,.m-search{transition:none}.m-social-icon:hover,.m-waiter-bar-btn:active,.m-social-icon:active{transform:none}}
 
 /* STICKY CATEGORY NAV — sayfa arka planıyla aynı yüzey, ince alt kenarlık, hafif gölge */
 .sticky-nav{position:sticky;top:0;display:flex;align-items:center;z-index:10;background:var(--m-bg);border-bottom:1px solid var(--m-border);box-shadow:var(--shadow-sm);padding:var(--space-2) var(--space-3)}
@@ -372,7 +353,7 @@ textarea.form-input{resize:vertical;min-height:88px}
 .m-no-result{text-align:center;padding:48px 24px;color:var(--m-text2)}
 .m-wifi-icon{width:36px;height:36px;border-radius:8px;background:var(--m-bg);border:1px solid var(--m-border);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
 .m-wifi-copy-btn{flex-shrink:0;padding:6px 10px;border-radius:8px;border:1px solid var(--m-border);background:var(--m-bg);color:var(--m-text2);font-size:11px;cursor:pointer;font-family:var(--sans)}
-.m-hours-badge{display:inline-flex;align-items:center;gap:var(--space-1);border-radius:var(--radius-sm);padding:var(--space-1) var(--space-3);font-size:11.5px;font-weight:600;margin-bottom:var(--space-2);border:1px solid}
+.m-hours-badge{display:inline-flex;align-items:center;gap:var(--space-1);border-radius:var(--radius-sm);padding:var(--space-1) var(--space-3);font-size:11.5px;font-weight:600;margin-bottom:var(--space-3);border:1px solid}
 .m-hours-badge.open{background:rgba(71,201,126,.1);border-color:rgba(71,201,126,.3);color:#47c97e}
 .m-hours-badge.closed{background:rgba(232,71,71,.1);border-color:rgba(232,71,71,.3);color:#e84747}
 .m-nav-lang-wrap{display:flex;align-items:center;gap:3px;padding:0 8px;flex-shrink:0;border-left:1px solid var(--m-border)}
@@ -4047,45 +4028,23 @@ function renderPublicMenu(data){
   </svg>`;
 
   // Facebook: resmi mavi + beyaz f harfi
-  const fbSvg = `<svg width='28' height='28' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
-    <rect width='24' height='24' rx='5.5' fill='#1877F2'/>
-    <path d='M15.5 7H13.5C12.95 7 12.5 7.45 12.5 8V10H15.5L15 13H12.5V20H9.5V13H7.5V10H9.5V8C9.5 5.79 11.29 4 13.5 4H15.5V7Z' fill='white'/>
-  </svg>`;
-
-  // Google Maps: resmi G harfi + pin şekli
-  const mapsSvg = `<svg width='28' height='28' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+  // Google Reviews: yıldız görsel dili (Konum/pin ikonu yerine — aynı google_maps_url bağlantısı kullanılıyor)
+  const reviewsSvg = `<svg width='28' height='28' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
     <rect width='24' height='24' rx='5.5' fill='white'/>
-    <path d='M12 2C8.686 2 6 4.686 6 8c0 5.25 6 14 6 14s6-8.75 6-14c0-3.314-2.686-6-6-6z' fill='#EA4335'/>
-    <path d='M12 2C8.686 2 6 4.686 6 8c0 1.2.35 2.32.95 3.27L12 2z' fill='#FBBC04'/>
-    <path d='M6.95 11.27C7.9 12.73 9.35 13.75 11 13.96V2.05C8.73 2.55 7 4.57 6 7c0 .69.1 1.37.28 2.02.18.65.44 1.25.67 1.62l0 .63z' fill='#FBBC04' opacity='0'/>
-    <path d='M12 5.5A2.5 2.5 0 1 0 12 10.5A2.5 2.5 0 0 0 12 5.5Z' fill='white'/>
+    <path d='M12 3.5l2.02 4.36 4.73.57-3.52 3.32.97 4.75L12 14.15l-4.2 2.35.97-4.75-3.52-3.32 4.73-.57L12 3.5z' fill='#FBBC04'/>
   </svg>`;
 
-  // Dil tespiti ve seçici
+  // Feedback ikonu — sosyal ikon satırıyla aynı boyutta, tema rengine uyumlu
+  const feedbackSvg = `<svg width='28' height='28' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
+    <path d='M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v6a2.5 2.5 0 0 1-2.5 2.5H10l-3.5 3v-3H7.5A2.5 2.5 0 0 1 5 12.5v-6z' fill='none' stroke='var(--m-text2)' stroke-width='1.5' stroke-linejoin='round'/>
+  </svg>`;
+
+  // Dil tespiti — hero'da artık dil seçici yok, sadece kategori barının yanındaki mevcut seçici kullanılıyor
   const supportedLangs = (restaurant.supported_languages || ['tr']).filter(l => LANG_META[l]);
   detectBrowserLang(supportedLangs);
   if (!supportedLangs.includes(_menuLang)) _menuLang = supportedLangs[0] || 'tr';
 
-  // Hero'daki dil seçici — artık dropdown (aktif dil üstte, tıklayınca açılır/kapanır)
-  const langSwitcherHtml = supportedLangs.length > 1
-    ? (function() {
-        var ordered = [_menuLang].concat(supportedLangs.filter(function(l){ return l !== _menuLang; }));
-        var active = LANG_META[_menuLang];
-        var options = ordered.map(function(l) {
-          var isActive = l === _menuLang;
-          var cls = isActive ? 'm-lang-option active' : 'm-lang-option';
-          return '<button class="'+cls+'" onclick="switchMenuLang(\'' + l + '\')">' + LANG_META[l].flag + ' ' + LANG_META[l].label + '</button>';
-        }).join('');
-        return '<div class="m-lang-dropdown">'
-          + '<button class="m-lang-trigger" onclick="this.parentElement.classList.toggle(\'open\')">'
-          + '<span>🌍 ' + active.label + '</span><span class="m-lang-chevron">▾</span>'
-          + '</button>'
-          + '<div class="m-lang-menu">' + options + '</div>'
-          + '</div>';
-      })()
-    : '';
-
-  // Sticky nav sağına eklenecek kompakt bayrak butonları (2+ dil varsa)
+  // Sticky nav sağına eklenecek kompakt bayrak butonları (2+ dil varsa) — dil değiştirmenin tek yolu
   const navLangBtn = supportedLangs.length > 1
     ? ('<div class="m-nav-lang-wrap">'
       + supportedLangs.map(function(l) {
@@ -4095,23 +4054,20 @@ function renderPublicMenu(data){
         }).join('') + '</div>')
     : '';
 
-  const socialIconsHtml = (restaurant.instagram_url || restaurant.facebook_url || restaurant.google_maps_url) ? `
+  // Sosyal/aksiyon satırı — Instagram, Google Reviews, Feedback: aynı boyut/radius/border/shadow/hover
+  const socialIconsHtml = `
     <div class="m-social-row">
       ${restaurant.instagram_url ? `<a href="https://instagram.com/${restaurant.instagram_url.replace('@','')}" target="_blank" class="m-social-icon" title="Instagram">${igSvg}</a>` : ''}
-      ${restaurant.facebook_url ? `<a href="https://facebook.com/${restaurant.facebook_url}" target="_blank" class="m-social-icon" title="Facebook">${fbSvg}</a>` : ''}
-      ${restaurant.google_maps_url ? `<a href="${restaurant.google_maps_url}" target="_blank" class="m-social-icon maps" title="Google Harita">${mapsSvg}</a>` : ''}
-    </div>` : '';
+      ${restaurant.google_maps_url ? `<a href="${restaurant.google_maps_url}" target="_blank" class="m-social-icon reviews" title="Google Reviews">${reviewsSvg}</a>` : ''}
+      <button class="m-social-icon feedback" onclick="document.getElementById('fb-modal').classList.add('open')" title="${mt('feedback')}">${feedbackSvg}</button>
+    </div>`;
 
   const hero=`<div class="m-hero">
     ${logoHtml}
     <div class="m-rest-name" style="font-family:'${font}',serif">${restaurant.name}</div>
     <div class="m-tag">${restaurant.tagline||'Dijital Menü'}</div>
-    ${langSwitcherHtml}
-    ${socialIconsHtml}
     ${today_hours&&!today_hours.is_closed?`<div class="m-hours-badge ${is_open?'open':'closed'}">${is_open?mt('open'):mt('closed')} · ${today_hours.opens_at} - ${today_hours.closes_at}</div>`:''}
-    <div class="m-pills">
-      <button class="m-pill m-pill-ghost" onclick="document.getElementById('fb-modal').classList.add('open')">${mt('feedback')}</button>
-    </div>
+    ${socialIconsHtml}
   </div>`;
 
   const search=`<div class="m-search-wrap">
@@ -4219,7 +4175,7 @@ function renderPublicMenu(data){
     <div style="font-size:16px;font-weight:600;margin-bottom:6px" id="no-result-title">Sonuç bulunamadı</div>
     <div style="font-size:13px;opacity:.6" id="no-result-sub">Farklı bir kelime deneyin</div>
   </div>`;
-  el.innerHTML=hero+nav+search+filterBar+sections+noResult+wifiHtml+waiterBar;
+  el.innerHTML=hero+search+filterBar+nav+sections+noResult+wifiHtml+waiterBar;
   window._menuData=data;
   // Filtre + arama sırasında her karta tekrar tekrar DOM'dan veri çekmemek için düz (flat) map
   window._menuProductsFlat={};
