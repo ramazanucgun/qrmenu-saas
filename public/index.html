@@ -244,9 +244,7 @@ textarea.form-input{resize:vertical;min-height:88px}
 
 /* Sosyal/aksiyon satırı — Instagram / Google Reviews / Feedback, birebir aynı boyut */
 .m-social-row{display:flex;justify-content:center;gap:var(--space-3);margin-bottom:var(--space-3)}
-.m-social-icon{width:56px;height:56px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid var(--m-border);box-shadow:var(--shadow-sm);cursor:pointer;transition:transform var(--dur-base) var(--ease-standard),box-shadow var(--dur-base) var(--ease-standard)}
-.m-social-icon.reviews{background:#fff}
-.m-social-icon.feedback{background:var(--m-bg2)}
+.m-social-icon{width:56px;height:56px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid var(--m-border);box-shadow:var(--shadow-sm);cursor:pointer;transition:transform var(--dur-base) var(--ease-standard),box-shadow var(--dur-base) var(--ease-standard);background:var(--m-bg2);color:var(--m-text)}
 .m-social-icon:active{transform:scale(.94)}
 @media(hover:hover){.m-social-icon:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}}
 .m-social-icon:focus-visible{outline:2px solid var(--m-accent);outline-offset:2px}
@@ -4011,32 +4009,20 @@ function renderPublicMenu(data){
 
   // Sosyal medya ikonları — hero içinde tagline'ın hemen altında
   // Instagram: gradient arka plan, detaylı resmi ikon
-  const igSvg = `<svg width='28' height='28' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
-    <defs>
-      <radialGradient id='ig-rg' cx='30%' cy='107%' r='150%'>
-        <stop offset='0%' stop-color='#fdf497'/>
-        <stop offset='5%' stop-color='#fdf497'/>
-        <stop offset='45%' stop-color='#fd5949'/>
-        <stop offset='60%' stop-color='#d6249f'/>
-        <stop offset='90%' stop-color='#285AEB'/>
-      </radialGradient>
-    </defs>
-    <rect width='24' height='24' rx='5.5' fill='url(#ig-rg)'/>
-    <rect x='6.5' y='6.5' width='11' height='11' rx='3.2' stroke='white' stroke-width='1.5' fill='none'/>
-    <circle cx='12' cy='12' r='3' stroke='white' stroke-width='1.5' fill='none'/>
-    <circle cx='16' cy='8' r='0.9' fill='white'/>
+  const igSvg = `<svg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
+    <rect x='3' y='3' width='18' height='18' rx='5' stroke='currentColor' stroke-width='1.6'/>
+    <circle cx='12' cy='12' r='4' stroke='currentColor' stroke-width='1.6'/>
+    <circle cx='17.2' cy='6.8' r='1.1' fill='currentColor'/>
   </svg>`;
 
-  // Facebook: resmi mavi + beyaz f harfi
-  // Google Reviews: yıldız görsel dili (Konum/pin ikonu yerine — aynı google_maps_url bağlantısı kullanılıyor)
-  const reviewsSvg = `<svg width='28' height='28' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
-    <rect width='24' height='24' rx='5.5' fill='white'/>
-    <path d='M12 3.5l2.02 4.36 4.73.57-3.52 3.32.97 4.75L12 14.15l-4.2 2.35.97-4.75-3.52-3.32 4.73-.57L12 3.5z' fill='#FBBC04'/>
+  // Google Reviews — Google'ın "G" logomarkını temsil eden sade, tek renk (solid), temaya uyumlu ikon
+  const reviewsSvg = `<svg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
+    <text x='12' y='17.5' font-family='Arial,Helvetica,sans-serif' font-size='16' font-weight='700' text-anchor='middle' fill='currentColor'>G</text>
   </svg>`;
 
-  // Feedback ikonu — sosyal ikon satırıyla aynı boyutta, tema rengine uyumlu
-  const feedbackSvg = `<svg width='28' height='28' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'>
-    <path d='M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v6a2.5 2.5 0 0 1-2.5 2.5H10l-3.5 3v-3H7.5A2.5 2.5 0 0 1 5 12.5v-6z' fill='none' stroke='var(--m-text2)' stroke-width='1.5' stroke-linejoin='round'/>
+  // Geri Bildirim — klasik konuşma balonu, aynı ikon ailesi (outline, tek renk)
+  const feedbackSvg = `<svg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
+    <path d='M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v6a2.5 2.5 0 0 1-2.5 2.5H10l-3.5 3v-3H7.5A2.5 2.5 0 0 1 5 12.5v-6z' fill='none' stroke='currentColor' stroke-width='1.6' stroke-linejoin='round'/>
   </svg>`;
 
   // Dil tespiti — hero'da artık dil seçici yok, sadece kategori barının yanındaki mevcut seçici kullanılıyor
