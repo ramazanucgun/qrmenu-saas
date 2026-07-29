@@ -272,12 +272,15 @@ textarea.form-input{resize:vertical;min-height:88px}
 .style-list .m-product:last-child{margin-bottom:0}
 .style-list .m-product:active{transform:scale(.98)}
 @media(hover:hover){.style-list .m-product:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}}
-.style-list .m-prod-img{width:84px;height:84px;border-radius:var(--radius-md);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:32px;overflow:hidden;min-width:84px;background:var(--m-bg)}
-.style-list .m-prod-img img{width:84px;height:84px;object-fit:cover;border-radius:var(--radius-md);display:block;flex-shrink:0}
+.style-list .m-prod-img{width:88px;height:88px;border-radius:var(--radius-md);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:32px;overflow:hidden;min-width:88px;background:var(--m-bg)}
+.style-list .m-prod-img img{width:88px;height:88px;object-fit:cover;border-radius:var(--radius-md);display:block;flex-shrink:0}
 .style-list .m-prod-img img{width:100%;height:100%;object-fit:cover;border-radius:var(--radius-md);display:block}
-.style-list .m-prod-name{font-size:16px;font-weight:600;line-height:1.3;margin-bottom:var(--space-1);color:var(--m-text);letter-spacing:-.01em}
-.style-list .m-prod-desc{font-size:13px;line-height:1.5;margin-bottom:var(--space-2);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-clamp:2;color:var(--m-text2)}
-.style-list .m-prod-price{font-size:16px;font-weight:700;color:var(--m-accent);letter-spacing:-.01em}
+.style-list .m-product>div:not(.m-prod-img){display:flex;flex-direction:column;justify-content:center;min-width:0;max-height:88px;overflow:hidden}
+.style-list .m-prod-name{font-size:15px;font-weight:600;line-height:1.3;margin-bottom:3px;color:var(--m-text);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.style-list .m-prod-desc{font-size:12.5px;line-height:1.4;margin-bottom:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;line-clamp:1;color:var(--m-text2)}
+.style-list .m-mini-badges{margin:0 0 4px!important}
+.style-list .m-badge{padding:2px 8px;font-size:10.5px}
+.style-list .m-prod-price{font-size:15px;font-weight:700;color:var(--m-accent);letter-spacing:-.01em}
 
 /* KART STİLİ 2: Kart — premium: yumuşak gölge, nazik hover kalkışı */
 .m-products-grid.style-card{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)}
