@@ -2714,9 +2714,9 @@ app.post('/api/payment/init', authMiddleware, async (req, res) => {
   }
 
   // KDV dahil fiyatlar (TRY) — KDV oranı %20
-  // starter: 9360 TL (KDV hariç: 7800 TL), pro: 11995 TL (KDV hariç: 9996 TL)
-  const pricesWithKdv  = { starter: 9360.00, pro: 11995.00, enterprise: 11995.00 };
-  const pricesWithoutKdv = { starter: 7800.00, pro: 9996.00, enterprise: 9996.00 }; // KDV hariç (÷1.20)
+  // starter: 600 TL (KDV hariç: 500 TL, aylık), pro: 6.000 TL (KDV hariç: 5.000 TL, yıllık)
+  const pricesWithKdv  = { starter: 600.00, pro: 6000.00, enterprise: 6000.00 };
+  const pricesWithoutKdv = { starter: 500.00, pro: 5000.00, enterprise: 5000.00 }; // KDV hariç (÷1.20)
   const prices = pricesWithKdv; // ödeme tutarı KDV dahil
   const price = prices[plan];
   if (!price) return res.status(400).json({ error: 'Geçersiz plan' });

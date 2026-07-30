@@ -1111,8 +1111,9 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
           <div class="plans-grid">
             <div class="plan-card">
               <div style="font-size:11px;color:var(--text2);font-weight:600;letter-spacing:.08em">STARTER</div>
-              <div class="plan-price">Aylık: 500 TL + KDV</div>
-              <div style="font-size:11px;color:var(--text3);margin-bottom:16px">Yıllık: 5.000 TL + KDV</div>
+              <div style="font-size:10px;color:var(--text3);font-weight:600;letter-spacing:.04em;margin-top:6px">AYLIK ÖDEME</div>
+              <div class="plan-price">500 TL + KDV<span style="font-size:12px;font-weight:500;color:var(--text3)">/ay</span></div>
+              <div style="margin-bottom:16px"></div>
               <ul class="plan-features">
                 <li><span class="feat-ok">✓</span>1 Restoran</li>
                 <li><span class="feat-ok">✓</span>50 ürüne kadar</li>
@@ -1124,8 +1125,9 @@ function doResetPassword(){ if(typeof _doResetPassword==='function') _doResetPas
             <div class="plan-card featured">
               <div class="plan-badge">EN POPÜLER</div>
               <div style="font-size:11px;color:rgba(255,255,255,.6);font-weight:600;letter-spacing:.08em;margin-top:8px">PRO</div>
-              <div class="plan-price">Aylık: 500 TL + KDV</div>
-              <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:16px">Yıllık: 5.000 TL + KDV</div>
+              <div style="font-size:10px;color:#4ade80;font-weight:700;letter-spacing:.04em;margin-top:6px">💰 YILLIK ÖDEME — AVANTAJLI FİYAT</div>
+              <div class="plan-price">5.000 TL + KDV<span style="font-size:12px;font-weight:500;color:rgba(255,255,255,.5)">/yıl</span></div>
+              <div style="margin-bottom:16px"></div>
               <ul class="plan-features">
                 <li><span class="feat-ok">✓</span>Sınırsız ürün</li>
                 <li><span class="feat-ok">✓</span>Garson çağrı sistemi</li>
@@ -2360,7 +2362,7 @@ async function publishAnnouncement() {
 }
 
 async function startPayment(plan) {
-  const planNames = { starter:'Starter — 500 TL + KDV/ay veya 5.000 TL + KDV/yıl', pro:'Pro — 500 TL + KDV/ay veya 5.000 TL + KDV/yıl', enterprise:'Enterprise — İletişime Geçin' };
+  const planNames = { starter:'Starter — Aylık Ödeme — 500 TL + KDV', pro:'Pro — Yıllık Ödeme — 5.000 TL + KDV (avantajlı)', enterprise:'Enterprise — İletişime Geçin' };
   // Ödeme formu öncesi bilgi formu
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
