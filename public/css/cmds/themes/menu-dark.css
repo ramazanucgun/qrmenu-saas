@@ -1,0 +1,30 @@
+/*
+  CMDS — Müşteri Menüsü Teması: Koyu Gece
+  ─────────────────────────────────────────────────────────────
+  Kaynak: public/index.html içindeki THEMES.dark JS nesnesi.
+  Değerler BİREBİR aynı şekilde buraya taşınmıştır. (Bkz. menu-classic.css
+  başındaki not — bu dosya da bugün render pipeline'ı tarafından
+  kullanılmıyor, Faz 4+ için hazırlanmış hedef token setidir.)
+*/
+
+[data-menu-theme='dark'] {
+  --cmds-menu-accent:       #e8c547;
+  --cmds-menu-bg:           #0f0f12;
+  --cmds-menu-bg2:          #1a1a1f;
+  --cmds-menu-border:       rgba(255, 255, 255, 0.08);
+  --cmds-menu-text:         #f0f0ee;
+  --cmds-menu-text2:        #a8a8a4;
+  --cmds-menu-hero-bg:      linear-gradient(180deg, #1a1a1f 0%, #0f0f12 70%);
+  --cmds-menu-nav-bg:       #1a1a1f;
+  --cmds-menu-footer-bg:    #1a1a1f;
+  --cmds-menu-pill-bg:      rgba(255, 255, 255, 0.07);
+  --cmds-menu-pill-color:   #cccccc;
+  --cmds-menu-pill-border:  rgba(255, 255, 255, 0.1);
+  --cmds-menu-search-bg:      #1a1a1f;
+  --cmds-menu-search-border:  rgba(255, 255, 255, 0.1);
+  --cmds-menu-search-color:   #f0f0ee;
+  --cmds-menu-wifi-bg:      #1a1a1f;
+  --cmds-menu-wifi-border:  rgba(255, 255, 255, 0.08);
+  --cmds-menu-social-bg:      rgba(255, 255, 255, 0.07);
+  --cmds-menu-social-border:  rgba(255, 255, 255, 0.1);
+}

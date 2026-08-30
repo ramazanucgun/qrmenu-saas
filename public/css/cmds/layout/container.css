@@ -1,0 +1,36 @@
+/*
+  CMDS — Layout: Container
+  ─────────────────────────────────────────────────────────────
+  Kaynak: tokens/breakpoints.css içindeki --cmds-container-* değerleri.
+  Bugün hiçbir sayfa .cmds-container-* sınıflarını kullanmıyor —
+  bu yeni, opsiyonel yardımcı sınıflardır (bkz. Faz 3 görev 4:
+  "reusable utility classes").
+*/
+
+.cmds-container-menu {
+  max-width: var(--cmds-container-menu);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+.cmds-container-dashboard {
+  max-width: var(--cmds-container-dashboard);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+.cmds-container-admin {
+  max-width: var(--cmds-container-admin);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+.cmds-container-marketing {
+  max-width: var(--cmds-container-marketing);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}

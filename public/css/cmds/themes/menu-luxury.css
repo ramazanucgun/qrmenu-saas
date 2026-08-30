@@ -1,0 +1,29 @@
+/*
+  CMDS — Müşteri Menüsü Teması: Lüks
+  ─────────────────────────────────────────────────────────────
+  Kaynak: public/index.html içindeki THEMES.luxury JS nesnesi.
+  Değerler BİREBİR aynı şekilde buraya taşınmıştır. (Bkz. menu-classic.css
+  başındaki not.)
+*/
+
+[data-menu-theme='luxury'] {
+  --cmds-menu-accent:       #c9a84c;
+  --cmds-menu-bg:           #1a1208;
+  --cmds-menu-bg2:          #241a0a;
+  --cmds-menu-border:       rgba(201, 168, 76, 0.15);
+  --cmds-menu-text:         #f5e6c8;
+  --cmds-menu-text2:        #a89060;
+  --cmds-menu-hero-bg:      linear-gradient(180deg, #241a0a 0%, #1a1208 70%);
+  --cmds-menu-nav-bg:       #241a0a;
+  --cmds-menu-footer-bg:    #241a0a;
+  --cmds-menu-pill-bg:      rgba(201, 168, 76, 0.08);
+  --cmds-menu-pill-color:   #c9a84c;
+  --cmds-menu-pill-border:  rgba(201, 168, 76, 0.2);
+  --cmds-menu-search-bg:      #241a0a;
+  --cmds-menu-search-border:  rgba(201, 168, 76, 0.15);
+  --cmds-menu-search-color:   #f5e6c8;
+  --cmds-menu-wifi-bg:      #241a0a;
+  --cmds-menu-wifi-border:  rgba(201, 168, 76, 0.15);
+  --cmds-menu-social-bg:      rgba(201, 168, 76, 0.08);
+  --cmds-menu-social-border:  rgba(201, 168, 76, 0.15);
+}

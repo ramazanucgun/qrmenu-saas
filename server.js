@@ -2391,6 +2391,69 @@ app.get('/api/admin/users', adminMiddleware, async (req, res) => {
   }
 });
 
+// Admin panelinden manuel kullanıcı oluşturma — public /api/auth/register akışının
+// (telefon/KVKK/email-doğrulama adımları hariç) sadeleştirilmiş, admin-only sürümü.
+// Hesap, admin tarafından açıldığı için doğrudan is_verified=true olarak oluşturulur
+// ve normal kayıtla aynı şekilde bir deneme (trial) aboneliği alır. Mevcut
+// /api/auth/register, /api/auth/login veya başka hiçbir endpoint DEĞİŞTİRİLMEDİ.
+app.post('/api/admin/users', adminMiddleware, async (req, res) => {
+  const { email, password, restaurantName, menuSlug } = req.body;
+  if (!email || !password || !restaurantName) {
+    return res.status(400).json({ error: 'Email, şifre ve restoran adı zorunludur' });
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Geçerli bir email adresi girin' });
+  }
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'Şifre en az 6 karakter olmalı' });
+  }
+  try {
+    const existing = await pool.query('SELECT id FROM users WHERE email=$1', [email]);
+    if (existing.rows.length) {
+      return res.status(400).json({ error: 'Bu email adresi zaten kayıtlı' });
+    }
+
+    const hash = await bcrypt.hash(password, 10);
+    const userResult = await pool.query(
+      `INSERT INTO users (email, password_hash, is_verified) VALUES ($1,$2,true) RETURNING id, email`,
+      [email, hash]
+    );
+    const user = userResult.rows[0];
+
+    function toSlug(str) {
+      return str.toLowerCase()
+        .replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s')
+        .replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c')
+        .replace(/[^a-z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+    }
+    const desiredSlug = menuSlug ? toSlug(menuSlug) : '';
+    const baseSlug = toSlug(restaurantName);
+    let slug = desiredSlug || baseSlug;
+    if (!slug || slug.length < 3) slug = baseSlug || ('restoran-' + Math.random().toString(36).substr(2,6));
+    const existingSlug = await pool.query('SELECT id FROM restaurants WHERE slug=$1', [slug]);
+    if (existingSlug.rows.length) {
+      if (desiredSlug) {
+        return res.status(400).json({ error: 'Bu menü linki zaten kullanımda, farklı bir link deneyin' });
+      }
+      slug = baseSlug + '-' + Math.random().toString(36).substr(2,4);
+    }
+
+    const restResult = await pool.query(
+      'INSERT INTO restaurants (user_id, slug, name) VALUES ($1,$2,$3) RETURNING id, slug, name',
+      [user.id, slug, restaurantName]
+    );
+
+    // Normal kayıtla aynı şekilde deneme aboneliği açılır (subscriptions tablosu varsayılanları geçerli)
+    await pool.query('INSERT INTO subscriptions (user_id) VALUES ($1)', [user.id]);
+
+    res.json({ success: true, user: { id: user.id, email: user.email }, restaurant: restResult.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 // Kullanıcı sil
 app.delete('/api/admin/users/:id', adminMiddleware, async (req, res) => {
   try {
@@ -2714,9 +2777,9 @@ app.post('/api/payment/init', authMiddleware, async (req, res) => {
   }
 
   // KDV dahil fiyatlar (TRY) — KDV oranı %20
-  // starter: 600 TL (KDV hariç: 500 TL, aylık), pro: 6.000 TL (KDV hariç: 5.000 TL, yıllık)
-  const pricesWithKdv  = { starter: 600.00, pro: 6000.00, enterprise: 6000.00 };
-  const pricesWithoutKdv = { starter: 500.00, pro: 5000.00, enterprise: 5000.00 }; // KDV hariç (÷1.20)
+  // starter: 9360 TL (KDV hariç: 7800 TL), pro: 11995 TL (KDV hariç: 9996 TL)
+  const pricesWithKdv  = { starter: 9360.00, pro: 11995.00, enterprise: 11995.00 };
+  const pricesWithoutKdv = { starter: 7800.00, pro: 9996.00, enterprise: 9996.00 }; // KDV hariç (÷1.20)
   const prices = pricesWithKdv; // ödeme tutarı KDV dahil
   const price = prices[plan];
   if (!price) return res.status(400).json({ error: 'Geçersiz plan' });

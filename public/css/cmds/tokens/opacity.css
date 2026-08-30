@@ -1,0 +1,16 @@
+/*
+  CMDS — Opacity Tokens
+  ─────────────────────────────────────────────────────────────
+  Bugün projede tekrarlanan opaklık değerleri: disabled/hidden ürünler
+  için .4 (bkz. .product-card.hidden{opacity:.4}), overlay arka planları
+  için .5/.6/.75, toast fade-out için .3s içinde 0. Bu dosya bunları
+  isimlendirir; hiçbir mevcut kurala henüz uygulanmamıştır.
+*/
+
+:root {
+  --cmds-opacity-disabled: 0.4;   /* = mevcut .product-card.hidden ile birebir aynı */
+  --cmds-opacity-hover-bg: 0.08;
+  --cmds-opacity-overlay-light: 0.5;
+  --cmds-opacity-overlay-strong: 0.75; /* = mevcut .modal-overlay arka planıyla birebir aynı */
+  --cmds-opacity-scrim: 0.6;
+}

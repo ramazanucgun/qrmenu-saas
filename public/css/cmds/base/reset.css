@@ -1,0 +1,48 @@
+/*
+  CMDS — Base: Reset
+  ─────────────────────────────────────────────────────────────
+  Mevcut index.html/admin.html'deki global reset kurallarıyla
+  BİREBİR aynıdır (*{margin:0;padding:0;box-sizing:border-box} vb.).
+  Bu dosya bugün hiçbir sayfaya bağlı değildir; bağlandığında da
+  zaten var olan aynı kuralları tekrar edeceği için görsel fark
+  yaratmaz — amacı, ileride inline <style> blokları kaldırıldığında
+  bu temel kuralların kaybolmayacağı tek bir yer olmaktır.
+*/
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  overflow-x: clip;
+  width: 100%;
+  max-width: 100%;
+}
+
+body {
+  font-family: var(--cmds-font-sans);
+  background: var(--cmds-bg);
+  color: var(--cmds-text);
+  min-height: 100vh;
+}
+
+button {
+  cursor: pointer;
+  font-family: var(--cmds-font-sans);
+}
+
+input,
+textarea,
+select {
+  font-family: var(--cmds-font-sans);
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}

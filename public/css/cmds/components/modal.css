@@ -1,0 +1,103 @@
+/*
+  CMDS — Component: Modal
+  ─────────────────────────────────────────────────────────────
+  Kaynak: mevcut .modal-overlay / .modal / .modal-head / .modal-footer.
+  Faz 1'de belgelenen mobilde-sheet'e-dönüşme davranışı (768px ve
+  480px eşiklerinde) burada da AYNEN korunmuştur — bu, Faz 2 §13.4'te
+  önerilen "otomatik sheet" kuralının, bugünkü sayfa-özel !important
+  yamasıyla ZATEN aynı sonucu ürettiğini gösterir; CMDS burada sadece
+  bunu adlandırıp merkezi hale getirir.
+*/
+
+.cmds-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, var(--cmds-opacity-overlay-strong));
+  z-index: var(--cmds-z-modal);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  padding: var(--cmds-space-3);
+  overflow-y: auto;
+}
+
+.cmds-modal-overlay.open {
+  display: flex;
+}
+
+.cmds-modal {
+  background: var(--cmds-surface);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--cmds-radius-xl);
+  padding: var(--cmds-space-6);
+  width: 480px;
+  max-width: 94vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--cmds-shadow-3);
+}
+
+.cmds-modal-sm { width: 360px; }
+.cmds-modal-lg { width: 560px; }
+
+.cmds-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--cmds-space-5);
+}
+
+.cmds-modal-title {
+  font-size: var(--cmds-text-h3);
+  font-weight: var(--cmds-weight-semibold);
+}
+
+.cmds-modal-close {
+  background: none;
+  border: none;
+  color: var(--cmds-text-tertiary);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.cmds-modal-close:hover { color: var(--cmds-text); }
+
+.cmds-modal-footer {
+  display: flex;
+  gap: var(--cmds-space-2);
+  justify-content: flex-end;
+  margin-top: var(--cmds-space-5);
+  padding-top: var(--cmds-space-4);
+  border-top: 1px solid var(--cmds-border);
+}
+
+/* Mobil — mevcut 768px/480px davranışıyla birebir aynı */
+@media (max-width: 768px) {
+  .cmds-modal {
+    padding: var(--cmds-space-4);
+    width: calc(100vw - 24px);
+    max-width: 100%;
+    max-height: calc(100dvh - 24px);
+    margin: 0;
+  }
+  .cmds-modal-footer {
+    flex-direction: column-reverse;
+  }
+  .cmds-modal-footer .cmds-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .cmds-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .cmds-modal {
+    border-radius: var(--cmds-radius-xl) var(--cmds-radius-xl) 0 0;
+    max-height: 92dvh;
+    width: 100%;
+    max-width: 100%;
+  }
+}

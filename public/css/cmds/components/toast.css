@@ -1,0 +1,59 @@
+/*
+  CMDS — Component: Toast
+  ─────────────────────────────────────────────────────────────
+  Kaynak: mevcut .toast-wrap / .toast / .t-success / .t-error / .t-info.
+  index.html VE admin.html içinde bayt-bayt aynı şekilde iki kez
+  tanımlıydı (bkz. Faz 1 "Component Audit") — bu dosya artık tek
+  kaynak olur.
+*/
+
+.cmds-toast-wrap {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: var(--cmds-z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cmds-space-2);
+}
+
+.cmds-toast {
+  background: var(--cmds-surface);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--cmds-radius-md);
+  padding: 12px 18px;
+  font-size: var(--cmds-text-body-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--cmds-space-2);
+  box-shadow: var(--cmds-shadow-4);
+  animation: cmds-toast-in var(--cmds-duration-slow) var(--cmds-ease-standard);
+}
+
+@keyframes cmds-toast-in {
+  from { transform: translateX(16px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.cmds-toast-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--cmds-radius-full);
+  flex-shrink: 0;
+}
+
+.cmds-toast-success .cmds-toast-dot { background: var(--cmds-success); }
+.cmds-toast-error   .cmds-toast-dot { background: var(--cmds-danger); }
+.cmds-toast-info    .cmds-toast-dot { background: var(--cmds-info); }
+
+@media (max-width: 768px) {
+  .cmds-toast-wrap {
+    right: 10px;
+    left: 10px;
+    bottom: 12px;
+  }
+  .cmds-toast {
+    font-size: 12px;
+    padding: 10px 14px;
+  }
+}

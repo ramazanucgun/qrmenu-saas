@@ -1,0 +1,32 @@
+/*
+  CMDS — Light Theme (YENİ — henüz hiçbir sayfada kullanılmıyor)
+  ─────────────────────────────────────────────────────────────
+  Kaynak: CMDS Faz 2 §3.4. Bugün proje sadece Dark tema ile çalışıyor
+  (owner dashboard + super-admin panel). Faz 2 dokümanına göre Light,
+  gelecekte varsayılan tema olacak — ama bu, kasıtlı ve onaylı bir
+  görsel karar olduğundan Faz 3'te (foundation) UYGULANMAZ.
+
+  Bu dosya, o geçiş geldiğinde tek satırlık bir attribute değişikliği
+  (data-cmds-theme="light") ile devreye girecek şekilde HAZIR tutulur.
+  Bugün hiçbir element bu attribute'u taşımadığı için sıfır etkisi vardır.
+*/
+
+[data-cmds-theme='light'] {
+  --cmds-bg:             var(--cmds-neutral-50);
+  --cmds-surface:        var(--cmds-neutral-0);
+  --cmds-surface-raised: var(--cmds-neutral-0);
+  --cmds-surface-sunken: var(--cmds-neutral-100);
+  --cmds-border:         var(--cmds-neutral-200);
+  --cmds-border-strong:  var(--cmds-neutral-300);
+  --cmds-text:           var(--cmds-neutral-800);
+  --cmds-text-secondary: var(--cmds-neutral-500);
+  --cmds-text-tertiary:  var(--cmds-neutral-400);
+  --cmds-accent:         var(--cmds-gold-400);
+  --cmds-accent-text:    var(--cmds-gold-700);
+
+  /* Light temada gölgeler daha yumuşak okunur (bkz. Faz 2 §7) */
+  --cmds-shadow-1: 0 1px 2px rgba(20, 19, 17, 0.04);
+  --cmds-shadow-2: 0 4px 16px rgba(20, 19, 17, 0.08);
+  --cmds-shadow-3: 0 12px 40px rgba(20, 19, 17, 0.12);
+  --cmds-shadow-4: 0 16px 56px rgba(20, 19, 17, 0.16);
+}

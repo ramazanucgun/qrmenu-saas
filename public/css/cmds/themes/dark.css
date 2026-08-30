@@ -1,0 +1,28 @@
+/*
+  CMDS — Dark Theme
+  ─────────────────────────────────────────────────────────────
+  Bu, bugün hem index.html hem admin.html'in TEK ve varsayılan temasıdır.
+  tokens/colors.css içindeki :root rolü tokenları zaten bu değerlerle
+  ankorlanmıştır; bu dosya aynı eşlemeyi [data-cmds-theme="dark"]
+  seçicisiyle de tekrarlar — böylece ileride explicit tema değiştirme
+  (Faz 4+) eklendiğinde hem "varsayılan" hem "seçilmiş" durum aynı
+  kaynağa bağlı kalır.
+
+  Bugün hiçbir elementte data-cmds-theme="dark" attribute'u yok;
+  bu dosyanın canlı sayfalarda şu an hiçbir etkisi yoktur.
+*/
+
+:root,
+[data-cmds-theme='dark'] {
+  --cmds-bg:             var(--cmds-prod-bg);
+  --cmds-surface:        var(--cmds-prod-bg2);
+  --cmds-surface-raised: var(--cmds-prod-bg2);
+  --cmds-surface-sunken: var(--cmds-prod-bg3);
+  --cmds-border:         var(--cmds-prod-border);
+  --cmds-border-strong:  rgba(255, 255, 255, 0.16);
+  --cmds-text:           var(--cmds-prod-text);
+  --cmds-text-secondary: var(--cmds-prod-text2);
+  --cmds-text-tertiary:  var(--cmds-prod-text3);
+  --cmds-accent:         var(--cmds-gold-400);
+  --cmds-accent-text:    var(--cmds-gold-400);
+}

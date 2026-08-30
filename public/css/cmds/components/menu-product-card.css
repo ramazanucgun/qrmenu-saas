@@ -1,0 +1,347 @@
+/*
+  CMDS — Müşteri Menüsü: Ürün Kartı
+  ─────────────────────────────────────────────────────────────
+  Sprint 5 — Customer Menu UI Implementation.
+  Bu, Sprint 5'in en önemli bileşenidir (bkz. görev talimatı).
+
+  VERİ KAYNAĞI: Sadece mevcut alanlar kullanılır — p.name, p.description,
+  p.price, p.calories, p.allergens, p.ingredients, p.image_url, p.emoji.
+  Hiçbir yeni alan icat edilmedi (bkz. ingredientsBtnHtml() yorumu,
+  public/index.html).
+
+  LAZY-LOAD UYUMLULUĞU: .m-prod-img-placeholder ve [data-prod-id] seçici
+  sözleşmesi BİREBİR korunmuştur — applyMenuImages() fonksiyonu (mevcut
+  IntersectionObserver tabanlı lazy-load mekanizması) bu dosyadan
+  etkilenmez, dokunulmadı.
+
+  3 KART STİLİ (liste/kart/kompakt) restoran sahibinin bir tercihidir
+  (card_style ayarı) — üçü de korunmuştur, sadece token'lı hale getirildi.
+*/
+
+/* ── Kategori bölümü ── */
+.m-section {
+  padding: var(--cmds-space-5) var(--cmds-space-4) var(--cmds-space-6);
+  overflow: clip;
+  box-sizing: border-box;
+  background: var(--cmds-menu-bg);
+}
+
+.m-section-title {
+  font-size: var(--cmds-text-h2);
+  font-weight: var(--cmds-weight-semibold);
+  margin-bottom: var(--cmds-space-4);
+  padding-bottom: var(--cmds-space-3);
+  border-bottom: 1px solid var(--cmds-menu-border);
+  color: var(--cmds-menu-text);
+  font-family: var(--cmds-menu-font, var(--cmds-font-serif));
+}
+
+/* ── Ortak ürün adı / açıklama / fiyat tipografisi (3 stilde de temel) ── */
+.m-prod-name {
+  font-weight: var(--cmds-weight-semibold);
+  color: var(--cmds-menu-text);
+}
+
+.m-prod-desc {
+  line-height: var(--cmds-leading-normal);
+  opacity: 0.7;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  color: var(--cmds-menu-text2);
+}
+
+.m-prod-price {
+  font-weight: var(--cmds-weight-bold);
+  font-family: var(--cmds-font-mono);
+  color: var(--cmds-menu-accent);
+}
+
+.m-prod-img-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Fiyat + "İçindekiler" butonu satırı — kart alt kısmı */
+.m-prod-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cmds-space-2);
+  margin-top: 2px;
+}
+
+/* "İçindekiler" butonu — SADECE p.ingredients doluysa render edilir (bkz. JS yorumu).
+   Kartın geri kalanıyla aynı tıklama sonucunu (showProdDetail) tetikler; yeni bir iş
+   mantığı eklenmez, sadece mevcut akışa ikinci, net bir giriş noktası sağlanır. */
+.m-prod-ing-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--cmds-menu-border);
+  border-radius: var(--cmds-radius-full);
+  padding: 5px 10px;
+  min-height: 32px;
+  font-size: 11px;
+  font-weight: var(--cmds-weight-medium);
+  color: var(--cmds-menu-text2);
+  cursor: pointer;
+  font-family: var(--cmds-font-sans);
+  transition: var(--cmds-transition-fast);
+}
+
+.m-prod-ing-btn:hover {
+  border-color: var(--cmds-menu-accent);
+  color: var(--cmds-menu-text);
+}
+
+.m-prod-ing-btn:focus-visible {
+  outline: 2px solid var(--cmds-menu-accent);
+  outline-offset: 2px;
+}
+
+/* ── Mini rozet şeridi (kalori / alerjen / diyet) — kart üzerinde ilk bakış bilgisi.
+   Sıralama (kalori → alerjen → diyet) cardMiniBadgesHtml() içinde tanımlıdır,
+   bu dosya sadece görünümü belirler. ── */
+.m-mini-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 2px 0 6px;
+}
+
+.m-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--cmds-radius-full);
+  font-size: 11.5px;
+  font-weight: var(--cmds-weight-semibold);
+  background: rgba(120, 120, 120, 0.12);
+  white-space: nowrap;
+  color: var(--cmds-menu-text2);
+}
+
+/* Alerjen rozeti — yasal/güvenlik bilgisi, semantic "danger" token'ı kullanır */
+.m-badge.b-warn {
+  background: var(--cmds-danger-bg);
+  color: var(--cmds-danger);
+}
+
+/* Vegan/glutensiz/helal gibi olumlu diyet rozetleri — semantic "success" token'ı */
+.m-badge.b-good {
+  background: var(--cmds-success-bg);
+  color: var(--cmds-success);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   KART STİLİ 1 — Liste (varsayılan)
+   Görsel, önceki sürüme göre büyütüldü (76px → 88px) — "büyük görsel"
+   gerekliliği ile yatay-liste düzeninin dengesi gözetilerek.
+   ══════════════════════════════════════════════════════════════ */
+.style-list .m-product {
+  display: flex;
+  gap: var(--cmds-space-3);
+  padding: var(--cmds-space-3) 0;
+  border-bottom: 1px solid var(--cmds-menu-border);
+  cursor: pointer;
+  align-items: center;
+  min-height: 60px; /* Faz 2 §13.27 dokunma hedefi */
+  transition: background var(--cmds-transition-fast);
+}
+
+.style-list .m-product:last-child {
+  border-bottom: none;
+}
+
+.style-list .m-product:hover {
+  background: color-mix(in srgb, var(--cmds-menu-text) 3%, transparent);
+}
+
+.style-list .m-product:focus-visible {
+  outline: 2px solid var(--cmds-menu-accent);
+  outline-offset: -2px;
+  border-radius: var(--cmds-radius-sm);
+}
+
+.style-list .m-prod-img {
+  width: 88px;
+  height: 88px;
+  min-width: 88px;
+  border-radius: var(--cmds-radius-lg);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  overflow: hidden;
+  background: var(--cmds-menu-bg2);
+  box-shadow: var(--cmds-shadow-1);
+}
+
+.style-list .m-prod-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.style-list .m-prod-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.style-list .m-prod-name {
+  font-size: var(--cmds-text-h3);
+  margin-bottom: 3px;
+}
+
+.style-list .m-prod-desc {
+  font-size: var(--cmds-text-body-sm);
+  margin-bottom: 6px;
+}
+
+.style-list .m-prod-price {
+  font-size: 15px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   KART STİLİ 2 — Kart (görsel öncelikli)
+   Zaten büyük/tam-genişlik görsel kullanıyordu — burada yükseklik
+   hafifçe artırıldı ve gölge/radius CMDS token'larına bağlandı.
+   ══════════════════════════════════════════════════════════════ */
+.m-products-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--cmds-space-3);
+}
+
+.style-card .m-product {
+  border-radius: var(--cmds-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--cmds-menu-border);
+  background: var(--cmds-menu-bg2);
+  cursor: pointer;
+  box-shadow: var(--cmds-shadow-1);
+  transition: transform var(--cmds-transition-fast), box-shadow var(--cmds-transition-fast);
+}
+
+.style-card .m-product:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--cmds-shadow-2);
+}
+
+.style-card .m-product:focus-visible {
+  outline: 2px solid var(--cmds-menu-accent);
+  outline-offset: 2px;
+}
+
+.style-card .m-prod-img {
+  width: 100%;
+  height: 152px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  overflow: hidden;
+  background: var(--cmds-menu-bg2);
+}
+
+.style-card .m-prod-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.style-card .m-prod-body {
+  padding: var(--cmds-space-3);
+  box-sizing: border-box;
+}
+
+.style-card .m-prod-name {
+  font-size: 13px;
+  margin-bottom: 3px;
+}
+
+.style-card .m-prod-desc {
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+
+.style-card .m-prod-price {
+  font-size: 14px;
+}
+
+.style-card .m-prod-ing-btn {
+  font-size: 10px;
+  padding: 4px 8px;
+  min-height: 28px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   KART STİLİ 3 — Kompakt (görselsiz, restoran sahibinin bilinçli tercihi)
+   "Büyük görsel" gerekliliği bu stile kasıtlı olarak uygulanmaz —
+   kompakt stilin amacı zaten görselsiz, yoğun bir liste sunmaktır.
+   ══════════════════════════════════════════════════════════════ */
+.style-compact .m-product {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cmds-space-3);
+  padding: var(--cmds-space-3) 0;
+  border-bottom: 1px solid var(--cmds-menu-border);
+  cursor: pointer;
+  min-height: 44px;
+  transition: background var(--cmds-transition-fast);
+}
+
+.style-compact .m-product:last-child {
+  border-bottom: none;
+}
+
+.style-compact .m-product:hover {
+  background: color-mix(in srgb, var(--cmds-menu-text) 3%, transparent);
+}
+
+.style-compact .m-product:focus-visible {
+  outline: 2px solid var(--cmds-menu-accent);
+  outline-offset: -2px;
+}
+
+.style-compact .m-prod-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.style-compact .m-prod-name {
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.style-compact .m-prod-desc {
+  font-size: 11px;
+  opacity: 0.6;
+  white-space: normal;
+}
+
+.style-compact .m-prod-price {
+  font-size: 14px;
+  margin-left: var(--cmds-space-3);
+  flex-shrink: 0;
+}
+
+.style-compact .m-prod-img {
+  display: none;
+}
+
+.style-compact .m-prod-ing-btn {
+  margin-top: 4px;
+}

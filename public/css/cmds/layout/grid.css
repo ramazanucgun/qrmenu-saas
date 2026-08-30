@@ -1,0 +1,63 @@
+/*
+  CMDS — Layout: Grid
+  ─────────────────────────────────────────────────────────────
+  Bugün projede tekrarlayan 4 grid deseni: stats-grid (4 kolon),
+  editor-grid (260px + 1fr, iki panel), design-grid (1fr + 340px),
+  plans-grid (3 kolon). Bu dosya bunları CMDS token'larıyla,
+  MEVCUT kolon/gap değerleriyle birebir uyumlu şekilde yeniden
+  tanımlar — .cmds- ön ekiyle, mevcut .stats-grid vb. sınıflara
+  dokunmadan (isim çakışması yok, bu yüzden sıfır risk).
+*/
+
+.cmds-grid-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--cmds-space-3);
+}
+
+.cmds-grid-editor {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: var(--cmds-space-4);
+}
+
+.cmds-grid-design {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: var(--cmds-space-4);
+  align-items: start;
+}
+
+.cmds-grid-plans {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--cmds-space-3);
+}
+
+.cmds-grid-menu-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--cmds-space-3);
+}
+
+/* Referans: component/layout dosyalarındaki mobil kırılımlar için
+   bkz. tokens/breakpoints.css — bugünkü 768px eşiğiyle uyumlu */
+@media (max-width: 768px) {
+  .cmds-grid-editor,
+  .cmds-grid-design,
+  .cmds-grid-plans {
+    grid-template-columns: 1fr;
+    gap: var(--cmds-space-3);
+  }
+
+  .cmds-grid-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--cmds-space-2);
+  }
+}
+
+@media (max-width: 480px) {
+  .cmds-grid-stats {
+    grid-template-columns: 1fr;
+  }
+}

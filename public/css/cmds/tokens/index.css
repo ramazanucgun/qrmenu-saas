@@ -1,0 +1,23 @@
+/*
+  CMDS — Tokens Entry Point
+  ─────────────────────────────────────────────────────────────
+  Bu dosya, tüm CMDS token kategorilerini tek noktadan yükler.
+  Sadece --cmds-* CSS custom property'leri tanımlar; hiçbir HTML
+  elementini doğrudan seçmez veya biçimlendirmez. Bu nedenle bu
+  dosyanın <head>'e eklenmesi, mevcut hiçbir sayfanın görünümünü
+  DEĞİŞTİRMEZ (custom property'ler, bir yerde var() ile referans
+  alınmadıkça hiçbir etki yaratmaz).
+
+  Yükleme sırası önemli değildir (hepsi :root seviyesinde, çakışmayan
+  isimlerle tanımlıdır) ama okunabilirlik için mantıksal sırada tutulur.
+*/
+
+@import url('./colors.css');
+@import url('./spacing.css');
+@import url('./radius.css');
+@import url('./shadows.css');
+@import url('./typography.css');
+@import url('./animation.css');
+@import url('./z-index.css');
+@import url('./breakpoints.css');
+@import url('./opacity.css');

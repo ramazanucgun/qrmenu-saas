@@ -1,0 +1,34 @@
+/*
+  ═══════════════════════════════════════════════════════════════
+  CMDS — CafeMenu Design System
+  Master Entry Point
+  ═══════════════════════════════════════════════════════════════
+  Faz 3 — UI Foundation
+
+  Bu dosya, CMDS'in tüm katmanlarını doğru cascade sırasıyla yükler:
+    1. tokens/   → sadece --cmds-* custom property tanımları
+    2. themes/   → token'ları rol bazlı değişkenlere eşler (dark/light/menu-*)
+    3. base/     → global reset + element varsayılanları
+    4. layout/   → container ve grid yardımcıları
+    5. components/ → .cmds- ön ekli yeniden kullanılabilir bileşenler
+    6. utilities/  → tekil amaçlı yardımcı sınıflar
+
+  GÜVENLİK NOTU: Bu dosyanın <head>'e eklenmesi, mevcut hiçbir
+  sayfanın görünümünü DEĞİŞTİRMEZ:
+    - tokens/ ve themes/ sadece custom property tanımlar (etkisiz,
+      referans alınmadıkça).
+    - base/reset.css mevcut kurallarla SAYISAL olarak birebir aynıdır.
+    - layout/, components/, utilities/ katmanları tamamen .cmds- ön
+      ekli, YENİ sınıf isimleri kullanır; mevcut hiçbir class="..."
+      ile çakışmaz.
+
+  Kullanım (ileride, Faz 4+ kademeli benimseme için):
+    <link rel="stylesheet" href="/css/cmds/cmds.css">
+*/
+
+@import url('./tokens/index.css');
+@import url('./themes/index.css');
+@import url('./base/index.css');
+@import url('./layout/index.css');
+@import url('./components/index.css');
+@import url('./utilities/index.css');

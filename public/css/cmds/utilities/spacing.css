@@ -1,0 +1,36 @@
+/*
+  CMDS — Utilities: Spacing
+  ─────────────────────────────────────────────────────────────
+  tokens/spacing.css içindeki ölçeğe dayalı margin/padding/gap
+  yardımcı sınıfları. Tailwind'e benzer bir isimlendirme kullanır
+  (proje kuralı gereği Tailwind'in KENDİSİ değil — sadece tanıdık
+  bir kısayol deseni) ama tamamen bu projeye özel, bağımsız,
+  vanilla CSS olarak üretilmiştir.
+*/
+
+:root {
+  --cmds-space-scale-1: var(--cmds-space-1);
+  --cmds-space-scale-2: var(--cmds-space-2);
+  --cmds-space-scale-3: var(--cmds-space-3);
+  --cmds-space-scale-4: var(--cmds-space-4);
+  --cmds-space-scale-5: var(--cmds-space-5);
+  --cmds-space-scale-6: var(--cmds-space-6);
+  --cmds-space-scale-8: var(--cmds-space-8);
+}
+
+.cmds-m-0 { margin: 0; }
+.cmds-mt-1 { margin-top: var(--cmds-space-1); } .cmds-mt-2 { margin-top: var(--cmds-space-2); }
+.cmds-mt-3 { margin-top: var(--cmds-space-3); } .cmds-mt-4 { margin-top: var(--cmds-space-4); }
+.cmds-mt-6 { margin-top: var(--cmds-space-6); } .cmds-mt-8 { margin-top: var(--cmds-space-8); }
+
+.cmds-mb-1 { margin-bottom: var(--cmds-space-1); } .cmds-mb-2 { margin-bottom: var(--cmds-space-2); }
+.cmds-mb-3 { margin-bottom: var(--cmds-space-3); } .cmds-mb-4 { margin-bottom: var(--cmds-space-4); }
+.cmds-mb-6 { margin-bottom: var(--cmds-space-6); } .cmds-mb-8 { margin-bottom: var(--cmds-space-8); }
+
+.cmds-p-0 { padding: 0; }
+.cmds-p-2 { padding: var(--cmds-space-2); } .cmds-p-3 { padding: var(--cmds-space-3); }
+.cmds-p-4 { padding: var(--cmds-space-4); } .cmds-p-6 { padding: var(--cmds-space-6); }
+
+.cmds-gap-1 { gap: var(--cmds-space-1); } .cmds-gap-2 { gap: var(--cmds-space-2); }
+.cmds-gap-3 { gap: var(--cmds-space-3); } .cmds-gap-4 { gap: var(--cmds-space-4); }
+.cmds-gap-6 { gap: var(--cmds-space-6); }

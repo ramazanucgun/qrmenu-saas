@@ -1,0 +1,43 @@
+/*
+  CMDS — Utilities: Text
+  ─────────────────────────────────────────────────────────────
+  Tip skalası ve metin rengi için hızlı yardımcı sınıflar.
+*/
+
+.cmds-text-display { font-size: var(--cmds-text-display); font-family: var(--cmds-font-serif); }
+.cmds-text-h1 { font-size: var(--cmds-text-h1); font-weight: var(--cmds-weight-semibold); }
+.cmds-text-h2 { font-size: var(--cmds-text-h2); font-weight: var(--cmds-weight-semibold); }
+.cmds-text-h3 { font-size: var(--cmds-text-h3); font-weight: var(--cmds-weight-semibold); }
+.cmds-text-body { font-size: var(--cmds-text-body); }
+.cmds-text-body-sm { font-size: var(--cmds-text-body-sm); }
+.cmds-text-caption { font-size: var(--cmds-text-caption); }
+.cmds-text-micro { font-size: var(--cmds-text-micro); letter-spacing: var(--cmds-tracking-wide); font-weight: var(--cmds-weight-semibold); }
+
+.cmds-text-primary { color: var(--cmds-text); }
+.cmds-text-secondary { color: var(--cmds-text-secondary); }
+.cmds-text-tertiary { color: var(--cmds-text-tertiary); }
+.cmds-text-accent { color: var(--cmds-accent-text); }
+.cmds-text-success { color: var(--cmds-success); }
+.cmds-text-warning { color: var(--cmds-warning); }
+.cmds-text-danger { color: var(--cmds-danger); }
+.cmds-text-info { color: var(--cmds-info); }
+
+.cmds-text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmds-text-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.cmds-text-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}

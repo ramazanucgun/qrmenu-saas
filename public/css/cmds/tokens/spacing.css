@@ -1,0 +1,23 @@
+/*
+  CMDS — Spacing Tokens
+  ─────────────────────────────────────────────────────────────
+  Kaynak: CMDS Faz 2 §5 Spacing Scale (8pt sistem + 4px yarım adım).
+
+  NOT: Bu tokenlar bugün hiçbir mevcut sayfada kullanılmıyor — mevcut
+  sayfalar hâlâ serbest piksel değerleriyle (inline style) çalışıyor.
+  Bu dosya sadece "spacing" için tek doğruluk kaynağını kurar; component/
+  utility dosyaları bunu kullanacak, canlı sayfalar bugün etkilenmez.
+*/
+
+:root {
+  --cmds-space-1:  4px;
+  --cmds-space-2:  8px;
+  --cmds-space-3:  12px;
+  --cmds-space-4:  16px;
+  --cmds-space-5:  20px;
+  --cmds-space-6:  24px;
+  --cmds-space-8:  32px;
+  --cmds-space-10: 40px;
+  --cmds-space-12: 48px;
+  --cmds-space-16: 64px;
+}

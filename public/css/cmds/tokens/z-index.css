@@ -1,0 +1,24 @@
+/*
+  CMDS — Z-Index Tokens
+  ─────────────────────────────────────────────────────────────
+  Bugünkü projede z-index değerleri sayfa başına ayrı ayrı, elle
+  seçilmiş sayılar olarak var (sidebar: 200, overlay: 199, modal: 200,
+  imp-banner: 9999, toast: 500...). Bu genellikle "hangisi hangisinin
+  üstünde kalacak" konusunda kırılgan bir sistemdir.
+
+  Bu dosya, MEVCUT bağıl sırayı (hangi katman hangisinin üstünde)
+  koruyarak resmi bir katman skalası tanımlar. Hiçbir mevcut elemente
+  henüz uygulanmadığı için bugün görsel bir etkisi yoktur.
+*/
+
+:root {
+  --cmds-z-base:        0;
+  --cmds-z-dropdown:    100;
+  --cmds-z-sticky:      150;      /* sticky nav / topbar */
+  --cmds-z-overlay:     199;      /* = mevcut .sidebar-overlay ile aynı sıra */
+  --cmds-z-sidebar:     200;      /* = mevcut .sidebar ile aynı sıra */
+  --cmds-z-modal:       200;      /* = mevcut .modal-overlay ile aynı sıra */
+  --cmds-z-drawer:      210;
+  --cmds-z-toast:       500;      /* = mevcut .toast-wrap ile aynı sıra */
+  --cmds-z-banner:      9999;     /* = mevcut #imp-banner (impersonate) ile aynı sıra */
+}

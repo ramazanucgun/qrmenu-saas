@@ -1,0 +1,29 @@
+/*
+  CMDS — Utilities: Display & Flex
+  ─────────────────────────────────────────────────────────────
+  En sık tekrarlanan flex/display kalıpları için kısayollar
+  (bugün projede display:flex;align-items:center;gap:Npx deseni
+  onlarca kez elle tekrarlanıyor).
+*/
+
+.cmds-flex { display: flex; }
+.cmds-flex-col { display: flex; flex-direction: column; }
+.cmds-items-center { align-items: center; }
+.cmds-justify-between { justify-content: space-between; }
+.cmds-justify-center { justify-content: center; }
+.cmds-justify-end { justify-content: flex-end; }
+.cmds-flex-1 { flex: 1; }
+.cmds-flex-wrap { flex-wrap: wrap; }
+.cmds-hidden { display: none; }
+
+.cmds-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

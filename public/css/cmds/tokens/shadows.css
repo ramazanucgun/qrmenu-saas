@@ -1,0 +1,20 @@
+/*
+  CMDS — Shadow / Elevation Tokens
+  ─────────────────────────────────────────────────────────────
+  Kaynak: CMDS Faz 2 §7. Bugün projede tanımlı, tutarlı bir gölge/
+  elevation sistemi yok (modallerde ve toast'larda ad-hoc rgba(0,0,0,x)
+  değerleri kullanılıyor). Bu dosya, gelecekte bu ad-hoc değerlerin
+  yerini alacak 5 kademeli, sıcak-nötr tonlu bir ölçek tanımlar.
+
+  Dark tema için gölgeler bilinçli olarak daha belirgin (koyu zeminde
+  gölge daha az "okunur"); Light tema (henüz kullanımda değil) için
+  daha yumuşak değerler themes/light.css içinde override edilecek.
+*/
+
+:root {
+  --cmds-shadow-0: none;
+  --cmds-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.24);
+  --cmds-shadow-2: 0 4px 16px rgba(0, 0, 0, 0.32);
+  --cmds-shadow-3: 0 12px 40px rgba(0, 0, 0, 0.4);   /* mevcut modal gölgesine en yakın kademe */
+  --cmds-shadow-4: 0 16px 56px rgba(0, 0, 0, 0.45);  /* toast / floating öğeler */
+}

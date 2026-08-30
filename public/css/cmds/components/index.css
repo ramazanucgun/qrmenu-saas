@@ -1,0 +1,21 @@
+/*
+  CMDS — Components Entry Point
+  ─────────────────────────────────────────────────────────────
+  Tüm bileşenler .cmds- ön ekli, izole sınıf isimleriyle tanımlıdır.
+  Hiçbiri bugün hiçbir HTML elementinde kullanılmadığı için toplu
+  içe aktarım güvenlidir.
+*/
+
+@import url('./button.css');
+@import url('./input.css');
+@import url('./card.css');
+@import url('./modal.css');
+@import url('./toast.css');
+@import url('./badge.css');
+@import url('./navigation.css');
+
+/* Sprint 5 — Müşteri Menüsü UI Modernizasyonu (Header/Banner/Kategori Nav/Ürün Kartı) */
+@import url('./menu-header.css');
+@import url('./menu-banner.css');
+@import url('./menu-category-nav.css');
+@import url('./menu-product-card.css');

@@ -1,0 +1,46 @@
+/*
+  CMDS — Typography Tokens
+  ─────────────────────────────────────────────────────────────
+  Kaynak: CMDS Faz 2 §4. Font aileleri BİREBİR mevcut projeden
+  korunmuştur (DM Sans / DM Serif Display — index.html & admin.html;
+  Playfair Display — landing.html). Faz 2'de önerilen "tek serif"
+  birleştirmesi burada UYGULANMADI çünkü bu görsel bir değişikliktir;
+  ileride ayrı, onaylı bir adımda yapılacaktır.
+
+  Boyut skalası da bugünkü fiili kullanım değerleriyle uyumlu olacak
+  şekilde seçilmiştir (14px gövde metni, 11-13px meta/caption vb.),
+  böylece component dosyaları bu tokenları kullanmaya başladığında
+  hiçbir mevcut metin boyutu değişmeyecektir.
+*/
+
+:root {
+  /* Font aileleri — mevcut projeden birebir */
+  --cmds-font-serif:  'DM Serif Display', serif;
+  --cmds-font-sans:   'DM Sans', sans-serif;
+  --cmds-font-mono:   ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* landing.html kendi serif'ini kullanmaya devam eder (bilinçli, §14 notu) */
+  --cmds-font-serif-landing: 'Playfair Display', Georgia, serif;
+
+  /* Tip skalası */
+  --cmds-text-display:   2rem;     /* 32px — mevcut .stat-val / hero ile uyumlu */
+  --cmds-text-h1:        1.4rem;   /* 22.4px */
+  --cmds-text-h2:        1.2rem;   /* 19.2px — mevcut .sidebar-logo ile uyumlu */
+  --cmds-text-h3:        1rem;     /* 16px — mevcut .modal-title büyük kademesi */
+  --cmds-text-body-lg:   15px;
+  --cmds-text-body:      14px;     /* mevcut varsayılan gövde metni */
+  --cmds-text-body-sm:   13px;     /* mevcut .panel-title / buton metni */
+  --cmds-text-caption:   12px;     /* mevcut .stat-label / .form-label yakını */
+  --cmds-text-micro:     11px;     /* mevcut .nav-section / .form-label */
+
+  --cmds-leading-tight:  1.25;
+  --cmds-leading-normal: 1.5;
+  --cmds-leading-loose:  1.65;
+
+  --cmds-weight-regular:  400;
+  --cmds-weight-medium:   500;
+  --cmds-weight-semibold: 600;
+  --cmds-weight-bold:     700;
+
+  --cmds-tracking-wide: 0.06em; /* mevcut .form-label letter-spacing */
+}

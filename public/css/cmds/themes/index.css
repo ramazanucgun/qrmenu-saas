@@ -1,0 +1,16 @@
+/*
+  CMDS — Themes Entry Point
+  ─────────────────────────────────────────────────────────────
+  Uygulama temaları (dashboard/admin) + müşteri menüsü temaları.
+  Hepsi attribute tabanlı seçicilerle (data-cmds-theme / data-menu-theme)
+  izole edilmiştir; hiçbiri bugün hiçbir HTML elementinde kullanılmadığı
+  için (dark.css hariç — o zaten :root varsayılanı) toplu içe aktarım
+  güvenlidir.
+*/
+
+@import url('./dark.css');
+@import url('./light.css');
+@import url('./menu-classic.css');
+@import url('./menu-dark.css');
+@import url('./menu-nature.css');
+@import url('./menu-luxury.css');

@@ -1,0 +1,94 @@
+/*
+  CMDS — Component: Badge & Chip
+  ─────────────────────────────────────────────────────────────
+  Kaynak: Faz 1'de tespit edilen dağınık badge sistemleri —
+  .toggle-pill, .nav-badge, .m-badge, .plan-badge, .stars — hepsi
+  kavramsal olarak aynı şeyi (küçük, durum bildiren etiket) farklı
+  şekillerde uyguluyor. CMDS bunu ikiye ayırır (Faz 2 §13.7/§13.8):
+  Badge = statik/tıklanamaz, Chip = etkileşimli/toggle edilebilir.
+*/
+
+/* ── Badge (statik) ── */
+.cmds-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--cmds-radius-full);
+  font-size: var(--cmds-text-caption);
+  font-weight: var(--cmds-weight-semibold);
+  white-space: nowrap;
+  background: rgba(120, 120, 120, 0.12);
+  color: var(--cmds-text-secondary);
+}
+
+.cmds-badge-success { background: var(--cmds-success-bg); color: var(--cmds-success); }
+.cmds-badge-warning  { background: var(--cmds-warning-bg); color: var(--cmds-warning); }
+.cmds-badge-danger   { background: var(--cmds-danger-bg);  color: var(--cmds-danger); }
+.cmds-badge-info     { background: var(--cmds-info-bg);    color: var(--cmds-info); }
+
+/* Sayaç rozeti — mevcut .nav-badge ile birebir aynı görünüm */
+.cmds-badge-count {
+  background: var(--cmds-danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: var(--cmds-weight-bold);
+  padding: 1px 6px;
+  border-radius: var(--cmds-radius-full);
+}
+
+/* ── Chip (etkileşimli / toggle) ── */
+.cmds-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--cmds-surface);
+  border: 1.5px solid var(--cmds-border);
+  border-radius: var(--cmds-radius-full);
+  padding: 7px 13px;
+  font-size: 12.5px;
+  font-weight: var(--cmds-weight-semibold);
+  cursor: pointer;
+  transition: var(--cmds-transition-fast);
+  user-select: none;
+}
+
+.cmds-chip:hover        { border-color: var(--cmds-border-strong); }
+.cmds-chip:focus-visible{ outline: 2px solid var(--cmds-accent); outline-offset: 2px; }
+.cmds-chip:active        { transform: scale(0.98); }
+
+.cmds-chip[aria-pressed='true'],
+.cmds-chip.checked {
+  background: var(--cmds-gold-50);
+  border-color: var(--cmds-accent);
+  color: var(--cmds-gold-700);
+}
+
+.cmds-chip:disabled {
+  opacity: var(--cmds-opacity-disabled);
+  cursor: not-allowed;
+}
+
+/* Açık/kapalı durum göstergesi — mevcut .toggle-pill ile birebir aynı görünüm */
+.cmds-toggle-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--cmds-surface);
+  border: 1px solid var(--cmds-border);
+  border-radius: var(--cmds-radius-full);
+  padding: 3px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: var(--cmds-transition-base);
+}
+
+.cmds-toggle-pill.on {
+  background: var(--cmds-success-bg);
+  border-color: rgba(71, 201, 126, 0.3);
+  color: var(--cmds-success);
+}
+
+.cmds-toggle-pill.off {
+  color: var(--cmds-text-tertiary);
+}

@@ -1,0 +1,86 @@
+/*
+  CMDS — Component: Card / Panel
+  ─────────────────────────────────────────────────────────────
+  Kaynak: mevcut .panel, .stat-card, .product-card, .feedback-card,
+  .notif-card, .plan-card sınıfları — hepsi aynı temel "surface +
+  border + radius" desenini bağımsız bağımsız tekrar ediyor
+  (bkz. Faz 1 "Component Audit"). Bu dosya o ortak deseni
+  .cmds-card olarak tek bir yerde tanımlar, varyantları modifier
+  sınıflarıyla ekler.
+*/
+
+.cmds-card {
+  background: var(--cmds-surface);
+  border: 1px solid var(--cmds-border);
+  border-radius: var(--cmds-radius-lg);
+  overflow: hidden;
+}
+
+.cmds-card-padded {
+  padding: var(--cmds-space-4);
+}
+
+/* Panel — başlık + gövde deseni (mevcut .panel/.panel-head/.panel-title) */
+.cmds-panel-head {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--cmds-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cmds-panel-title {
+  font-size: var(--cmds-text-body-sm);
+  font-weight: var(--cmds-weight-semibold);
+}
+
+/* Stat card — üstte 2px marka/anlamsal renk şeridi (mevcut ::before deseni) */
+.cmds-stat-card {
+  position: relative;
+  padding: 18px;
+}
+
+.cmds-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--cmds-stat-color, var(--cmds-accent));
+}
+
+.cmds-stat-value {
+  font-family: var(--cmds-font-serif);
+  font-size: var(--cmds-text-display);
+  margin-bottom: var(--cmds-space-1);
+}
+
+.cmds-stat-label {
+  font-size: var(--cmds-text-caption);
+  color: var(--cmds-text-secondary);
+}
+
+/* Interactive card — tıklanabilir kartlar için hover/focus (Faz 2 §13.1) */
+.cmds-card-interactive {
+  cursor: pointer;
+  transition: border-color var(--cmds-transition-fast), box-shadow var(--cmds-transition-fast);
+}
+
+.cmds-card-interactive:hover {
+  border-color: var(--cmds-border-strong);
+  box-shadow: var(--cmds-shadow-2);
+}
+
+.cmds-card-interactive:focus-visible {
+  outline: 2px solid var(--cmds-accent);
+  outline-offset: 2px;
+}
+
+.cmds-card-interactive:active {
+  box-shadow: var(--cmds-shadow-1);
+  transform: translateY(0.5px);
+}
+
+/* Devre dışı / gizli durum — mevcut .product-card.hidden ile birebir aynı */
+.cmds-card-disabled {
+  opacity: var(--cmds-opacity-disabled);
+}

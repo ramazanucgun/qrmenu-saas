@@ -1,0 +1,101 @@
+/*
+  CMDS — Color Tokens
+  ─────────────────────────────────────────────────────────────
+  Kaynak: CMDS Faz 2 dokümantasyonu (§3 Color System)
+
+  ÖNEMLİ — Faz 3 kuralı: "Görsel fark olmayacak"
+  Aşağıdaki değerler İKİ gruba ayrılır:
+
+  1) "PRODUCTION ANCHOR" değerler — bugün index.html / admin.html /
+     landing.html içinde canlıda kullanılan GERÇEK hex değerleridir.
+     Bunlar birebir korunmuştur, tek bir piksel bile değişmez.
+
+  2) "CMDS RAMP" değerler — Faz 2'de tasarlanan tam 10 adımlı marka ve
+     nötr renk skalasıdır. Bu adımlar bugün HİÇBİR yerde kullanılmıyor;
+     sadece ileride (Faz 4+) kademeli olarak benimsenmek üzere burada
+     tanımlanmıştır. Şu an sadece --cmds-gold-400 canlı üründeki
+     #e8c547 ile birebir eşleştiği için "role" tokenlarında kullanılır.
+
+  Bu ayrım bilinçlidir: Faz 3 "foundation" fazıdır, "redesign" değildir.
+*/
+
+:root {
+  /* ── CMDS RAMP — Marka (Gold) — Faz 2 tam skala, gelecekte kullanılacak ── */
+  --cmds-gold-50:  #fdf8e9;
+  --cmds-gold-100: #f9edc4;
+  --cmds-gold-200: #f2dd8f;
+  --cmds-gold-300: #eacf63;
+  --cmds-gold-400: #e8c547; /* = mevcut --accent değeriyle birebir aynı */
+  --cmds-gold-500: #d1ac2e;
+  --cmds-gold-600: #b08f22;
+  --cmds-gold-700: #8a701a;
+  --cmds-gold-800: #5f4d13;
+  --cmds-gold-900: #3a2f0c;
+
+  /* ── CMDS RAMP — Nötr (Charcoal) — Faz 2 tam skala, gelecekte kullanılacak ── */
+  --cmds-neutral-0:   #ffffff;
+  --cmds-neutral-50:  #faf9f7;
+  --cmds-neutral-100: #f2f0ec;
+  --cmds-neutral-200: #e6e3dc;
+  --cmds-neutral-300: #cfcbc0;
+  --cmds-neutral-400: #a19b8c;
+  --cmds-neutral-500: #75705f;
+  --cmds-neutral-600: #524e42;
+  --cmds-neutral-700: #37342c;
+  --cmds-neutral-800: #211f1a;
+  --cmds-neutral-900: #141311;
+  --cmds-neutral-950: #0c0b0a;
+
+  /* ── PRODUCTION ANCHOR — bugün canlıda kullanılan ham değerler ──
+     index.html / admin.html içindeki :root bloklarıyla birebir aynı. */
+  --cmds-prod-bg:     #0d0d0f;
+  --cmds-prod-bg2:    #141416;
+  --cmds-prod-bg3:    #1c1c20;
+  --cmds-prod-border: rgba(255, 255, 255, 0.08);
+  --cmds-prod-text:   #f0f0ee;
+  --cmds-prod-text2:  #a8a8a4;
+  --cmds-prod-text3:  #555555;
+  --cmds-prod-green:  #47c97e;
+  --cmds-prod-red:    #e84747;
+  --cmds-prod-blue:   #4799e8;
+
+  /* ── PRODUCTION ANCHOR — landing.html'e özgü ham değerler ── */
+  --cmds-prod-landing-gold:       #c8a84b;
+  --cmds-prod-landing-gold-light: #e8c547;
+  --cmds-prod-landing-dark:       #0e0e0e;
+  --cmds-prod-landing-dark2:      #1a1a1a;
+  --cmds-prod-landing-dark3:      #242424;
+  --cmds-prod-landing-gray:       #888888;
+  --cmds-prod-landing-light:      #f5f0e8;
+
+  /* ── Semantic (anlamsal) renkler — bugünkü karşılıklarıyla ankorlanmış ──
+     Faz 2'de önerilen "rafine" semantic ton (örn. --cmds-danger: #e8574a)
+     BİLEREK burada kullanılmadı; bu, gözle görülür bir renk değişikliği
+     olurdu ve "invisible modernization" kuralını ihlal ederdi.
+     Rafine tonlar ileride ayrı, onaylı bir görsel güncelleme adımında
+     devreye alınacak. */
+  --cmds-success:    var(--cmds-prod-green);
+  --cmds-success-bg: rgba(71, 201, 126, 0.1);
+  --cmds-warning:    var(--cmds-gold-400);
+  --cmds-warning-bg: rgba(232, 197, 71, 0.1);
+  --cmds-danger:     var(--cmds-prod-red);
+  --cmds-danger-bg:  rgba(232, 71, 71, 0.1);
+  --cmds-info:       var(--cmds-prod-blue);
+  --cmds-info-bg:    rgba(71, 153, 232, 0.1);
+
+  /* ── Role tokens — bugünkü Dark tema, ANKOR değerlerle eşlenmiş ──
+     Bu değişkenler component/base/layout dosyalarında kullanılacak
+     tek gerçek kaynak (single source of truth). Şu an sayısal olarak
+     mevcut --accent/--bg/... değerleriyle birebir aynıdır. */
+  --cmds-bg:              var(--cmds-prod-bg);
+  --cmds-surface:         var(--cmds-prod-bg2);
+  --cmds-surface-raised:  var(--cmds-prod-bg2);
+  --cmds-surface-sunken:  var(--cmds-prod-bg3);
+  --cmds-border:          var(--cmds-prod-border);
+  --cmds-border-strong:   rgba(255, 255, 255, 0.16);
+  --cmds-text:            var(--cmds-prod-text);
+  --cmds-text-secondary:  var(--cmds-prod-text2);
+  --cmds-text-tertiary:   var(--cmds-prod-text3);
+  --cmds-accent:          var(--cmds-gold-400);
+  --cmds-accent-text:     var(--cmds-gold-400);
+}

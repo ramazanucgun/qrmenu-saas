@@ -1,0 +1,38 @@
+/*
+  CMDS — Animation & Transition Tokens
+  ─────────────────────────────────────────────────────────────
+  Kaynak: CMDS Faz 2 §8. Mevcut projede geçiş süreleri dağınık şekilde
+  .15s / .2s / .25s / .3s olarak tekrar tekrar tanımlanmış (bkz. Faz 1
+  denetimi). Bu dosya bunları 4 kasıtlı kademeye indirger.
+
+  --cmds-duration-fast (150ms), bugün en sık kullanılan .15s değeriyle
+  birebir aynıdır — component dosyaları geçişte bu tokena taşındığında
+  hiçbir hover/focus geçişinin hızı değişmeyecektir.
+*/
+
+:root {
+  --cmds-duration-instant: 100ms;
+  --cmds-duration-fast:    150ms; /* = mevcut .15s ile birebir aynı */
+  --cmds-duration-base:    220ms;
+  --cmds-duration-slow:    350ms; /* mevcut .25s/.3s'e en yakın kademe */
+
+  --cmds-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --cmds-ease-decel:    cubic-bezier(0, 0, 0, 1);
+  --cmds-ease-accel:    cubic-bezier(0.4, 0, 1, 1);
+  --cmds-ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Hazır kısayollar — component dosyalarında transition: var(--cmds-transition-base) gibi kullanılır */
+  --cmds-transition-fast: var(--cmds-duration-fast) var(--cmds-ease-standard);
+  --cmds-transition-base: var(--cmds-duration-base) var(--cmds-ease-standard);
+  --cmds-transition-slow: var(--cmds-duration-slow) var(--cmds-ease-standard);
+}
+
+/* Erişilebilirlik: hareket azaltma tercihine saygı — Faz 2 §8 "Motion principles" */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --cmds-duration-instant: 0ms;
+    --cmds-duration-fast:    0ms;
+    --cmds-duration-base:    0ms;
+    --cmds-duration-slow:    0ms;
+  }
+}

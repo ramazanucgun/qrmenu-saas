@@ -1,0 +1,40 @@
+/*
+  CMDS — Breakpoint & Container Width Tokens
+  ─────────────────────────────────────────────────────────────
+  Kaynak: CMDS Faz 2 §9.
+
+  ÖNEMLİ TEKNİK NOT:
+  CSS custom property'leri (var(--x)) tarayıcı desteği gereği doğrudan
+  @media (min-width: var(--x)) içinde KULLANILAMAZ. Bu yüzden breakpoint
+  değerleri burada hem referans/dokümantasyon amaçlı --cmds-bp-* olarak,
+  hem de aşağıdaki sabit tablo halinde tanımlanmıştır. Component ve
+  layout dosyalarındaki @media kuralları bu tablodaki SAYISAL değerleri
+  birebir kullanacak ve yanlarına "bkz. breakpoints.css" yorumu
+  eklenecektir — böylece tek doğruluk kaynağı yine bu dosya olur,
+  sadece @media içinde referans dolaylı olur.
+
+  Mevcut sayfalardaki dağınık breakpoint'ler (768px, 480px, 520px,
+  400px, 600px, 900px) bu skalaya kademeli olarak taşınacaktır;
+  bugün hiçbir sayfa bu tokenları kullanmıyor.
+*/
+
+:root {
+  --cmds-bp-xs: 0px;     /* 0–479px   küçük telefonlar */
+  --cmds-bp-sm: 480px;   /* 480–767px telefonlar */
+  --cmds-bp-md: 768px;   /* 768–1023px tabletler / küçük laptoplar */
+  --cmds-bp-lg: 1024px;  /* 1024–1439px laptop / masaüstü */
+  --cmds-bp-xl: 1440px;  /* 1440px+ geniş masaüstü */
+
+  --cmds-container-menu:       520px;   /* müşteri menüsü içerik genişliği */
+  --cmds-container-dashboard: 1280px;   /* işletme sahibi paneli */
+  --cmds-container-admin:     1100px;   /* platform süper-admin paneli */
+  --cmds-container-marketing: 1200px;   /* landing.html */
+}
+
+/*
+  Referans tablo (component/layout dosyalarında kopyala-yapıştır için):
+  @media (min-width: 480px)  → --cmds-bp-sm
+  @media (min-width: 768px)  → --cmds-bp-md
+  @media (min-width: 1024px) → --cmds-bp-lg
+  @media (min-width: 1440px) → --cmds-bp-xl
+*/

@@ -1,0 +1,217 @@
+/*
+  CMDS — Müşteri Menüsü: Header
+  ─────────────────────────────────────────────────────────────
+  Sprint 5 — Customer Menu UI Implementation.
+
+  Renkler: window._menuVars ile #menu-public üzerinde TEK SEFERDE
+  set edilen --cmds-menu-* custom property'lerini okur (bkz.
+  public/index.html renderPublicMenu() fonksiyonu). Tema SEÇİMİ ve
+  THEMES nesnesi DEĞİŞMEDİ — sadece bu değerlerin DOM'a aktarım şekli
+  değişti (Faz 3'te hazırlanan köprü burada devreye alındı).
+
+  Yapısal değerler (boşluk, radius, tipografi, geçiş süreleri) CMDS
+  token'larından (Faz 3) gelir — hiçbir "sihirli sayı" yoktur.
+*/
+
+.m-hero {
+  padding: var(--cmds-space-8) var(--cmds-space-5) var(--cmds-space-6);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  width: 100%;
+  background: var(--cmds-menu-hero-bg, var(--cmds-menu-bg));
+}
+
+/* Logo — "premium" hissi: yumuşak köşe + ince, belirgin çerçeve + hafif gölge */
+.m-logo {
+  width: 76px;
+  height: 76px;
+  border-radius: var(--cmds-radius-lg);
+  object-fit: cover;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  box-shadow: var(--cmds-shadow-2);
+  margin-bottom: var(--cmds-space-3);
+}
+
+.m-logo-placeholder {
+  width: 76px;
+  height: 76px;
+  border-radius: var(--cmds-radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  font-weight: var(--cmds-weight-semibold);
+  margin: 0 auto var(--cmds-space-3);
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  box-shadow: var(--cmds-shadow-2);
+  background: var(--cmds-menu-accent);
+  color: #fff;
+}
+
+/* Restoran adı — kahraman (hero) öğe: en büyük, en belirgin */
+.m-rest-name {
+  font-size: var(--cmds-text-display);
+  font-weight: var(--cmds-weight-semibold);
+  line-height: var(--cmds-leading-tight);
+  margin-bottom: 4px;
+  position: relative;
+  color: var(--cmds-menu-text);
+  font-family: var(--cmds-menu-font, var(--cmds-font-serif));
+}
+
+.m-tag {
+  font-size: var(--cmds-text-caption);
+  margin-bottom: var(--cmds-space-4);
+  opacity: 0.7;
+  position: relative;
+  color: var(--cmds-menu-text2);
+}
+
+/* Dil seçici — hero içinde, büyük */
+.m-lang-switcher {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--cmds-space-2);
+  margin-bottom: var(--cmds-space-3);
+}
+
+.m-lang-btn {
+  padding: 5px var(--cmds-space-3);
+  border-radius: var(--cmds-radius-full);
+  border: 1.5px solid var(--cmds-menu-border);
+  background: var(--cmds-menu-bg2);
+  color: var(--cmds-menu-text2);
+  font-size: 13px;
+  font-weight: var(--cmds-weight-regular);
+  cursor: pointer;
+  font-family: var(--cmds-font-sans);
+  transition: var(--cmds-transition-fast);
+}
+
+.m-lang-btn:hover {
+  border-color: var(--cmds-menu-accent);
+}
+
+.m-lang-btn:focus-visible {
+  outline: 2px solid var(--cmds-menu-accent);
+  outline-offset: 2px;
+}
+
+.m-lang-btn.active {
+  border-color: var(--cmds-menu-accent);
+  background: color-mix(in srgb, var(--cmds-menu-accent) 13%, transparent);
+  color: var(--cmds-menu-text);
+  font-weight: var(--cmds-weight-bold);
+}
+
+/* Sosyal medya ikonları */
+.m-social-row {
+  display: flex;
+  justify-content: center;
+  gap: var(--cmds-space-2);
+  margin-bottom: var(--cmds-space-4);
+}
+
+.m-social-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--cmds-radius-md);
+  overflow: hidden;
+  box-shadow: var(--cmds-shadow-1);
+  transition: var(--cmds-transition-fast);
+}
+
+.m-social-icon:hover {
+  box-shadow: var(--cmds-shadow-2);
+  transform: translateY(-1px);
+}
+
+.m-social-icon:focus-visible {
+  outline: 2px solid var(--cmds-menu-accent);
+  outline-offset: 2px;
+}
+
+.m-social-icon.maps {
+  background: #fff;
+}
+
+/* Açık/kapalı rozeti — semantic token'lardan (Faz 3) beslenir */
+.m-hours-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--cmds-radius-full);
+  padding: 5px var(--cmds-space-3);
+  font-size: 12px;
+  font-weight: var(--cmds-weight-medium);
+  margin-bottom: var(--cmds-space-2);
+  border: 1px solid transparent;
+}
+
+.m-hours-badge.is-open {
+  background: var(--cmds-success-bg);
+  border-color: rgba(71, 201, 126, 0.3);
+  color: var(--cmds-success);
+}
+
+.m-hours-badge.is-closed {
+  background: var(--cmds-danger-bg);
+  border-color: rgba(232, 71, 71, 0.3);
+  color: var(--cmds-danger);
+}
+
+/* Pill satırı — geri bildirim / garson çağırma (mantık DEĞİŞMEDİ, sadece stil) */
+.m-pills {
+  display: flex;
+  justify-content: center;
+  gap: var(--cmds-space-2);
+  flex-wrap: wrap;
+  position: relative;
+}
+
+.m-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: var(--cmds-weight-medium);
+  border-radius: var(--cmds-radius-full);
+  padding: 8px var(--cmds-space-4); /* min 40px dokunma yüksekliği için düşeyde genişletildi */
+  min-height: 40px;
+  cursor: pointer;
+  border: 1px solid var(--cmds-menu-pill-border);
+  background: var(--cmds-menu-pill-bg);
+  color: var(--cmds-menu-pill-color);
+  font-family: var(--cmds-font-sans);
+  transition: var(--cmds-transition-fast);
+}
+
+.m-pill:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.m-pill:active {
+  transform: translateY(0);
+}
+
+.m-pill:focus-visible {
+  outline: 2px solid var(--cmds-menu-accent);
+  outline-offset: 2px;
+}
+
+/* Mobil — tek elle kullanım: hero dikeyde biraz daha kompakt */
+@media (max-width: 480px) {
+  .m-hero {
+    padding: var(--cmds-space-6) var(--cmds-space-4) var(--cmds-space-5);
+  }
+  .m-rest-name {
+    font-size: 1.65rem;
+  }
+}

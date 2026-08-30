@@ -1,0 +1,36 @@
+/*
+  CMDS — Müşteri Menüsü Teması: Klasik Açık
+  ─────────────────────────────────────────────────────────────
+  Kaynak: public/index.html içindeki THEMES.classic JS nesnesi.
+  Değerler BİREBİR aynı şekilde buraya taşınmıştır.
+
+  NOT: Bu dosya bugün render pipeline'ı tarafından KULLANILMIYOR.
+  Müşteri menüsü hâlâ renderPublicMenu() fonksiyonu içinde THEMES
+  JS nesnesinden okuyup her elemente doğrudan inline style yazıyor
+  (bkz. Faz 1 denetimi, "Theme System Audit"). Bu dosya, o pipeline'ın
+  CSS custom property tabanlı bir motora taşınacağı Faz 4+ için
+  hazırlanan HEDEF token setidir. JS tarafı değiştirilmeden bu
+  dosyanın tek başına hiçbir etkisi yoktur.
+*/
+
+[data-menu-theme='classic'] {
+  --cmds-menu-accent:       #c0a020;
+  --cmds-menu-bg:           #ffffff;
+  --cmds-menu-bg2:          #f9f9f9;
+  --cmds-menu-border:       #f0f0f0;
+  --cmds-menu-text:         #111111;
+  --cmds-menu-text2:        #666666;
+  --cmds-menu-hero-bg:      linear-gradient(180deg, #fdf6e3 0%, #ffffff 70%);
+  --cmds-menu-nav-bg:       #ffffff;
+  --cmds-menu-footer-bg:    #fafafa;
+  --cmds-menu-pill-bg:      rgba(0, 0, 0, 0.05);
+  --cmds-menu-pill-color:   #555555;
+  --cmds-menu-pill-border:  rgba(0, 0, 0, 0.1);
+  --cmds-menu-search-bg:      #f5f5f5;
+  --cmds-menu-search-border:  #e5e5e5;
+  --cmds-menu-search-color:   #111111;
+  --cmds-menu-wifi-bg:      #ffffff;
+  --cmds-menu-wifi-border:  #eeeeee;
+  --cmds-menu-social-bg:      #f5f5f5;
+  --cmds-menu-social-border:  #eeeeee;
+}

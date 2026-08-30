@@ -1,0 +1,76 @@
+/*
+  CMDS — Component: Input
+  ─────────────────────────────────────────────────────────────
+  Kaynak: mevcut .form-group / .form-label / .form-input sınıfları.
+  Yeni .cmds-input-* sınıfları olarak, aynı görünümle tanımlanmıştır.
+  Mevcut .form-input ile isim çakışması yoktur → sıfır görsel risk.
+*/
+
+.cmds-field {
+  margin-bottom: var(--cmds-space-4);
+}
+
+.cmds-label {
+  font-size: var(--cmds-text-micro);
+  color: var(--cmds-text-secondary);
+  font-weight: var(--cmds-weight-semibold);
+  letter-spacing: var(--cmds-tracking-wide);
+  display: block;
+  margin-bottom: var(--cmds-space-2);
+}
+
+.cmds-input,
+.cmds-textarea,
+.cmds-select {
+  width: 100%;
+  background: var(--cmds-surface-sunken);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--cmds-radius-md);
+  padding: 11px 14px;
+  color: var(--cmds-text);
+  font-size: var(--cmds-text-body);
+  font-family: var(--cmds-font-sans);
+  outline: none;
+  transition: border-color var(--cmds-duration-base) var(--cmds-ease-standard);
+}
+
+.cmds-input:hover,
+.cmds-textarea:hover,
+.cmds-select:hover {
+  border-color: var(--cmds-border-strong);
+}
+
+.cmds-input:focus,
+.cmds-textarea:focus,
+.cmds-select:focus {
+  border-color: var(--cmds-accent);
+}
+
+.cmds-input:disabled,
+.cmds-textarea:disabled,
+.cmds-select:disabled {
+  opacity: var(--cmds-opacity-disabled);
+  border-color: transparent;
+  cursor: not-allowed;
+}
+
+.cmds-select {
+  cursor: pointer;
+}
+
+.cmds-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Hata durumu — yeni, mevcut projede formal bir "input error" sınıfı yok */
+.cmds-field-error .cmds-input,
+.cmds-field-error .cmds-textarea {
+  border-color: var(--cmds-danger);
+}
+
+.cmds-field-error-text {
+  color: var(--cmds-danger);
+  font-size: 12px;
+  margin-top: var(--cmds-space-1);
+}

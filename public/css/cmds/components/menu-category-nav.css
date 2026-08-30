@@ -1,0 +1,102 @@
+/*
+  CMDS — Müşteri Menüsü: Kategori Navigasyonu
+  ─────────────────────────────────────────────────────────────
+  Sprint 5 — Customer Menu UI Implementation.
+
+  Scroll-spy DAVRANIŞI (hangi kategori aktif, otomatik kaydırma)
+  DEĞİŞMEDİ — public/index.html içindeki initMenuScrollSpy() ve
+  scrollToSec() fonksiyonları artık inline style yerine sadece
+  .active class'ını toggle ediyor (bkz. Sprint 5 JS notu); bu dosya
+  o class'ın görünümünü tanımlar.
+*/
+
+.sticky-nav {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: stretch;
+  z-index: var(--cmds-z-sticky);
+  border-bottom: 1px solid var(--cmds-menu-border);
+  background: var(--cmds-menu-nav-bg);
+  /* Faz 2 §13.13 notu: alttaki içerikten net ayrım için ince gölge */
+  box-shadow: var(--cmds-shadow-1);
+}
+
+.snav-scroll {
+  display: flex;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.snav-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.snav-item {
+  padding: var(--cmds-space-3) var(--cmds-space-4);
+  min-height: 44px; /* Faz 2 §13.9/erişilebilirlik — kolay baş parmak erişimi */
+  display: flex;
+  align-items: center;
+  font-size: var(--cmds-text-body-sm);
+  font-weight: var(--cmds-weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: var(--cmds-menu-text2);
+  transition: color var(--cmds-transition-fast), border-color var(--cmds-transition-fast);
+}
+
+.snav-item:hover {
+  color: var(--cmds-menu-text);
+}
+
+.snav-item:focus-visible {
+  outline: 2px solid var(--cmds-menu-accent);
+  outline-offset: -2px;
+}
+
+/* Aktif durum imzası — CMDS genelindeki tek aktif-durum diliyle hizalı (Faz 2 §13.9) */
+.snav-item.active {
+  color: var(--cmds-menu-accent);
+  border-bottom-color: var(--cmds-menu-accent);
+  font-weight: var(--cmds-weight-semibold);
+}
+
+/* Sticky nav sağındaki kompakt dil butonları */
+.m-nav-lang {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 var(--cmds-space-2);
+  flex-shrink: 0;
+  border-left: 1px solid var(--cmds-menu-border);
+}
+
+.m-nav-lang-btn {
+  padding: 3px 6px;
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: var(--cmds-radius-full);
+  border: 1.5px solid transparent;
+  background: transparent;
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+  transition: var(--cmds-transition-fast);
+}
+
+.m-nav-lang-btn:hover {
+  background: color-mix(in srgb, var(--cmds-menu-accent) 10%, transparent);
+}
+
+.m-nav-lang-btn:focus-visible {
+  outline: 2px solid var(--cmds-menu-accent);
+  outline-offset: 2px;
+}
+
+.m-nav-lang-btn.active {
+  border-color: var(--cmds-menu-accent);
+  background: color-mix(in srgb, var(--cmds-menu-accent) 13%, transparent);
+}

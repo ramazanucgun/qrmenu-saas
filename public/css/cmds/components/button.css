@@ -1,0 +1,105 @@
+/*
+  CMDS — Component: Button
+  ─────────────────────────────────────────────────────────────
+  Kaynak: mevcut .btn-primary / .btn-sm / .btn-accent / .btn-google
+  sınıfları (index.html + admin.html, iki dosyada da neredeyse
+  aynı ama bağımsız tanımlı — bkz. Faz 1 "Component Audit").
+
+  Bu dosya, AYNI görünümü üreten YENİ .cmds-btn-* sınıflarını
+  tanımlar. İsimler kasıtlı olarak farklıdır (.cmds- ön eki) ki
+  mevcut .btn-primary vb. sınıflarla çakışmasın — bu yüzden bu
+  dosyanın bağlanması bugün hiçbir görünümü etkilemez.
+
+  Faz 4'te yapılacak iş: HTML'deki class="btn-primary" →
+  class="cmds-btn cmds-btn-primary" gibi kademeli, sayfa sayfa
+  bir geçiştir (bu fazın kapsamı dışında, kasıtlı olarak burada
+  yapılmadı).
+*/
+
+.cmds-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cmds-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--cmds-radius-md);
+  font-family: var(--cmds-font-sans);
+  font-weight: var(--cmds-weight-medium);
+  font-size: var(--cmds-text-body-sm);
+  transition: var(--cmds-transition-fast);
+  white-space: nowrap;
+}
+
+.cmds-btn:focus-visible {
+  outline: 2px solid var(--cmds-accent);
+  outline-offset: 2px;
+}
+
+.cmds-btn:disabled {
+  opacity: var(--cmds-opacity-disabled);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Boyutlar — Faz 2 §13.2 ile uyumlu üç kademe */
+.cmds-btn-sm  { height: 32px; padding: 0 var(--cmds-space-3); font-size: 12px; }
+.cmds-btn-md  { height: 40px; padding: 0 var(--cmds-space-4); }
+.cmds-btn-lg  { height: 48px; padding: 0 var(--cmds-space-5); font-size: var(--cmds-text-body); }
+
+/* Primary — mevcut .btn-accent / .btn-primary ile birebir aynı görünüm */
+.cmds-btn-primary {
+  background: var(--cmds-accent);
+  border-color: var(--cmds-accent);
+  color: var(--cmds-prod-bg); /* koyu metin, altın zemin üzerinde — mevcut #0d0d0f ile aynı */
+  font-weight: var(--cmds-weight-bold);
+}
+.cmds-btn-primary:hover:not(:disabled)  { filter: brightness(1.1); }
+.cmds-btn-primary:active:not(:disabled) { filter: brightness(0.96); transform: translateY(0.5px); }
+
+/* Secondary — mevcut .btn-sm ile birebir aynı görünüm */
+.cmds-btn-secondary {
+  background: var(--cmds-surface-sunken);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--cmds-text);
+}
+.cmds-btn-secondary:hover:not(:disabled)  { background: var(--cmds-surface); }
+.cmds-btn-secondary:active:not(:disabled) { transform: translateY(0.5px); }
+
+/* Ghost — metin ağırlıklı, arka plansız */
+.cmds-btn-ghost {
+  background: transparent;
+  color: var(--cmds-text-secondary);
+}
+.cmds-btn-ghost:hover:not(:disabled) { background: var(--cmds-surface-sunken); color: var(--cmds-text); }
+
+/* Danger — silme / geri alınamaz aksiyonlar */
+.cmds-btn-danger {
+  background: var(--cmds-danger-bg);
+  border-color: rgba(232, 71, 71, 0.3);
+  color: var(--cmds-danger);
+}
+.cmds-btn-danger:hover:not(:disabled) { filter: brightness(1.15); }
+
+/* Google — mevcut .btn-google ile birebir aynı görünüm */
+.cmds-btn-google {
+  width: 100%;
+  background: var(--cmds-surface-sunken);
+  border-color: var(--cmds-border);
+  color: var(--cmds-text);
+  font-size: var(--cmds-text-body);
+}
+.cmds-btn-google:hover:not(:disabled) {
+  background: var(--cmds-surface);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Icon-only — min 40x40 dokunma alanı korunur (Faz 2 §13.2 erişilebilirlik notu) */
+.cmds-btn-icon {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: var(--cmds-surface);
+  border-color: var(--cmds-border);
+  color: var(--cmds-text-secondary);
+}
+.cmds-btn-icon:hover:not(:disabled) { background: var(--cmds-surface-sunken); color: var(--cmds-text); }

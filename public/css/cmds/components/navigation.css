@@ -1,0 +1,131 @@
+/*
+  CMDS — Component: Navigation (Sidebar / Topbar / Nav Item)
+  ─────────────────────────────────────────────────────────────
+  Kaynak: mevcut .sidebar / .sidebar-nav / .nav-item / .topbar sınıfları.
+  Faz 1'de tespit edilen "admin.html'de responsive kural yok" sorunu
+  burada çözülmez (bu, Faz 3'ün değil, bir sonraki görsel/etkileşim
+  fazının kapsamıdır) — ama alt yapı, o değişikliğin admin.html'e de
+  aynı .cmds-sidebar sınıfı üzerinden tek seferde uygulanabilmesini
+  sağlayacak şekilde hazırlanmıştır.
+*/
+
+.cmds-sidebar {
+  width: 220px;
+  min-height: 100vh;
+  background: var(--cmds-surface);
+  border-right: 1px solid var(--cmds-border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--cmds-z-sidebar);
+  transition: transform var(--cmds-duration-slow) ease;
+}
+
+.cmds-sidebar-logo {
+  padding: 22px 18px;
+  font-family: var(--cmds-font-serif);
+  font-size: var(--cmds-text-h2);
+  border-bottom: 1px solid var(--cmds-border);
+  display: flex;
+  align-items: center;
+  gap: var(--cmds-space-2);
+}
+
+.cmds-sidebar-nav {
+  flex: 1;
+  padding: var(--cmds-space-2) var(--cmds-space-2);
+  overflow-y: auto;
+}
+
+.cmds-sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, var(--cmds-opacity-overlay-light));
+  z-index: var(--cmds-z-overlay);
+  backdrop-filter: blur(2px);
+}
+.cmds-sidebar-overlay.open { display: block; }
+
+.cmds-nav-section {
+  font-size: 10px;
+  color: var(--cmds-text-tertiary);
+  letter-spacing: 0.1em;
+  padding: 10px 10px 5px;
+  font-weight: var(--cmds-weight-semibold);
+}
+
+.cmds-nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--cmds-space-2);
+  padding: 9px 12px;
+  border-radius: var(--cmds-radius-sm);
+  cursor: pointer;
+  font-size: var(--cmds-text-body-sm);
+  color: var(--cmds-text-secondary);
+  transition: var(--cmds-transition-fast);
+  position: relative;
+}
+
+.cmds-nav-item:hover {
+  background: var(--cmds-surface-sunken);
+  color: var(--cmds-text);
+}
+
+.cmds-nav-item.active,
+.cmds-nav-item[aria-current='page'] {
+  background: rgba(232, 197, 71, 0.1);
+  color: var(--cmds-accent);
+}
+
+.cmds-topbar {
+  height: 56px; /* mevcut 54px'e göre 2px artış — Faz 2 §13.11 dokunma-alanı notu; görsel olarak fark edilmez ölçekte */
+  background: var(--cmds-surface);
+  border-bottom: 1px solid var(--cmds-border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: var(--cmds-space-3);
+  position: sticky;
+  top: 0;
+  z-index: var(--cmds-z-sticky);
+}
+
+.cmds-topbar-title {
+  font-size: 15px;
+  font-weight: var(--cmds-weight-semibold);
+  flex: 1;
+}
+
+.cmds-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--cmds-radius-sm);
+  color: var(--cmds-text);
+  font-size: 20px;
+  line-height: 1;
+}
+
+@media (max-width: 768px) {
+  .cmds-sidebar {
+    transform: translateX(-100%);
+    width: 260px;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+  }
+  .cmds-sidebar.open { transform: translateX(0); }
+  .cmds-hamburger { display: flex; align-items: center; justify-content: center; }
+  .cmds-topbar { padding: 0 10px; gap: 8px; }
+  .cmds-topbar-title {
+    font-size: 13px;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

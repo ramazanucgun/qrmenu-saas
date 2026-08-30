@@ -1,0 +1,27 @@
+/*
+  CMDS — Base: Typography
+  ─────────────────────────────────────────────────────────────
+  Başlık/gövde metni için varsayılan kurallar. Mevcut sayfalarda
+  bu kurallar per-selector olarak (.stat-val, .modal-title, vb.)
+  tekrar tekrar tanımlanıyor; bu dosya sadece taban/element
+  seviyesindeki varsayılanları toplar, mevcut sınıf tanımlarının
+  yerini almaz (o iş components/ dosyalarında yapılır).
+*/
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--cmds-font-sans);
+  font-weight: var(--cmds-weight-semibold);
+  line-height: var(--cmds-leading-tight);
+}
+
+p {
+  line-height: var(--cmds-leading-normal);
+}
+
+.cmds-font-serif {
+  font-family: var(--cmds-font-serif);
+}
+
+.cmds-font-mono {
+  font-family: var(--cmds-font-mono);
+}

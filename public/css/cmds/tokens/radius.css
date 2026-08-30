@@ -1,0 +1,18 @@
+/*
+  CMDS — Border Radius Tokens
+  ─────────────────────────────────────────────────────────────
+  Kaynak: CMDS Faz 2 §6. Denetimde (Faz 1) tespit edilen 15 farklı,
+  belgelenmemiş border-radius değeri yerine 5 kasıtlı adım.
+
+  --cmds-radius-md (10px), bugünkü index.html'deki --r:10px değişkeniyle
+  birebir aynıdır — bu yüzden --r, ileride risk almadan --cmds-radius-md'a
+  yönlendirilebilir (bkz. entegrasyon notları / cmds.css).
+*/
+
+:root {
+  --cmds-radius-sm:   6px;
+  --cmds-radius-md:   10px;  /* = mevcut --r değeriyle birebir aynı */
+  --cmds-radius-lg:   14px;
+  --cmds-radius-xl:   20px;
+  --cmds-radius-full: 999px;
+}

@@ -1,0 +1,155 @@
+/*
+  CMDS — Müşteri Menüsü: Banner (Kampanya Popup)
+  ─────────────────────────────────────────────────────────────
+  Sprint 5 — Customer Menu UI Implementation.
+
+  Kampanya AÇMA/KAPAMA mantığı, hangi kampanyanın gösterileceği,
+  link davranışı vb. HİÇ DEĞİŞMEDİ (public/index.html içindeki
+  renderCampPopup/handleCampAction fonksiyonları dokunulmadan kaldı).
+  Bu dosya sadece görsel sunumu iyileştirir: daha iyi oran, yumuşak
+  köşeler, tutarlı boşluk, "aşırı büyük banner" riski olmayan sınırlar.
+*/
+
+.camp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: var(--cmds-z-modal);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.camp-overlay.open {
+  display: flex;
+}
+
+.camp-box {
+  position: relative;
+  background: var(--cmds-neutral-950);
+  overflow: hidden;
+  width: 100%;
+  max-width: 420px;
+  height: 100svh;
+  max-height: 100svh;
+  text-align: center;
+  animation: popIn var(--cmds-duration-slow) var(--cmds-ease-spring);
+  box-shadow: var(--cmds-shadow-4);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Küçük ekranlarda tam-ekran, büyüdükçe kartlaşan, ASLA aşırı büyümeyen banner */
+@media (min-width: 480px) {
+  .camp-box {
+    max-width: 390px;
+    height: calc(390px * 16 / 9);
+    max-height: 90svh;
+    border-radius: var(--cmds-radius-xl);
+  }
+}
+
+.camp-close-btn {
+  position: absolute;
+  top: var(--cmds-space-3);
+  right: var(--cmds-space-3);
+  z-index: 10;
+  width: 40px;  /* min dokunma hedefi — Faz 2 §13.2/erişilebilirlik kuralı */
+  height: 40px;
+  border-radius: var(--cmds-radius-full);
+  background: rgba(0, 0, 0, 0.45);
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  transition: var(--cmds-transition-fast);
+}
+
+.camp-close-btn:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.camp-close-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.camp-img {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 80px;
+  background: linear-gradient(135deg, var(--cmds-gold-200), var(--cmds-gold-500));
+  overflow: hidden;
+  position: relative;
+  min-height: 0;
+}
+
+.camp-img img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.camp-img-emoji {
+  position: relative;
+  z-index: 1;
+}
+
+.camp-body {
+  padding: var(--cmds-space-5) var(--cmds-space-5) var(--cmds-space-6);
+  background: var(--cmds-neutral-950);
+  flex-shrink: 0;
+  text-align: left;
+}
+
+.camp-title {
+  color: #fff;
+  font-size: var(--cmds-text-h2);
+  font-weight: var(--cmds-weight-semibold);
+  margin-bottom: 6px;
+}
+
+.camp-sub {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: var(--cmds-text-body-sm);
+  line-height: var(--cmds-leading-normal);
+  margin-bottom: var(--cmds-space-4);
+}
+
+.camp-action-btn {
+  width: 100%;
+  padding: var(--cmds-space-3);
+  min-height: 48px; /* Faz 2 §13.2 — birincil CTA, lg boyut */
+  border-radius: var(--cmds-radius-md);
+  border: none;
+  font-size: 15px;
+  font-weight: var(--cmds-weight-bold);
+  cursor: pointer;
+  font-family: var(--cmds-font-sans);
+  background: var(--cmds-gold-400);
+  color: var(--cmds-neutral-950);
+  transition: var(--cmds-transition-fast);
+}
+
+.camp-action-btn:hover {
+  filter: brightness(1.08);
+}
+
+.camp-action-btn:active {
+  filter: brightness(0.96);
+}
+
+.camp-action-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}

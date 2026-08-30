@@ -1,0 +1,29 @@
+/*
+  CMDS — Müşteri Menüsü Teması: Doğal
+  ─────────────────────────────────────────────────────────────
+  Kaynak: public/index.html içindeki THEMES.nature JS nesnesi.
+  Değerler BİREBİR aynı şekilde buraya taşınmıştır. (Bkz. menu-classic.css
+  başındaki not.)
+*/
+
+[data-menu-theme='nature'] {
+  --cmds-menu-accent:       #5a8a3c;
+  --cmds-menu-bg:           #f5f7f0;
+  --cmds-menu-bg2:          #edf0e6;
+  --cmds-menu-border:       #dde5d0;
+  --cmds-menu-text:         #2d3a1e;
+  --cmds-menu-text2:        #5a6b48;
+  --cmds-menu-hero-bg:      linear-gradient(180deg, #e8f0dc 0%, #f5f7f0 70%);
+  --cmds-menu-nav-bg:       #f5f7f0;
+  --cmds-menu-footer-bg:    #edf0e6;
+  --cmds-menu-pill-bg:      rgba(90, 138, 60, 0.08);
+  --cmds-menu-pill-color:   #3a6020;
+  --cmds-menu-pill-border:  rgba(90, 138, 60, 0.2);
+  --cmds-menu-search-bg:      #edf0e6;
+  --cmds-menu-search-border:  #dde5d0;
+  --cmds-menu-search-color:   #2d3a1e;
+  --cmds-menu-wifi-bg:      #ffffff;
+  --cmds-menu-wifi-border:  #dde5d0;
+  --cmds-menu-social-bg:      rgba(90, 138, 60, 0.08);
+  --cmds-menu-social-border:  rgba(90, 138, 60, 0.15);
+}
